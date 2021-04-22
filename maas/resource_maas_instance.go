@@ -37,11 +37,31 @@ func resourceMaasInstance() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"zone": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"pool": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"distro_series": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  "focal",
+			},
+			"hwe_kernel": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"user_data": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
 			},
 			"cpu_count": {
 				Type:     schema.TypeInt,
@@ -72,29 +92,16 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m inter
 	// Allocate MAAS machine
 	machine, _, err := client.AllocateMachine(getMaasMachineAllocateArgs(d))
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("error allocating MAAS machine: %s", err))
+		return diag.FromErr(fmt.Errorf("failed to allocate MAAS machine: %s", err))
 	}
 
 	// Save system id
 	d.SetId(machine.SystemID())
 
 	// Deploy MAAS machine
-	machine.Start(getMaasMachineStartArgs(d))
-	log.Printf("[DEBUG] Waiting for machine (%s) to become active\n", machine.SystemID())
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"Deploying"},
-		Target:     []string{"Deployed"},
-		Refresh:    getMaasMachineStatusFunc(client, machine.SystemID()),
-		Timeout:    30 * time.Minute,
-		Delay:      10 * time.Second,
-		MinTimeout: 3 * time.Second,
-	}
-	if _, err = stateConf.WaitForState(); err != nil {
-		releaseArgs := gomaasapi.ReleaseMachinesArgs{SystemIDs: []string{machine.SystemID()}}
-		if err = client.ReleaseMachines(releaseArgs); err != nil {
-			log.Printf("[WARN] Unable to release machine (%s)\n", machine.SystemID())
-		}
-		return diag.FromErr(fmt.Errorf("error waiting for machine (%s) to become deployed: %s", machine.SystemID(), err))
+	err = deployMaasMachine(d, client)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	// Read MAAS machine info
@@ -107,7 +114,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	// Get MAAS machine
 	machine, err := getMaasMachine(client, d.Id())
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("error getting machine (%s): %s", d.Id(), err))
+		return diag.FromErr(fmt.Errorf("failed to get machine (%s): %s", d.Id(), err))
 	}
 
 	// Set Terraform state
@@ -125,7 +132,7 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 	// Release MAAS machine
 	err := client.ReleaseMachines(gomaasapi.ReleaseMachinesArgs{SystemIDs: []string{d.Id()}})
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("error releasing machine with system id %s: %s", d.Id(), err))
+		return diag.FromErr(fmt.Errorf("failed to release machine (%s): %s", d.Id(), err))
 	}
 
 	return nil
@@ -156,13 +163,58 @@ func getMaasMachineAllocateArgs(d *schema.ResourceData) gomaasapi.AllocateMachin
 	if tags, ok := d.GetOk("tags"); ok {
 		allocateMachineArgs.Tags = convertToStringSlice(tags)
 	}
+	if zone, ok := d.GetOk("zone"); ok {
+		allocateMachineArgs.Zone = zone.(string)
+	}
+	if pool, ok := d.GetOk("pool"); ok {
+		allocateMachineArgs.Pool = pool.(string)
+	}
 	return allocateMachineArgs
 }
 
 func getMaasMachineStartArgs(d *schema.ResourceData) gomaasapi.StartArgs {
 	startArgs := gomaasapi.StartArgs{}
+
+	if userData, ok := d.GetOk("user_data"); ok {
+		startArgs.UserData = base64Encode([]byte(userData.(string)))
+	}
 	if distroSeries, ok := d.GetOk("distro_series"); ok {
 		startArgs.DistroSeries = distroSeries.(string)
 	}
+	if kernel, ok := d.GetOk("hwe_kernel"); ok {
+		startArgs.Kernel = kernel.(string)
+	}
+
 	return startArgs
+}
+
+func deployMaasMachine(d *schema.ResourceData, client gomaasapi.Controller) error {
+	// Get MAAS machine
+	machine, err := getMaasMachine(client, d.Id())
+	if err != nil {
+		return fmt.Errorf("failed to get machine (%s): %s", d.Id(), err)
+	}
+
+	// Start MAAS machine
+	err = machine.Start(getMaasMachineStartArgs(d))
+	if err != nil {
+		return fmt.Errorf("failed to start machine (%s): %s", machine.SystemID(), err)
+	}
+
+	// Wait for MAAS machine to be deployed
+	log.Printf("[DEBUG] Waiting for machine (%s) to become deployed\n", machine.SystemID())
+	stateConf := &resource.StateChangeConf{
+		Pending:    []string{"Deploying"},
+		Target:     []string{"Deployed"},
+		Refresh:    getMaasMachineStatusFunc(client, machine.SystemID()),
+		Timeout:    30 * time.Minute,
+		Delay:      10 * time.Second,
+		MinTimeout: 3 * time.Second,
+	}
+	_, err = stateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("machine (%s) didn't deploy: %s", machine.SystemID(), err)
+	}
+
+	return nil
 }

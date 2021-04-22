@@ -1,8 +1,23 @@
 package maas
 
 import (
+	"encoding/base64"
+
 	"github.com/juju/gomaasapi"
 )
+
+func base64Encode(data []byte) string {
+	if isBase64Encoded(data) {
+		return string(data)
+	}
+
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+func isBase64Encoded(data []byte) bool {
+	_, err := base64.StdEncoding.DecodeString(string(data))
+	return err == nil
+}
 
 func convertToStringSlice(field interface{}) []string {
 	if field == nil {
