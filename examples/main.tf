@@ -12,12 +12,18 @@ provider "maas" {
 }
 
 resource "maas_instance" "ibalutoiu" {
-    count = 2
-    min_cpu_count = 1
-    min_memory = 2048
-    tags = [
-        "virtual"
-    ]
+  count = 2
+  min_cpu_count = 1
+  min_memory = 2048
+  tags = [
+      "virtual",
+      "kvm",
+  ]
+  zone = "default"
+  pool = "default"
+  distro_series = "focal"
+  hwe_kernel = "focal (ga-20.04)"  # Only used when deploying Ubuntu.
+  user_data = "${file("${path.module}/user-data.txt")}"
 }
 
 output "ibalutoiu_maas_instances" {
