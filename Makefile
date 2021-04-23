@@ -37,4 +37,4 @@ install: build
 
 .PHONY: test
 test:
-	go test $(TEST) $(TESTARGS) -timeout=5m -parallel=4
+	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=4
