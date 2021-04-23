@@ -99,7 +99,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m inter
 	d.SetId(machine.SystemID())
 
 	// Deploy MAAS machine
-	err = deployMaasMachine(d, client)
+	err = deployMaasMachine(d, client, ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -188,7 +188,7 @@ func getMaasMachineStartArgs(d *schema.ResourceData) gomaasapi.StartArgs {
 	return startArgs
 }
 
-func deployMaasMachine(d *schema.ResourceData, client gomaasapi.Controller) error {
+func deployMaasMachine(d *schema.ResourceData, client gomaasapi.Controller, ctx context.Context) error {
 	// Get MAAS machine
 	machine, err := getMaasMachine(client, d.Id())
 	if err != nil {
@@ -211,7 +211,7 @@ func deployMaasMachine(d *schema.ResourceData, client gomaasapi.Controller) erro
 		Delay:      10 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
 		return fmt.Errorf("machine (%s) didn't deploy: %s", machine.SystemID(), err)
 	}
