@@ -2,6 +2,7 @@ package maas
 
 import (
 	"encoding/base64"
+	"fmt"
 
 	"github.com/juju/gomaasapi"
 )
@@ -35,6 +36,14 @@ func getMaasMachine(client gomaasapi.Controller, systemId string) (gomaasapi.Mac
 	machines, err := client.Machines(gomaasapi.MachinesArgs{SystemIDs: []string{systemId}})
 	if err != nil {
 		return nil, err
+	}
+
+	if len(machines) == 0 {
+		return nil, fmt.Errorf("machine (%s) was not found", systemId)
+	}
+
+	if len(machines) > 1 {
+		return nil, fmt.Errorf("multiple machines found")
 	}
 
 	return machines[0], nil
