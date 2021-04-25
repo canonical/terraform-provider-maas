@@ -135,6 +135,20 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.FromErr(fmt.Errorf("failed to release machine (%s): %s", d.Id(), err))
 	}
 
+	// Wait MAAS machine to be released
+	log.Printf("[DEBUG] Waiting for machine (%s) to be released\n", d.Id())
+	stateConf := &resource.StateChangeConf{
+		Pending:    []string{"Releasing"},
+		Target:     []string{"Ready"},
+		Refresh:    getMaasMachineStatusFunc(client, d.Id()),
+		Timeout:    1 * time.Minute,
+		MinTimeout: 3 * time.Second,
+	}
+	_, err = stateConf.WaitForStateContext(ctx)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("machine (%s) couldn't be released: %s", d.Id(), err))
+	}
+
 	return nil
 }
 
