@@ -2,9 +2,6 @@ package maas
 
 import (
 	"encoding/base64"
-	"fmt"
-
-	"github.com/juju/gomaasapi"
 )
 
 func base64Encode(data []byte) string {
@@ -30,21 +27,4 @@ func convertToStringSlice(field interface{}) []string {
 		result[i] = value.(string)
 	}
 	return result
-}
-
-func getMaasMachine(client gomaasapi.Controller, systemId string) (gomaasapi.Machine, error) {
-	machines, err := client.Machines(gomaasapi.MachinesArgs{SystemIDs: []string{systemId}})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(machines) == 0 {
-		return nil, fmt.Errorf("machine (%s) was not found", systemId)
-	}
-
-	if len(machines) > 1 {
-		return nil, fmt.Errorf("multiple machines found")
-	}
-
-	return machines[0], nil
 }
