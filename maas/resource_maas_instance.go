@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/ionutbalutoiu/gomaasclient/api/endpoint"
 	"github.com/ionutbalutoiu/gomaasclient/gmaw"
 	"github.com/ionutbalutoiu/gomaasclient/maas"
 	"github.com/juju/gomaasapi"
@@ -180,8 +181,8 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 	return nil
 }
 
-func getMachinesAllocateParams(d *schema.ResourceData) *maas.MachinesAllocateParams {
-	allocateParams := maas.MachinesAllocateParams{}
+func getMachinesAllocateParams(d *schema.ResourceData) *endpoint.MachinesAllocateParams {
+	allocateParams := endpoint.MachinesAllocateParams{}
 
 	if cpuCount, ok := d.GetOk("min_cpu_count"); ok {
 		allocateParams.CPUCount = cpuCount.(int)
@@ -202,8 +203,8 @@ func getMachinesAllocateParams(d *schema.ResourceData) *maas.MachinesAllocatePar
 	return &allocateParams
 }
 
-func getMachineDeployParams(d *schema.ResourceData) *maas.MachineDeployParams {
-	deployParams := maas.MachineDeployParams{}
+func getMachineDeployParams(d *schema.ResourceData) *endpoint.MachineDeployParams {
+	deployParams := endpoint.MachineDeployParams{}
 
 	if userData, ok := d.GetOk("user_data"); ok {
 		deployParams.UserData = base64Encode([]byte(userData.(string)))
