@@ -208,6 +208,8 @@ github.com/ionutbalutoiu/gomaasclient v0.0.0-20210426150417-279aa9154bce h1:qJ+/
 github.com/ionutbalutoiu/gomaasclient v0.0.0-20210426150417-279aa9154bce/go.mod h1:eAXn2CS9G0zk9aDAhMBq7SBGLw5GQZgFayNBmzMfwSg=
 github.com/ionutbalutoiu/gomaasclient v0.0.0-20210426152610-52217b094502 h1:Ybs2i+owTKv2OE3FTlZoUJlDod8iech4AgQvu9eGyrg=
 github.com/ionutbalutoiu/gomaasclient v0.0.0-20210426152610-52217b094502/go.mod h1:eAXn2CS9G0zk9aDAhMBq7SBGLw5GQZgFayNBmzMfwSg=
+github.com/ionutbalutoiu/gomaasclient v0.0.0-20210426215326-4e3ac18f0339 h1:BXrAyu0XyNKDAlyd8iIUzOSaesXQAsqNzoH8QVNCrcc=
+github.com/ionutbalutoiu/gomaasclient v0.0.0-20210426215326-4e3ac18f0339/go.mod h1:eAXn2CS9G0zk9aDAhMBq7SBGLw5GQZgFayNBmzMfwSg=
 github.com/jarcoal/httpmock v1.0.8 h1:8kI16SoO6LQKgPE7PvQuV+YuD/inwHd7fOOe2zMbo4k=
 github.com/jarcoal/httpmock v1.0.8/go.mod h1:ATjnClrvW/3tijVmpL/va5Z3aAyGvqU3gCT8nX0Txik=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
