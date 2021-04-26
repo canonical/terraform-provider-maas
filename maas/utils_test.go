@@ -5,10 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	mock_gomaasapi "terraform-provider-maas/test/mocks"
-
-	"github.com/golang/mock/gomock"
-	"github.com/juju/gomaasapi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,66 +62,6 @@ func TestConvertToStringSlice(t *testing.T) {
 			for i := range out {
 				elemType := reflect.TypeOf(out[i]).Kind()
 				assert.Equal(t, reflect.String, elemType, fmt.Sprintf("convertToStringSlice(%s)[%v] has type %s, expected %s", testCase.in, i, elemType, reflect.String))
-			}
-		})
-	}
-}
-
-func TestGetMaasMachine(t *testing.T) {
-	testCases := []struct {
-		name        string
-		machine_ids []string
-		in          string
-		err         error
-	}{
-		{
-			name:        "machine is found",
-			machine_ids: []string{"id-1"},
-			in:          "id-1",
-			err:         nil,
-		},
-		{
-			name:        "machine is not found",
-			machine_ids: []string{},
-			in:          "id-1",
-			err:         fmt.Errorf("machine (id-1) was not found"),
-		},
-		{
-			name:        "multiple machines found",
-			machine_ids: []string{"id-1", "id-2"},
-			in:          "id-1",
-			err:         fmt.Errorf("multiple machines found"),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			mockCtrl := gomock.NewController(t)
-
-			var machines []gomaasapi.Machine
-			for _, id := range testCase.machine_ids {
-				machine := mock_gomaasapi.NewMockMachine(mockCtrl)
-				machine.
-					EXPECT().
-					SystemID().
-					Return(id).
-					AnyTimes()
-				machines = append(machines, machine)
-			}
-
-			client := mock_gomaasapi.NewMockController(mockCtrl)
-			client.
-				EXPECT().
-				Machines(gomock.Eq(gomaasapi.MachinesArgs{SystemIDs: []string{testCase.in}})).
-				Return(machines, nil)
-
-			ma, err := getMaasMachine(client, testCase.in)
-			if testCase.err != nil {
-				assert.Equal(t, testCase.err, err)
-			} else {
-				if assert.Nil(t, err) {
-					assert.Equal(t, testCase.in, ma.SystemID())
-				}
 			}
 		})
 	}

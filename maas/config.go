@@ -2,6 +2,8 @@ package maas
 
 import (
 	"github.com/juju/gomaasapi"
+
+	"github.com/ionutbalutoiu/gomaasclient/gmaw"
 )
 
 type Config struct {
@@ -10,12 +12,8 @@ type Config struct {
 	ApiVersion string
 }
 
-func (c *Config) Client() (interface{}, error) {
-	client, err := gomaasapi.NewController(
-		gomaasapi.ControllerArgs{
-			BaseURL: gomaasapi.AddAPIVersionToURL(c.APIURL, c.ApiVersion),
-			APIKey:  c.APIKey,
-		})
+func (c *Config) Client() (*gomaasapi.MAASObject, error) {
+	client, err := gmaw.GetClient(c.APIURL, c.APIKey, c.ApiVersion)
 	if err != nil {
 		return nil, err
 	}

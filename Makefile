@@ -38,8 +38,3 @@ install: build
 .PHONY: test
 test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=4
-
-.PHONY: mockgen
-mockgen:
-	go install github.com/golang/mock/mockgen@v1.5.0
-	mockgen -destination ./test/mocks/gomaasapi.go github.com/juju/gomaasapi Machine,Controller
