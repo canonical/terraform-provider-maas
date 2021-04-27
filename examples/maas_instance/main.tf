@@ -11,13 +11,13 @@ provider "maas" {
   api_url = "http://<MAAS_ADDRESS>:5240/MAAS"
 }
 
-resource "maas_instance" "ibalutoiu" {
+resource "maas_instance" "two_machines" {
   count = 2
   min_cpu_count = 1
   min_memory = 2048
   tags = [
-      "virtual",
-      "kvm",
+    "virtual",
+    "kvm",
   ]
   zone = "default"
   pool = "default"
@@ -26,6 +26,6 @@ resource "maas_instance" "ibalutoiu" {
   user_data = "${file("${path.module}/user-data.txt")}"
 }
 
-output "ibalutoiu_maas_instances" {
-  value = maas_instance.ibalutoiu
+output "maas_instance_two_machines" {
+  value = maas_instance.two_machines
 }
