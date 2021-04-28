@@ -43,18 +43,22 @@ func resourceMaasPod() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"zone": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"pool": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"tags": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -62,14 +66,17 @@ func resourceMaasPod() *schema.Resource {
 			"cpu_over_commit_ratio": {
 				Type:     schema.TypeFloat,
 				Optional: true,
+				Default:  1.0,
 			},
 			"memory_over_commit_ratio": {
 				Type:     schema.TypeFloat,
 				Optional: true,
+				Default:  1.0,
 			},
 			"default_macvlan_mode": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"resources_cores_available": {
 				Type:     schema.TypeInt,
@@ -104,7 +111,7 @@ func resourcePodCreate(ctx context.Context, d *schema.ResourceData, m interface{
 
 	// Create Pod
 	podsManager := maas.NewPodsManager(gmaw.NewPods(client))
-	pod, err := podsManager.Create(getPodParams(d))
+	pod, err := podsManager.Create(getPodCreateParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -131,12 +138,36 @@ func resourcePodRead(ctx context.Context, d *schema.ResourceData, m interface{})
 	pod := podManager.Current()
 
 	// Set Terraform state
-	d.Set("resources_cores_available", pod.Available.Cores)
-	d.Set("resources_cores_total", pod.Total.Cores)
-	d.Set("resources_memory_available", pod.Available.Memory)
-	d.Set("resources_memory_total", pod.Total.Memory)
-	d.Set("resources_local_storage_available", pod.Available.LocalStorage)
-	d.Set("resources_local_storage_total", pod.Total.LocalStorage)
+	if err := d.Set("name", pod.Name); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("zone", pod.Zone.Name); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("pool", pod.Pool.Name); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("tags", pod.Tags); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("resources_cores_available", pod.Available.Cores); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("resources_cores_total", pod.Total.Cores); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("resources_memory_available", pod.Available.Memory); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("resources_memory_total", pod.Total.Memory); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("resources_local_storage_available", pod.Available.LocalStorage); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("resources_local_storage_total", pod.Total.LocalStorage); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return nil
 }
@@ -155,7 +186,7 @@ func resourcePodUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 	}
 
 	// Update Pod options
-	_, err = podManager.Update(getPodParams(d))
+	_, err = podManager.Update(getPodUpdateParams(d, podManager.Current()))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -183,19 +214,39 @@ func resourcePodDelete(ctx context.Context, d *schema.ResourceData, m interface{
 	return nil
 }
 
-func getPodParams(d *schema.ResourceData) *endpoint.PodParams {
-	params := endpoint.PodParams{}
+func getPodCreateParams(d *schema.ResourceData) *endpoint.PodParams {
+	params := endpoint.PodParams{
+		Type:                  d.Get("type").(string),
+		PowerAddress:          d.Get("power_address").(string),
+		CPUOverCommitRatio:    d.Get("cpu_over_commit_ratio").(float64),
+		MemoryOverCommitRatio: d.Get("memory_over_commit_ratio").(float64),
+	}
 
-	// Required params
-	params.Type = d.Get("type").(string)
-	params.PowerAddress = d.Get("power_address").(string)
-
-	// Optional params
 	if p, ok := d.GetOk("power_user"); ok {
-		params.Name = p.(string)
+		params.PowerUser = p.(string)
 	}
 	if p, ok := d.GetOk("power_pass"); ok {
-		params.Name = p.(string)
+		params.PowerPass = p.(string)
+	}
+
+	return &params
+}
+
+func getPodUpdateParams(d *schema.ResourceData, pod *endpoint.Pod) *endpoint.PodParams {
+	params := endpoint.PodParams{
+		Type:                  pod.Type,
+		Name:                  pod.Name,
+		PowerAddress:          d.Get("power_address").(string),
+		CPUOverCommitRatio:    pod.CPUOverCommitRatio,
+		MemoryOverCommitRatio: pod.MemoryOverCommitRatio,
+		DefaultMacvlanMode:    pod.DefaultMACVLANMode,
+		Zone:                  pod.Zone.Name,
+		Pool:                  pod.Pool.Name,
+		Tags:                  strings.Join(pod.Tags, ","),
+	}
+
+	if p, ok := d.GetOk("power_pass"); ok {
+		params.PowerPass = p.(string)
 	}
 	if p, ok := d.GetOk("name"); ok {
 		params.Name = p.(string)
@@ -207,7 +258,7 @@ func getPodParams(d *schema.ResourceData) *endpoint.PodParams {
 		params.Pool = p.(string)
 	}
 	if p, ok := d.GetOk("tags"); ok {
-		params.Tags = strings.Join(convertToStringSlice(p), ",")
+		params.Tags = strings.Join(convertToStringSlice(p.(*schema.Set).List()), ",")
 	}
 	if p, ok := d.GetOk("cpu_over_commit_ratio"); ok {
 		params.CPUOverCommitRatio = p.(float64)
