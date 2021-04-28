@@ -13,17 +13,21 @@ provider "maas" {
 
 resource "maas_instance" "two_machines" {
   count = 2
-  min_cpu_count = 1
-  min_memory = 2048
-  tags = [
-    "virtual",
-    "kvm",
-  ]
-  zone = "default"
-  pool = "default"
-  distro_series = "focal"
-  hwe_kernel = "focal (ga-20.04)"  # Only used when deploying Ubuntu.
-  user_data = "${file("${path.module}/user-data.txt")}"
+  allocate_params {
+    min_cpu_count = 1
+    min_memory = 2048
+    zone = "default"
+    pool = "default"
+    tags = [
+      "virtual",
+      "kvm",
+    ]
+  }
+  deploy_params {
+    distro_series = "focal"
+    hwe_kernel = "focal (ga-20.04)"  # Only used when deploying Ubuntu.
+    user_data = "${file("${path.module}/user-data.txt")}"
+  }
 }
 
 output "maas_instance_two_machines" {
