@@ -44,3 +44,18 @@ output "maas_pod_kvm-resources_memory_available"        {value = maas_pod.kvm.re
 output "maas_pod_kvm-resources_memory_total"            {value = maas_pod.kvm.resources_memory_total}
 output "maas_pod_kvm-resources_local_storage_available" {value = maas_pod.kvm.resources_local_storage_available}
 output "maas_pod_kvm-resources_local_storage_total"     {value = maas_pod.kvm.resources_local_storage_total}
+
+resource "maas_pod_machine" "kvm" {
+  count = 3
+  pod = maas_pod.kvm.id
+  cores = 1
+  memory = 2048
+  storage = "disk1:32,disk2:20"
+  domain = "maas"
+  zone = "default"
+  pool = "default"
+}
+
+output "maas_pod_machine_kvm" {
+  value = maas_pod_machine.kvm
+}
