@@ -32,6 +32,7 @@ func Provider() *schema.Provider {
 			"maas_instance":    resourceMaasInstance(),
 			"maas_pod":         resourceMaasPod(),
 			"maas_pod_machine": resourceMaasPodMachine(),
+			"maas_machine":     resourceMaasMachine(),
 		},
 		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
