@@ -202,8 +202,8 @@ github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:
 github.com/imdario/mergo v0.3.11/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
 github.com/imdario/mergo v0.3.12 h1:b6R2BslTbIEToALKP7LxUvijTsNI9TAe80pLWN2g/HU=
 github.com/imdario/mergo v0.3.12/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
-github.com/ionutbalutoiu/gomaasclient v0.0.0-20210428160211-400a74c62923 h1:Ne6Jyk3Ds6Uzd5aA4rE++4xfs3I0Kmg8mHqJQVyh66o=
-github.com/ionutbalutoiu/gomaasclient v0.0.0-20210428160211-400a74c62923/go.mod h1:eAXn2CS9G0zk9aDAhMBq7SBGLw5GQZgFayNBmzMfwSg=
+github.com/ionutbalutoiu/gomaasclient v0.0.0-20210429182105-193e3107a8cc h1:84QgPmW/4bCsCq2kOt+QfqwiwK4vPS3iVXnGCMVLWs8=
+github.com/ionutbalutoiu/gomaasclient v0.0.0-20210429182105-193e3107a8cc/go.mod h1:eAXn2CS9G0zk9aDAhMBq7SBGLw5GQZgFayNBmzMfwSg=
 github.com/jarcoal/httpmock v1.0.8 h1:8kI16SoO6LQKgPE7PvQuV+YuD/inwHd7fOOe2zMbo4k=
 github.com/jarcoal/httpmock v1.0.8/go.mod h1:ATjnClrvW/3tijVmpL/va5Z3aAyGvqU3gCT8nX0Txik=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
