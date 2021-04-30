@@ -95,7 +95,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("machine (%s) didn't become ready within allowed timeout: %s", machine.SystemID, err))
+		return diag.FromErr(err)
 	}
 
 	// Return updated machine

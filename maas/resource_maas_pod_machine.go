@@ -124,7 +124,7 @@ func resourcePodMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 	}
 	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("machine (%s) didn't become ready within allowed timeout: %s", machine.SystemID, err))
+		return diag.FromErr(err)
 	}
 
 	// Return updated Pod machine
