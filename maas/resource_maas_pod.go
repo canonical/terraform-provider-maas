@@ -8,10 +8,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/api/endpoint"
-	"github.com/ionutbalutoiu/gomaasclient/gmaw"
-	"github.com/ionutbalutoiu/gomaasclient/maas"
-	"github.com/juju/gomaasapi"
+	"github.com/ionutbalutoiu/gomaasclient/client"
+	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
 
 func resourceMaasPod() *schema.Resource {
@@ -107,11 +105,10 @@ func resourceMaasPod() *schema.Resource {
 }
 
 func resourcePodCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Create Pod
-	podsManager := maas.NewPodsManager(gmaw.NewPods(client))
-	pod, err := podsManager.Create(getPodCreateParams(d))
+	pod, err := client.Pods.Create(getPodCreateParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -124,18 +121,17 @@ func resourcePodCreate(ctx context.Context, d *schema.ResourceData, m interface{
 }
 
 func resourcePodRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Get Pod details
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	podManager, err := maas.NewPodManager(id, gmaw.NewPod(client))
+	pod, err := client.Pod.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	pod := podManager.Current()
 
 	// Set Terraform state
 	if err := d.Set("name", pod.Name); err != nil {
@@ -173,20 +169,20 @@ func resourcePodRead(ctx context.Context, d *schema.ResourceData, m interface{})
 }
 
 func resourcePodUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
-	// Get the pod manager
+	// Get the pod
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	podManager, err := maas.NewPodManager(id, gmaw.NewPod(client))
+	pod, err := client.Pod.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Update Pod options
-	_, err = podManager.Update(getPodUpdateParams(d, podManager.Current()))
+	_, err = client.Pod.Update(pod.ID, getPodUpdateParams(d, pod))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -195,18 +191,14 @@ func resourcePodUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 }
 
 func resourcePodDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Delete Pod
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	podManager, err := maas.NewPodManager(id, gmaw.NewPod(client))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	err = podManager.Delete()
+	err = client.Pod.Delete(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -214,8 +206,8 @@ func resourcePodDelete(ctx context.Context, d *schema.ResourceData, m interface{
 	return nil
 }
 
-func getPodCreateParams(d *schema.ResourceData) *endpoint.PodParams {
-	params := endpoint.PodParams{
+func getPodCreateParams(d *schema.ResourceData) *entity.PodParams {
+	params := entity.PodParams{
 		Type:                  d.Get("type").(string),
 		PowerAddress:          d.Get("power_address").(string),
 		CPUOverCommitRatio:    d.Get("cpu_over_commit_ratio").(float64),
@@ -232,8 +224,8 @@ func getPodCreateParams(d *schema.ResourceData) *endpoint.PodParams {
 	return &params
 }
 
-func getPodUpdateParams(d *schema.ResourceData, pod *endpoint.Pod) *endpoint.PodParams {
-	params := endpoint.PodParams{
+func getPodUpdateParams(d *schema.ResourceData, pod *entity.Pod) *entity.PodParams {
+	params := entity.PodParams{
 		Type:                  pod.Type,
 		Name:                  pod.Name,
 		PowerAddress:          d.Get("power_address").(string),

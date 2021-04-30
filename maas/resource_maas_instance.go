@@ -9,10 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/api/endpoint"
-	"github.com/ionutbalutoiu/gomaasclient/gmaw"
-	"github.com/ionutbalutoiu/gomaasclient/maas"
-	"github.com/juju/gomaasapi"
+	"github.com/ionutbalutoiu/gomaasclient/client"
+	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
 
 func resourceMaasInstance() *schema.Resource {
@@ -138,26 +136,21 @@ func resourceMaasInstance() *schema.Resource {
 }
 
 func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Allocate MAAS machine
-	machinesManager := maas.NewMachinesManager(gmaw.NewMachines(client))
-	machine, err := machinesManager.Allocate(getMachinesAllocateParams(d))
+	machine, err := client.Machines.Allocate(getMachinesAllocateParams(d))
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to allocate MAAS machine: %s", err))
+		return diag.FromErr(err)
 	}
 
 	// Save system id
 	d.SetId(machine.SystemID)
 
 	// Deploy MAAS machine
-	machineManager, err := maas.NewMachineManager(machine.SystemID, gmaw.NewMachine(client))
+	machine, err = client.Machine.Deploy(machine.SystemID, getMachineDeployParams(d))
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get machine (%s) manager: %s", machine.SystemID, err))
-	}
-	err = machineManager.Deploy(getMachineDeployParams(d))
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to deploy machine (%s): %s", machine.SystemID, err))
+		return diag.FromErr(err)
 	}
 
 	// Wait for MAAS machine to be deployed
@@ -180,14 +173,13 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Get MAAS machine
-	machineManager, err := maas.NewMachineManager(d.Id(), gmaw.NewMachine(client))
+	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get machine (%s) manager: %s", d.Id(), err))
+		return diag.FromErr(err)
 	}
-	machine := machineManager.Current()
 
 	// Set Terraform state
 	if err := d.Set("fqdn", machine.FQDN); err != nil {
@@ -223,13 +215,12 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, m interfa
 }
 
 func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Release MAAS machine
-	machinesManager := maas.NewMachinesManager(gmaw.NewMachines(client))
-	err := machinesManager.Release([]string{d.Id()}, "Released by Terraform")
+	err := client.Machines.Release([]string{d.Id()}, "Released by Terraform")
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to release machine (%s): %s", d.Id(), err))
+		return diag.FromErr(err)
 	}
 
 	// Wait MAAS machine to be released
@@ -249,8 +240,8 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 	return nil
 }
 
-func getMachinesAllocateParams(d *schema.ResourceData) *endpoint.MachinesAllocateParams {
-	params := endpoint.MachinesAllocateParams{}
+func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachinesAllocateParams {
+	params := entity.MachinesAllocateParams{}
 
 	data, ok := d.GetOk("allocate_params")
 	if !ok {
@@ -280,8 +271,8 @@ func getMachinesAllocateParams(d *schema.ResourceData) *endpoint.MachinesAllocat
 	return &params
 }
 
-func getMachineDeployParams(d *schema.ResourceData) *endpoint.MachineDeployParams {
-	params := endpoint.MachineDeployParams{}
+func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams {
+	params := entity.MachineDeployParams{}
 
 	data, ok := d.GetOk("deploy_params")
 	if !ok {

@@ -9,10 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/api/endpoint"
-	"github.com/ionutbalutoiu/gomaasclient/gmaw"
-	"github.com/ionutbalutoiu/gomaasclient/maas"
-	"github.com/juju/gomaasapi"
+	"github.com/ionutbalutoiu/gomaasclient/client"
+	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
 
 func resourceMaasPodMachine() *schema.Resource {
@@ -81,21 +79,17 @@ func resourceMaasPodMachine() *schema.Resource {
 }
 
 func resourcePodMachineCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Find Pod
 	pod, err := findPod(client, d.Get("pod").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	podManager, err := maas.NewPodManager(pod.ID, gmaw.NewPod(client))
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	// Create Pod machine
 	params := getPodMachineCreateParams(d)
-	machine, err := podManager.Compose(params)
+	machine, err := client.Pod.Compose(pod.ID, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -138,14 +132,13 @@ func resourcePodMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 }
 
 func resourcePodMachineRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Get Pod machine
-	machineManager, err := maas.NewMachineManager(d.Id(), gmaw.NewMachine(client))
+	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get machine (%s) manager: %s", d.Id(), err))
+		return diag.FromErr(err)
 	}
-	machine := machineManager.Current()
 
 	// Set Terraform state
 	if err := d.Set("hostname", machine.Hostname); err != nil {
@@ -165,14 +158,14 @@ func resourcePodMachineRead(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func resourcePodMachineUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Update Pod machine
-	machineManager, err := maas.NewMachineManager(d.Id(), gmaw.NewMachine(client))
+	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get machine (%s) manager: %s", d.Id(), err))
+		return diag.FromErr(err)
 	}
-	err = machineManager.Update(getPodMachineUpdateParams(d, machineManager.Current()))
+	_, err = client.Machine.Update(machine.SystemID, getPodMachineUpdateParams(d, machine))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -181,14 +174,10 @@ func resourcePodMachineUpdate(ctx context.Context, d *schema.ResourceData, m int
 }
 
 func resourcePodMachineDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Delete Pod machine
-	machineManager, err := maas.NewMachineManager(d.Id(), gmaw.NewMachine(client))
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get machine (%s) manager: %s", d.Id(), err))
-	}
-	err = machineManager.Delete()
+	err := client.Machine.Delete(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -196,24 +185,23 @@ func resourcePodMachineDelete(ctx context.Context, d *schema.ResourceData, m int
 	return nil
 }
 
-func findPod(client *gomaasapi.MAASObject, podIdentifier string) (*endpoint.Pod, error) {
-	podsManager := maas.NewPodsManager(gmaw.NewPods(client))
-	pods, err := podsManager.Get()
+func findPod(client *client.Client, podIdentifier string) (*entity.Pod, error) {
+	pods, err := client.Pods.Get()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, pod := range pods {
 		if fmt.Sprintf("%v", pod.ID) == podIdentifier || pod.Name == podIdentifier {
-			return pod, err
+			return &pod, err
 		}
 	}
 
 	return nil, fmt.Errorf("pod (%s) not found", podIdentifier)
 }
 
-func getPodMachineCreateParams(d *schema.ResourceData) *endpoint.PodMachineParams {
-	params := endpoint.PodMachineParams{}
+func getPodMachineCreateParams(d *schema.ResourceData) *entity.PodMachineParams {
+	params := entity.PodMachineParams{}
 
 	if p, ok := d.GetOk("cores"); ok {
 		params.Cores = p.(int)
@@ -237,8 +225,8 @@ func getPodMachineCreateParams(d *schema.ResourceData) *endpoint.PodMachineParam
 	return &params
 }
 
-func getPodMachineUpdateParams(d *schema.ResourceData, machine *endpoint.Machine) *endpoint.MachineParams {
-	params := endpoint.MachineParams{
+func getPodMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *entity.MachineParams {
+	params := entity.MachineParams{
 		CPUCount:     machine.CPUCount,
 		Memory:       machine.Memory,
 		SwapSize:     machine.SwapSize,
