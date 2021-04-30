@@ -24,7 +24,6 @@ func resourceMaasMachine() *schema.Resource {
 			"power_type": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"power_parameters": {
 				Type:     schema.TypeMap,
@@ -37,12 +36,11 @@ func resourceMaasMachine() *schema.Resource {
 			"pxe_mac_address": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"architecture": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "amd64",
+				Default:  "amd64/generic",
 			},
 			"min_hwe_kernel": {
 				Type:     schema.TypeString,
@@ -77,11 +75,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*client.Client)
 
 	// Create MAAS machine
-	machineParams, powerParams, err := getMachineCreateParams(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	machine, err := client.Machines.Create(machineParams, powerParams)
+	machine, err := client.Machines.Create(getMachineCreateParams(d), getMachinePowerParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -148,7 +142,7 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Machine.Update(machine.SystemID, getMachineUpdateParams(d, machine))
+	_, err = client.Machine.Update(machine.SystemID, getMachineUpdateParams(d, machine), getMachinePowerParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -168,7 +162,16 @@ func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return nil
 }
 
-func getMachineCreateParams(d *schema.ResourceData) (*entity.MachineParams, interface{}, error) {
+func getMachinePowerParams(d *schema.ResourceData) map[string]string {
+	powerParams := d.Get("power_parameters").(map[string]interface{})
+	params := make(map[string]string, len(powerParams))
+	for k, v := range powerParams {
+		params[fmt.Sprintf("power_parameters_%s", k)] = v.(string)
+	}
+	return params
+}
+
+func getMachineCreateParams(d *schema.ResourceData) *entity.MachineParams {
 	params := entity.MachineParams{
 		PowerType:     d.Get("power_type").(string),
 		PXEMacAddress: d.Get("pxe_mac_address").(string),
@@ -187,33 +190,18 @@ func getMachineCreateParams(d *schema.ResourceData) (*entity.MachineParams, inte
 	if p, ok := d.GetOk("domain"); ok {
 		params.Domain = p.(string)
 	}
-	powerParams := d.Get("power_parameters").(map[string]interface{})
 
-	if params.PowerType == "virsh" {
-		virshParams := entity.VirshPowerParams{}
-		if p, ok := powerParams["power_parameters_power_address"]; ok {
-			virshParams.PowerAddress = p.(string)
-		}
-		if p, ok := powerParams["power_parameters_power_password"]; ok {
-			virshParams.PowerPassword = p.(string)
-		}
-		if p, ok := powerParams["power_parameters_power_id"]; ok {
-			virshParams.PowerID = p.(string)
-		}
-		return &params, virshParams, nil
-	}
-
-	return nil, nil, fmt.Errorf("machine power type %s is not supported", params.PowerType)
+	return &params
 }
 
 func getMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *entity.MachineParams {
 	params := entity.MachineParams{
+		PowerType:    d.Get("power_type").(string),
 		CPUCount:     machine.CPUCount,
 		Memory:       machine.Memory,
 		SwapSize:     machine.SwapSize,
 		Architecture: machine.Architecture,
 		MinHWEKernel: machine.MinHWEKernel,
-		PowerType:    machine.PowerType,
 		Description:  machine.Description,
 	}
 

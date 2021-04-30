@@ -165,7 +165,7 @@ func resourcePodMachineUpdate(ctx context.Context, d *schema.ResourceData, m int
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Machine.Update(machine.SystemID, getPodMachineUpdateParams(d, machine))
+	_, err = client.Machine.Update(machine.SystemID, getPodMachineUpdateParams(d, machine), map[string]string{})
 	if err != nil {
 		return diag.FromErr(err)
 	}
