@@ -9,10 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/api/endpoint"
-	"github.com/ionutbalutoiu/gomaasclient/gmaw"
-	"github.com/ionutbalutoiu/gomaasclient/maas"
-	"github.com/juju/gomaasapi"
+	"github.com/ionutbalutoiu/gomaasclient/client"
+	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
 
 func resourceMaasMachine() *schema.Resource {
@@ -76,15 +74,14 @@ func resourceMaasMachine() *schema.Resource {
 }
 
 func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Create MAAS machine
 	machineParams, powerParams, err := getMachineCreateParams(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machinesManager := maas.NewMachinesManager(gmaw.NewMachines(client))
-	machine, err := machinesManager.Create(machineParams, powerParams)
+	machine, err := client.Machines.Create(machineParams, powerParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -112,14 +109,13 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceMachineRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Get machine
-	machineManager, err := maas.NewMachineManager(d.Id(), gmaw.NewMachine(client))
+	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get machine (%s) manager: %s", d.Id(), err))
+		return diag.FromErr(err)
 	}
-	machine := machineManager.Current()
 
 	// Set Terraform state
 	if err := d.Set("architecture", machine.Architecture); err != nil {
@@ -145,14 +141,14 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Update machine
-	machineManager, err := maas.NewMachineManager(d.Id(), gmaw.NewMachine(client))
+	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get machine (%s) manager: %s", d.Id(), err))
+		return diag.FromErr(err)
 	}
-	err = machineManager.Update(getMachineUpdateParams(d, machineManager.Current()))
+	_, err = client.Machine.Update(machine.SystemID, getMachineUpdateParams(d, machine))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -161,14 +157,10 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*gomaasapi.MAASObject)
+	client := m.(*client.Client)
 
 	// Delete machine
-	machineManager, err := maas.NewMachineManager(d.Id(), gmaw.NewMachine(client))
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get machine (%s) manager: %s", d.Id(), err))
-	}
-	err = machineManager.Delete()
+	err := client.Machine.Delete(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -176,8 +168,8 @@ func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return nil
 }
 
-func getMachineCreateParams(d *schema.ResourceData) (*endpoint.MachineParams, interface{}, error) {
-	params := endpoint.MachineParams{
+func getMachineCreateParams(d *schema.ResourceData) (*entity.MachineParams, interface{}, error) {
+	params := entity.MachineParams{
 		PowerType:     d.Get("power_type").(string),
 		PXEMacAddress: d.Get("pxe_mac_address").(string),
 		Commission:    true,
@@ -198,7 +190,7 @@ func getMachineCreateParams(d *schema.ResourceData) (*endpoint.MachineParams, in
 	powerParams := d.Get("power_parameters").(map[string]interface{})
 
 	if params.PowerType == "virsh" {
-		virshParams := endpoint.VirshPowerParams{}
+		virshParams := entity.VirshPowerParams{}
 		if p, ok := powerParams["power_parameters_power_address"]; ok {
 			virshParams.PowerAddress = p.(string)
 		}
@@ -214,8 +206,8 @@ func getMachineCreateParams(d *schema.ResourceData) (*endpoint.MachineParams, in
 	return nil, nil, fmt.Errorf("machine power type %s is not supported", params.PowerType)
 }
 
-func getMachineUpdateParams(d *schema.ResourceData, machine *endpoint.Machine) *endpoint.MachineParams {
-	params := endpoint.MachineParams{
+func getMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *entity.MachineParams {
+	params := entity.MachineParams{
 		CPUCount:     machine.CPUCount,
 		Memory:       machine.Memory,
 		SwapSize:     machine.SwapSize,
