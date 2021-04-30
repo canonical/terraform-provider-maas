@@ -2,7 +2,6 @@ package maas
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -165,7 +164,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("machine (%s) didn't deploy within allowed timeout: %s", machine.SystemID, err))
+		return diag.FromErr(err)
 	}
 
 	// Read MAAS machine info
@@ -234,7 +233,7 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 	}
 	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("machine (%s) didn't release within allowed timeout: %s", d.Id(), err))
+		return diag.FromErr(err)
 	}
 
 	return nil
