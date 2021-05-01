@@ -202,8 +202,8 @@ github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:
 github.com/imdario/mergo v0.3.11/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
 github.com/imdario/mergo v0.3.12 h1:b6R2BslTbIEToALKP7LxUvijTsNI9TAe80pLWN2g/HU=
 github.com/imdario/mergo v0.3.12/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
-github.com/ionutbalutoiu/gomaasclient v0.0.0-20210430211659-9fd0eced1a06 h1:lhyi8LYtM3BLu7PZdt056giuu4TDcymo2j4R0/NqecU=
-github.com/ionutbalutoiu/gomaasclient v0.0.0-20210430211659-9fd0eced1a06/go.mod h1:dec5eQdl7Oz+SuEinaMgVbA33wNMAbI9+uoKlfdIFdQ=
+github.com/ionutbalutoiu/gomaasclient v0.0.0-20210501092900-7a85db6edca8 h1:slv7kSDS+ca/UYgPSSpHD9b/QhRwFtSPwNaoChg3H9Y=
+github.com/ionutbalutoiu/gomaasclient v0.0.0-20210501092900-7a85db6edca8/go.mod h1:dec5eQdl7Oz+SuEinaMgVbA33wNMAbI9+uoKlfdIFdQ=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/jessevdk/go-flags v1.5.0/go.mod h1:Fw0T6WPc1dYxT4mKEZRfG5kJhaTDP9pj1c2EWnYs/m4=
