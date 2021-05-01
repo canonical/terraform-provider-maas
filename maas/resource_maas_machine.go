@@ -26,9 +26,9 @@ func resourceMaasMachine() *schema.Resource {
 				Required: true,
 			},
 			"power_parameters": {
-				Type:     schema.TypeMap,
-				Required: true,
-				ForceNew: true,
+				Type:      schema.TypeMap,
+				Required:  true,
+				Sensitive: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
