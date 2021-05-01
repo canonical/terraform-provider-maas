@@ -26,12 +26,8 @@ resource "maas_pod_machine" "kvm" {
 
 resource "maas_instance" "kvm" {
   count = 2
-  allocate_params {
-    hostname = maas_pod_machine.kvm[count.index].hostname
-  }
-  deploy_params {
-    distro_series = "bionic"
-  }
+  allocate_hostname = maas_pod_machine.kvm[count.index].hostname
+  deploy_distro_series = "bionic"
 }
 
 output "maas_instance_kvm" {
