@@ -1,39 +1,3 @@
-terraform {
-  required_providers {
-    maas = {
-      source = "registry.terraform.io/ionutbalutoiu/maas"
-    }
-  }
-}
-
-provider "maas" {
-  api_key = "<API_KEY>"
-  api_url = "http://<MAAS_ADDRESS>:5240/MAAS"
-}
-
-resource "maas_pod" "kvm" {
-  type = "virsh"
-  power_address = "qemu+ssh://ubuntu@10.113.1.10/system"
-}
-
-resource "maas_pod_machine" "kvm" {
-  count = 2
-  pod = maas_pod.kvm.id
-  cores = 1
-  memory = 2048
-  storage = "disk1:15"
-}
-
-resource "maas_instance" "kvm" {
-  count = 2
-  allocate_hostname = maas_pod_machine.kvm[count.index].hostname
-  deploy_distro_series = "bionic"
-}
-
-output "maas_instance_kvm" {
-  value = maas_instance.kvm
-}
-
 resource "maas_machine" "virsh_vm1" {
   power_type = "virsh"
   power_parameters = {
@@ -52,9 +16,51 @@ resource "maas_machine" "virsh_vm2" {
   pxe_mac_address = "52:54:00:7c:f7:77"
 }
 
-output "maas_machine_virsh_vm1" {
-  value = maas_machine.virsh_vm1
+resource "maas_pod" "kvm" {
+  type = "virsh"
+  power_address = "qemu+ssh://ubuntu@10.113.1.10/system"
 }
-output "maas_machine_virsh_vm2" {
-  value = maas_machine.virsh_vm2
+
+resource "maas_pod_machine" "kvm" {
+  count = 2
+  pod = maas_pod.kvm.id
+  cores = 1
+  memory = 2048
+  storage = "disk1:15"
 }
+
+resource "maas_tag" "kvm" {
+  name = "tf-kvm"
+  machine_ids = [
+    maas_pod_machine.kvm[0].id,
+    maas_pod_machine.kvm[1].id,
+    maas_machine.virsh_vm1.id,
+    maas_machine.virsh_vm2.id,
+  ]
+}
+
+resource "maas_tag" "virtual" {
+  name = "tf-virtual"
+  machine_ids = [
+    maas_pod_machine.kvm[0].id,
+    maas_pod_machine.kvm[1].id,
+    maas_machine.virsh_vm1.id,
+    maas_machine.virsh_vm2.id,
+  ]
+}
+
+resource "maas_instance" "kvm" {
+  count = 2
+  allocate_hostname = maas_pod_machine.kvm[count.index].hostname
+  allocate_min_cpu_count = 1
+  allocate_min_memory = 2048
+  allocate_tags = [
+    maas_tag.virtual.name,
+    maas_tag.kvm.name,
+  ]
+  deploy_distro_series = "focal"
+}
+
+output "maas_machine_virsh_vm1-hostname" { value = maas_machine.virsh_vm1.hostname }
+output "maas_machine_virsh_vm2-hostname" { value = maas_machine.virsh_vm2.hostname }
+output "maas_instance_kvm" { value = maas_instance.kvm }
