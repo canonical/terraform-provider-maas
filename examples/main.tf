@@ -1,3 +1,13 @@
+data "maas_subnet" "pxe" {
+  cidr = "10.121.0.0/16"
+}
+
+data "maas_subnet" "vlan10" {
+  cidr = "10.10.0.0/16"
+  vid = 10
+  fabric = "maas"
+}
+
 resource "maas_machine" "virsh_vm1" {
   power_type = "virsh"
   power_parameters = {

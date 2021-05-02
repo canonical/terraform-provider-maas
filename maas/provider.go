@@ -35,7 +35,9 @@ func Provider() *schema.Provider {
 			"maas_machine":     resourceMaasMachine(),
 			"maas_tag":         resourceMaasTag(),
 		},
-		DataSourcesMap:       map[string]*schema.Resource{},
+		DataSourcesMap: map[string]*schema.Resource{
+			"maas_subnet": dataSourceMaasSubnet(),
+		},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
