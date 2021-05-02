@@ -43,6 +43,30 @@ provider "maas" {
 }
 ```
 
+### Data Source Configuration
+
+#### `maas_subnet`
+
+Fetches details about an existing MAAS subnet.
+
+Example:
+
+```hcl
+data "maas_subnet" "vlan10" {
+  cidr = "10.10.0.0/16"
+  vid = 10
+  fabric = "maas"
+}
+```
+
+Parameters:
+
+| Name | Type | Required | Description
+| ---- | ---- | -------- | -----------
+| `cidr` | `string` | `true` | The network CIDR for this subnet.
+| `vid` | `int` | `false` | VID of the VLAN this subnet belongs to. Picks the VLAN with this VID in the provided fabric or the default fabric if one is not given.
+| `fabric` | `string` | `false` | Fabric for the subnet. Defaults to the fabric the provided VLAN belongs to, or defaults to the default fabric.
+
 ### Resource Configuration
 
 #### `maas_instance`
