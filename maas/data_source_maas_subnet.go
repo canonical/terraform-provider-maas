@@ -18,17 +18,23 @@ func dataSourceMaasSubnet() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"vid": {
+			"vlan_id": {
 				Type:     schema.TypeInt,
 				Optional: true,
+			},
+			"vid": {
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"fabric": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 			"name": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"space": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -60,20 +66,14 @@ func dataSourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	cidr := d.Get("cidr").(string)
-	vid, vidDefined := d.GetOk("vid")
-	fabric, fabricDefined := d.GetOk("fabric")
+	vlanId, vlanIdOk := d.GetOk("vlan_id")
 
 	for _, subnet := range subnets {
 		if cidr != subnet.CIDR {
 			continue
 		}
-		if vidDefined {
-			if vid.(int) != subnet.VLAN.VID {
-				continue
-			}
-		}
-		if fabricDefined {
-			if fabric.(string) != subnet.VLAN.Fabric {
+		if vlanIdOk {
+			if vlanId.(int) != subnet.VLAN.ID {
 				continue
 			}
 		}
@@ -84,6 +84,9 @@ func dataSourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.FromErr(err)
 		}
 		if err := d.Set("name", subnet.Name); err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set("space", subnet.Space); err != nil {
 			return diag.FromErr(err)
 		}
 		gatewayIp := subnet.GatewayIP.String()
