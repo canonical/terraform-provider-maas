@@ -219,8 +219,8 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 	return nil
 }
 
-func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachinesAllocateParams {
-	params := entity.MachinesAllocateParams{}
+func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocateParams {
+	params := entity.MachineAllocateParams{}
 
 	if p, ok := d.GetOk("allocate_min_cpu_count"); ok {
 		params.CPUCount = p.(int)
