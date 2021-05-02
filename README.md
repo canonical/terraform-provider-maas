@@ -45,6 +45,48 @@ provider "maas" {
 
 ### Data Source Configuration
 
+#### `maas_fabric`
+
+Get an existing MAAS fabric.
+
+Example:
+
+```hcl
+data "maas_fabric" "default" {
+  name = "maas"
+}
+```
+
+Parameters:
+
+| Name | Type | Required | Description
+| ---- | ---- | -------- | -----------
+| `name` | `string` | `true` | The fabric name.
+
+#### `maas_vlan`
+
+Get an existing MAAS VLAN.
+
+Example:
+
+```hcl
+data "maas_fabric" "default" {
+  name = "maas"
+}
+
+data "maas_vlan" "default" {
+  fabric_id = data.maas_fabric.default.id
+  vid = 0
+}
+```
+
+Parameters:
+
+| Name | Type | Required | Description
+| ---- | ---- | -------- | -----------
+| `fabric_id` | `int` | `true` | The ID of the fabric containing the VLAN.
+| `vid` | `int` | `true` | The VLAN traffic segregation ID.
+
 #### `maas_subnet`
 
 Fetches details about an existing MAAS subnet.
@@ -52,10 +94,18 @@ Fetches details about an existing MAAS subnet.
 Example:
 
 ```hcl
-data "maas_subnet" "vlan10" {
-  cidr = "10.10.0.0/16"
-  vid = 10
-  fabric = "maas"
+data "maas_fabric" "default" {
+  name = "maas"
+}
+
+data "maas_vlan" "default" {
+  fabric_id = data.maas_fabric.default.id
+  vid = 0
+}
+
+data "maas_subnet" "pxe" {
+  cidr = "10.121.0.0/16"
+  vlan_id = data.maas_vlan.default.id
 }
 ```
 
@@ -64,8 +114,7 @@ Parameters:
 | Name | Type | Required | Description
 | ---- | ---- | -------- | -----------
 | `cidr` | `string` | `true` | The network CIDR for this subnet.
-| `vid` | `int` | `false` | VID of the VLAN this subnet belongs to. Picks the VLAN with this VID in the provided fabric or the default fabric if one is not given.
-| `fabric` | `string` | `false` | Fabric for the subnet. Defaults to the fabric the provided VLAN belongs to, or defaults to the default fabric.
+| `vlan_id` | `int` | `false` | The ID of the VLAN this subnet belongs to. This is the unique identifier set by MAAS for the VLAN resource, not the actual VLAN traffic segregation ID.
 
 ### Resource Configuration
 
