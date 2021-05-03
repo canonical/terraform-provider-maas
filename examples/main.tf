@@ -115,6 +115,11 @@ resource "maas_network_interface_physical" "virsh_vm2_nic3" {
 resource "maas_pod" "kvm" {
   type = "virsh"
   power_address = "qemu+ssh://ubuntu@10.113.1.10/system"
+  tags = [
+    "pod-console-logging",
+    "virtual",
+    "kvm",
+  ]
 }
 
 resource "maas_pod_machine" "kvm" {
@@ -126,7 +131,7 @@ resource "maas_pod_machine" "kvm" {
 }
 
 resource "maas_tag" "kvm" {
-  name = "tf-kvm"
+  name = "kvm"
   machine_ids = [
     maas_pod_machine.kvm[0].id,
     maas_pod_machine.kvm[1].id,
@@ -136,7 +141,17 @@ resource "maas_tag" "kvm" {
 }
 
 resource "maas_tag" "virtual" {
-  name = "tf-virtual"
+  name = "virtual"
+  machine_ids = [
+    maas_pod_machine.kvm[0].id,
+    maas_pod_machine.kvm[1].id,
+    maas_machine.virsh_vm1.id,
+    maas_machine.virsh_vm2.id,
+  ]
+}
+
+resource "maas_tag" "ubuntu" {
+  name = "ubuntu"
   machine_ids = [
     maas_pod_machine.kvm[0].id,
     maas_pod_machine.kvm[1].id,
@@ -153,8 +168,17 @@ resource "maas_instance" "kvm" {
   allocate_tags = [
     maas_tag.virtual.name,
     maas_tag.kvm.name,
+    maas_tag.ubuntu.name,
   ]
   deploy_distro_series = "focal"
+  depends_on = [
+    maas_network_interface_physical.virsh_vm1_nic1,
+    maas_network_interface_physical.virsh_vm1_nic2,
+    maas_network_interface_physical.virsh_vm1_nic3,
+    maas_network_interface_physical.virsh_vm2_nic1,
+    maas_network_interface_physical.virsh_vm2_nic2,
+    maas_network_interface_physical.virsh_vm2_nic3,
+  ]
 }
 
 output "maas_network_interface_physical-virsh_vm1_nic1" { value = maas_network_interface_physical.virsh_vm1_nic1 }

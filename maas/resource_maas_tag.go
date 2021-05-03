@@ -36,9 +36,16 @@ func resourceMaasTag() *schema.Resource {
 func resourceTagCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	tag, err := client.Tags.Create(getTagCreateParams(d))
+	params := getTagCreateParams(d)
+	tag, err := findTag(client, params.Name)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	if tag == nil {
+		tag, err = client.Tags.Create(params)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	d.SetId(tag.Name)
@@ -92,6 +99,19 @@ func getTagCreateParams(d *schema.ResourceData) *entity.TagParams {
 	return &entity.TagParams{
 		Name: d.Get("name").(string),
 	}
+}
+
+func findTag(client *client.Client, tagName string) (*entity.Tag, error) {
+	tags, err := client.Tags.Get()
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range tags {
+		if t.Name == tagName {
+			return &t, nil
+		}
+	}
+	return nil, nil
 }
 
 func untagOtherMachines(client *client.Client, tagName string, taggedMachineIds []string) error {
