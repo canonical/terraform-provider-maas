@@ -67,6 +67,29 @@ resource "maas_network_interface_physical" "virsh_vm1_nic3" {
   ]
 }
 
+resource "maas_network_interface_link" "virsh_vm1_nic1" {
+  machine_id = maas_machine.virsh_vm1.id
+  network_interface_id = maas_network_interface_physical.virsh_vm1_nic1.id
+  subnet_id = data.maas_subnet.pxe.id
+  mode = "STATIC"
+  ip_address = "10.121.10.29"
+  default_gateway = true
+}
+
+resource "maas_network_interface_link" "virsh_vm1_nic2" {
+  machine_id = maas_machine.virsh_vm1.id
+  network_interface_id = maas_network_interface_physical.virsh_vm1_nic2.id
+  subnet_id = data.maas_subnet.vlan10.id
+  mode = "AUTO"
+}
+
+resource "maas_network_interface_link" "virsh_vm1_nic3" {
+  machine_id = maas_machine.virsh_vm1.id
+  network_interface_id = maas_network_interface_physical.virsh_vm1_nic3.id
+  subnet_id = data.maas_subnet.pxe.id
+  mode = "DHCP"
+}
+
 resource "maas_machine" "virsh_vm2" {
   power_type = "virsh"
   power_parameters = {
@@ -110,6 +133,29 @@ resource "maas_network_interface_physical" "virsh_vm2_nic3" {
     "nic3-tag2",
     "nic3-tag3",
   ]
+}
+
+resource "maas_network_interface_link" "virsh_vm2_nic1" {
+  machine_id = maas_machine.virsh_vm2.id
+  network_interface_id = maas_network_interface_physical.virsh_vm2_nic1.id
+  subnet_id = data.maas_subnet.pxe.id
+  mode = "STATIC"
+  ip_address = "10.121.10.30"
+  default_gateway = true
+}
+
+resource "maas_network_interface_link" "virsh_vm2_nic2" {
+  machine_id = maas_machine.virsh_vm2.id
+  network_interface_id = maas_network_interface_physical.virsh_vm2_nic2.id
+  subnet_id = data.maas_subnet.vlan10.id
+  mode = "DHCP"
+}
+
+resource "maas_network_interface_link" "virsh_vm2_nic3" {
+  machine_id = maas_machine.virsh_vm2.id
+  network_interface_id = maas_network_interface_physical.virsh_vm2_nic3.id
+  subnet_id = data.maas_subnet.pxe.id
+  mode = "AUTO"
 }
 
 resource "maas_pod" "kvm" {
@@ -172,12 +218,12 @@ resource "maas_instance" "kvm" {
   ]
   deploy_distro_series = "focal"
   depends_on = [
-    maas_network_interface_physical.virsh_vm1_nic1,
-    maas_network_interface_physical.virsh_vm1_nic2,
-    maas_network_interface_physical.virsh_vm1_nic3,
-    maas_network_interface_physical.virsh_vm2_nic1,
-    maas_network_interface_physical.virsh_vm2_nic2,
-    maas_network_interface_physical.virsh_vm2_nic3,
+    maas_network_interface_link.virsh_vm1_nic1,
+    maas_network_interface_link.virsh_vm1_nic2,
+    maas_network_interface_link.virsh_vm1_nic3,
+    maas_network_interface_link.virsh_vm2_nic1,
+    maas_network_interface_link.virsh_vm2_nic2,
+    maas_network_interface_link.virsh_vm2_nic3,
   ]
 }
 
