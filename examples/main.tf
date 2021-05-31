@@ -158,7 +158,7 @@ resource "maas_network_interface_link" "virsh_vm2_nic3" {
   mode = "AUTO"
 }
 
-resource "maas_pod" "kvm" {
+resource "maas_vm_host" "kvm" {
   type = "virsh"
   power_address = "qemu+ssh://ubuntu@10.113.1.10/system"
   tags = [
@@ -168,9 +168,9 @@ resource "maas_pod" "kvm" {
   ]
 }
 
-resource "maas_pod_machine" "kvm" {
+resource "maas_vm_host_machine" "kvm" {
   count = 2
-  pod = maas_pod.kvm.id
+  vm_host = maas_vm_host.kvm.id
   cores = 1
   memory = 2048
   storage = "disk1:15"
@@ -179,8 +179,8 @@ resource "maas_pod_machine" "kvm" {
 resource "maas_tag" "kvm" {
   name = "kvm"
   machine_ids = [
-    maas_pod_machine.kvm[0].id,
-    maas_pod_machine.kvm[1].id,
+    maas_vm_host_machine.kvm[0].id,
+    maas_vm_host_machine.kvm[1].id,
     maas_machine.virsh_vm1.id,
     maas_machine.virsh_vm2.id,
   ]
@@ -189,8 +189,8 @@ resource "maas_tag" "kvm" {
 resource "maas_tag" "virtual" {
   name = "virtual"
   machine_ids = [
-    maas_pod_machine.kvm[0].id,
-    maas_pod_machine.kvm[1].id,
+    maas_vm_host_machine.kvm[0].id,
+    maas_vm_host_machine.kvm[1].id,
     maas_machine.virsh_vm1.id,
     maas_machine.virsh_vm2.id,
   ]
@@ -199,8 +199,8 @@ resource "maas_tag" "virtual" {
 resource "maas_tag" "ubuntu" {
   name = "ubuntu"
   machine_ids = [
-    maas_pod_machine.kvm[0].id,
-    maas_pod_machine.kvm[1].id,
+    maas_vm_host_machine.kvm[0].id,
+    maas_vm_host_machine.kvm[1].id,
     maas_machine.virsh_vm1.id,
     maas_machine.virsh_vm2.id,
   ]
@@ -208,7 +208,7 @@ resource "maas_tag" "ubuntu" {
 
 resource "maas_instance" "kvm" {
   count = 2
-  allocate_hostname = maas_pod_machine.kvm[count.index].hostname
+  allocate_hostname = maas_vm_host_machine.kvm[count.index].hostname
   allocate_min_cpu_count = 1
   allocate_min_memory = 2048
   allocate_tags = [

@@ -33,8 +33,8 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"maas_instance":                   resourceMaasInstance(),
-			"maas_pod":                        resourceMaasPod(),
-			"maas_pod_machine":                resourceMaasPodMachine(),
+			"maas_vm_host":                    resourceMaasVMHost(),
+			"maas_vm_host_machine":            resourceMaasVMHostMachine(),
 			"maas_machine":                    resourceMaasMachine(),
 			"maas_network_interface_physical": resourceMaasNetworkInterfacePhysical(),
 			"maas_network_interface_link":     resourceMaasNetworkInterfaceLink(),
