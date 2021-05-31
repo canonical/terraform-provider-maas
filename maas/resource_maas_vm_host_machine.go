@@ -13,15 +13,15 @@ import (
 	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
 
-func resourceMaasPodMachine() *schema.Resource {
+func resourceMaasVMHostMachine() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourcePodMachineCreate,
-		ReadContext:   resourcePodMachineRead,
-		UpdateContext: resourcePodMachineUpdate,
-		DeleteContext: resourcePodMachineDelete,
+		CreateContext: resourceVMHostMachineCreate,
+		ReadContext:   resourceVMHostMachineRead,
+		UpdateContext: resourceVMHostMachineUpdate,
+		DeleteContext: resourceVMHostMachineDelete,
 
 		Schema: map[string]*schema.Schema{
-			"pod": {
+			"vm_host": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -78,18 +78,18 @@ func resourceMaasPodMachine() *schema.Resource {
 	}
 }
 
-func resourcePodMachineCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Find Pod
-	pod, err := findPod(client, d.Get("pod").(string))
+	// Find VM host
+	vmHost, err := findVMHost(client, d.Get("vm_host").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// Create Pod machine
-	params := getPodMachineCreateParams(d)
-	machine, err := client.Pod.Compose(pod.ID, params)
+	// Create VM host machine
+	params := getVMHostMachineCreateParams(d)
+	machine, err := client.Pod.Compose(vmHost.ID, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -112,7 +112,7 @@ func resourcePodMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 	}
 	d.SetId(machine.SystemID)
 
-	// Wait for Pod machine to be ready
+	// Wait for VM host machine to be ready
 	log.Printf("[DEBUG] Waiting for machine (%s) to become ready\n", machine.SystemID)
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{"Commissioning", "Testing"},
@@ -127,14 +127,14 @@ func resourcePodMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 		return diag.FromErr(err)
 	}
 
-	// Return updated Pod machine
-	return resourcePodMachineUpdate(ctx, d, m)
+	// Return updated VM host machine
+	return resourceVMHostMachineUpdate(ctx, d, m)
 }
 
-func resourcePodMachineRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Get Pod machine
+	// Get VM host machine
 	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -157,26 +157,26 @@ func resourcePodMachineRead(ctx context.Context, d *schema.ResourceData, m inter
 	return nil
 }
 
-func resourcePodMachineUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Update Pod machine
+	// Update VM host machine
 	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Machine.Update(machine.SystemID, getPodMachineUpdateParams(d, machine), map[string]string{})
+	_, err = client.Machine.Update(machine.SystemID, getVMHostMachineUpdateParams(d, machine), map[string]string{})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourcePodMachineRead(ctx, d, m)
+	return resourceVMHostMachineRead(ctx, d, m)
 }
 
-func resourcePodMachineDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Delete Pod machine
+	// Delete VM host machine
 	err := client.Machine.Delete(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -185,22 +185,22 @@ func resourcePodMachineDelete(ctx context.Context, d *schema.ResourceData, m int
 	return nil
 }
 
-func findPod(client *client.Client, podIdentifier string) (*entity.Pod, error) {
-	pods, err := client.Pods.Get()
+func findVMHost(client *client.Client, vmHostIdentifier string) (*entity.Pod, error) {
+	vmHosts, err := client.Pods.Get()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, pod := range pods {
-		if fmt.Sprintf("%v", pod.ID) == podIdentifier || pod.Name == podIdentifier {
-			return &pod, err
+	for _, vmHost := range vmHosts {
+		if fmt.Sprintf("%v", vmHost.ID) == vmHostIdentifier || vmHost.Name == vmHostIdentifier {
+			return &vmHost, err
 		}
 	}
 
-	return nil, fmt.Errorf("pod (%s) not found", podIdentifier)
+	return nil, fmt.Errorf("VM host (%s) not found", vmHostIdentifier)
 }
 
-func getPodMachineCreateParams(d *schema.ResourceData) *entity.PodMachineParams {
+func getVMHostMachineCreateParams(d *schema.ResourceData) *entity.PodMachineParams {
 	params := entity.PodMachineParams{}
 
 	if p, ok := d.GetOk("cores"); ok {
@@ -225,7 +225,7 @@ func getPodMachineCreateParams(d *schema.ResourceData) *entity.PodMachineParams 
 	return &params
 }
 
-func getPodMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *entity.MachineParams {
+func getVMHostMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *entity.MachineParams {
 	params := entity.MachineParams{
 		CPUCount:     machine.CPUCount,
 		Memory:       machine.Memory,

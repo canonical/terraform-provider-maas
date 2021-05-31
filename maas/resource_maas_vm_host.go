@@ -12,12 +12,12 @@ import (
 	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
 
-func resourceMaasPod() *schema.Resource {
+func resourceMaasVMHost() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourcePodCreate,
-		ReadContext:   resourcePodRead,
-		UpdateContext: resourcePodUpdate,
-		DeleteContext: resourcePodDelete,
+		CreateContext: resourceVMHostCreate,
+		ReadContext:   resourceVMHostRead,
+		UpdateContext: resourceVMHostUpdate,
+		DeleteContext: resourceVMHostDelete,
 
 		Schema: map[string]*schema.Schema{
 			"type": {
@@ -104,96 +104,96 @@ func resourceMaasPod() *schema.Resource {
 	}
 }
 
-func resourcePodCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Create Pod
-	pod, err := client.Pods.Create(getPodCreateParams(d))
+	// Create VM host
+	vmHost, err := client.Pods.Create(getVMHostCreateParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Save Id
-	d.SetId(fmt.Sprintf("%v", pod.ID))
+	d.SetId(fmt.Sprintf("%v", vmHost.ID))
 
-	// Return updated pod
-	return resourcePodUpdate(ctx, d, m)
+	// Return updated VM host
+	return resourceVMHostUpdate(ctx, d, m)
 }
 
-func resourcePodRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Get Pod details
+	// Get VM host details
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	pod, err := client.Pod.Get(id)
+	vmHost, err := client.Pod.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Set Terraform state
-	if err := d.Set("name", pod.Name); err != nil {
+	if err := d.Set("name", vmHost.Name); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("zone", pod.Zone.Name); err != nil {
+	if err := d.Set("zone", vmHost.Zone.Name); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("pool", pod.Pool.Name); err != nil {
+	if err := d.Set("pool", vmHost.Pool.Name); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("tags", pod.Tags); err != nil {
+	if err := d.Set("tags", vmHost.Tags); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("resources_cores_available", pod.Available.Cores); err != nil {
+	if err := d.Set("resources_cores_available", vmHost.Available.Cores); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("resources_cores_total", pod.Total.Cores); err != nil {
+	if err := d.Set("resources_cores_total", vmHost.Total.Cores); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("resources_memory_available", pod.Available.Memory); err != nil {
+	if err := d.Set("resources_memory_available", vmHost.Available.Memory); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("resources_memory_total", pod.Total.Memory); err != nil {
+	if err := d.Set("resources_memory_total", vmHost.Total.Memory); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("resources_local_storage_available", pod.Available.LocalStorage); err != nil {
+	if err := d.Set("resources_local_storage_available", vmHost.Available.LocalStorage); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("resources_local_storage_total", pod.Total.LocalStorage); err != nil {
+	if err := d.Set("resources_local_storage_total", vmHost.Total.LocalStorage); err != nil {
 		return diag.FromErr(err)
 	}
 
 	return nil
 }
 
-func resourcePodUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Get the pod
+	// Get the VM host
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	pod, err := client.Pod.Get(id)
+	vmHost, err := client.Pod.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// Update Pod options
-	_, err = client.Pod.Update(pod.ID, getPodUpdateParams(d, pod))
+	// Update VM host options
+	_, err = client.Pod.Update(vmHost.ID, getVMHostUpdateParams(d, vmHost))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourcePodRead(ctx, d, m)
+	return resourceVMHostRead(ctx, d, m)
 }
 
-func resourcePodDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Delete Pod
+	// Delete VM host
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -206,7 +206,7 @@ func resourcePodDelete(ctx context.Context, d *schema.ResourceData, m interface{
 	return nil
 }
 
-func getPodCreateParams(d *schema.ResourceData) *entity.PodParams {
+func getVMHostCreateParams(d *schema.ResourceData) *entity.PodParams {
 	params := entity.PodParams{
 		Type:                  d.Get("type").(string),
 		PowerAddress:          d.Get("power_address").(string),
@@ -224,17 +224,17 @@ func getPodCreateParams(d *schema.ResourceData) *entity.PodParams {
 	return &params
 }
 
-func getPodUpdateParams(d *schema.ResourceData, pod *entity.Pod) *entity.PodParams {
+func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.Pod) *entity.PodParams {
 	params := entity.PodParams{
-		Type:                  pod.Type,
-		Name:                  pod.Name,
+		Type:                  vmHost.Type,
+		Name:                  vmHost.Name,
 		PowerAddress:          d.Get("power_address").(string),
-		CPUOverCommitRatio:    pod.CPUOverCommitRatio,
-		MemoryOverCommitRatio: pod.MemoryOverCommitRatio,
-		DefaultMacvlanMode:    pod.DefaultMACVLANMode,
-		Zone:                  pod.Zone.Name,
-		Pool:                  pod.Pool.Name,
-		Tags:                  strings.Join(pod.Tags, ","),
+		CPUOverCommitRatio:    vmHost.CPUOverCommitRatio,
+		MemoryOverCommitRatio: vmHost.MemoryOverCommitRatio,
+		DefaultMacvlanMode:    vmHost.DefaultMACVLANMode,
+		Zone:                  vmHost.Zone.Name,
+		Pool:                  vmHost.Pool.Name,
+		Tags:                  strings.Join(vmHost.Tags, ","),
 	}
 
 	if p, ok := d.GetOk("power_pass"); ok {
