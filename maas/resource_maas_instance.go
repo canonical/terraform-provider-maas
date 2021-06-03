@@ -2,11 +2,8 @@ package maas
 
 import (
 	"context"
-	"log"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ionutbalutoiu/gomaasclient/client"
 	"github.com/ionutbalutoiu/gomaasclient/entity"
@@ -64,11 +61,6 @@ func resourceMaasInstance() *schema.Resource {
 			},
 			"deploy_user_data": {
 				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"deploy_install_kvm": {
-				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 			},
@@ -133,16 +125,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Wait for MAAS machine to be deployed
-	log.Printf("[DEBUG] Waiting for machine (%s) to become deployed\n", machine.SystemID)
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"Deploying"},
-		Target:     []string{"Deployed"},
-		Refresh:    getMachineStatusFunc(client, machine.SystemID),
-		Timeout:    30 * time.Minute,
-		Delay:      10 * time.Second,
-		MinTimeout: 3 * time.Second,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Deploying"}, []string{"Deployed"})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -203,15 +186,7 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Wait MAAS machine to be released
-	log.Printf("[DEBUG] Waiting for machine (%s) to be released\n", d.Id())
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"Releasing"},
-		Target:     []string{"Ready"},
-		Refresh:    getMachineStatusFunc(client, d.Id()),
-		Timeout:    1 * time.Minute,
-		MinTimeout: 3 * time.Second,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
+	_, err = waitForMachineStatus(ctx, client, d.Id(), []string{"Releasing"}, []string{"Ready"})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -255,9 +230,6 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 	}
 	if p, ok := d.GetOk("deploy_user_data"); ok {
 		params.UserData = base64Encode([]byte(p.(string)))
-	}
-	if p, ok := d.GetOk("deploy_install_kvm"); ok {
-		params.InstallKVM = p.(bool)
 	}
 
 	return &params

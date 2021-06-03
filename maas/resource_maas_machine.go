@@ -226,3 +226,46 @@ func getMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *en
 
 	return &params
 }
+
+func getMachineStatusFunc(client *client.Client, systemId string) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		machine, err := client.Machine.Get(systemId)
+		if err != nil {
+			return nil, "", err
+		}
+		log.Printf("[DEBUG] Machine (%s) status: %s\n", systemId, machine.StatusName)
+		return machine, machine.StatusName, nil
+	}
+}
+
+func waitForMachineStatus(ctx context.Context, client *client.Client, systemID string, pendingStates []string, targetStates []string) (*entity.Machine, error) {
+	log.Printf("[DEBUG] Waiting for machine (%s) status to be one of %s\n", systemID, targetStates)
+	stateConf := &resource.StateChangeConf{
+		Pending:    pendingStates,
+		Target:     targetStates,
+		Refresh:    getMachineStatusFunc(client, systemID),
+		Timeout:    30 * time.Minute,
+		Delay:      10 * time.Second,
+		MinTimeout: 3 * time.Second,
+	}
+	result, err := stateConf.WaitForStateContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return result.(*entity.Machine), nil
+}
+
+func findMachine(client *client.Client, identifier string) (*entity.Machine, error) {
+	machines, err := client.Machines.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, m := range machines {
+		if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier {
+			return &m, nil
+		}
+	}
+
+	return nil, fmt.Errorf("machine *%s' not found", identifier)
+}
