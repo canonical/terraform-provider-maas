@@ -10,9 +10,13 @@ output "maas_machine_1" { value = maas_machine.virsh_vm1.hostname }
 output "maas_machine_2" { value = maas_machine.virsh_vm2.hostname }
 
 # VM Hosts
-output "maas_vm_host_kvm"           { value = maas_vm_host.kvm.name }
-output "maas_vm_host_kvm_machine_1" { value = maas_vm_host_machine.kvm[0] }
-output "maas_vm_host_kvm_machine_2" { value = maas_vm_host_machine.kvm[1] }
+output "maas_vm_host_kvm"             { value = maas_vm_host.kvm.name }
+output "maas_vm_host_kvm_1"           { value = maas_vm_host_machine.kvm[0] }
+output "maas_vm_host_kvm_2"           { value = maas_vm_host_machine.kvm[1] }
+output "maas_vm_host_maas_machine"    { value = maas_vm_host.maas_machine.name }
+output "maas_vm_host_maas_machine_1"  { value = maas_vm_host_machine.maas_machine[0] }
+output "maas_vm_host_maas_machine_2"  { value = maas_vm_host_machine.maas_machine[1] }
+output "maas_vm_host_maas_machine_3"  { value = maas_vm_host_machine.maas_machine[2] }
 
 # Tags
 output "maas_tag_kvm"     { value = maas_tag.kvm }

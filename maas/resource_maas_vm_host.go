@@ -8,8 +8,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/ionutbalutoiu/gomaasclient/client"
 	"github.com/ionutbalutoiu/gomaasclient/entity"
+)
+
+var (
+	vmHostSources = []string{
+		"machine",
+		"power_address",
+	}
 )
 
 func resourceMaasVMHost() *schema.Resource {
@@ -24,19 +32,32 @@ func resourceMaasVMHost() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				ValidateDiagFunc: validation.ToDiagFunc(
+					validation.StringInSlice([]string{"lxd", "virsh"}, false)),
+			},
+			"machine": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ExactlyOneOf:  vmHostSources,
+				ConflictsWith: []string{"power_address", "power_user", "power_pass"},
 			},
 			"power_address": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ExactlyOneOf:  vmHostSources,
+				ConflictsWith: []string{"machine"},
 			},
 			"power_user": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"machine"},
 			},
 			"power_pass": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Sensitive: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine"},
 			},
 			"name": {
 				Type:     schema.TypeString,
@@ -108,9 +129,19 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	client := m.(*client.Client)
 
 	// Create VM host
-	vmHost, err := client.Pods.Create(getVMHostCreateParams(d))
-	if err != nil {
-		return diag.FromErr(err)
+	var vmHost *entity.Pod
+	var err error
+	if p, ok := d.GetOk("machine"); ok {
+		// Deploy machine, and register it as VM host
+		vmHost, err = deployMachineAsVMHost(ctx, client, p.(string), d.Get("type").(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	} else {
+		vmHost, err = client.Pods.Create(getVMHostCreateParams(d))
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Save Id
@@ -182,7 +213,11 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Update VM host options
-	_, err = client.Pod.Update(vmHost.ID, getVMHostUpdateParams(d, vmHost))
+	vmHostParams, err := client.Pod.GetParameters(vmHost.ID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	_, err = client.Pod.Update(vmHost.ID, getVMHostUpdateParams(d, vmHost, vmHostParams))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -198,9 +233,27 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	err = client.Pod.Delete(id)
+	pod, err := client.Pod.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	err = client.Pod.Delete(pod.ID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// If the VM host was deployed from a machine, release the machine.
+	if pod.Host.SystemID != "" {
+		// Release machine
+		err = client.Machines.Release([]string{pod.Host.SystemID}, "Released by Terraform")
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		// Wait machine to be released
+		_, err = waitForMachineStatus(ctx, client, pod.Host.SystemID, []string{"Releasing"}, []string{"Ready"})
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	return nil
@@ -209,11 +262,13 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, m interfa
 func getVMHostCreateParams(d *schema.ResourceData) *entity.PodParams {
 	params := entity.PodParams{
 		Type:                  d.Get("type").(string),
-		PowerAddress:          d.Get("power_address").(string),
 		CPUOverCommitRatio:    d.Get("cpu_over_commit_ratio").(float64),
 		MemoryOverCommitRatio: d.Get("memory_over_commit_ratio").(float64),
 	}
 
+	if p, ok := d.GetOk("power_address"); ok {
+		params.PowerAddress = p.(string)
+	}
 	if p, ok := d.GetOk("power_user"); ok {
 		params.PowerUser = p.(string)
 	}
@@ -224,19 +279,19 @@ func getVMHostCreateParams(d *schema.ResourceData) *entity.PodParams {
 	return &params
 }
 
-func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.Pod) *entity.PodParams {
-	params := entity.PodParams{
-		Type:                  vmHost.Type,
-		Name:                  vmHost.Name,
-		PowerAddress:          d.Get("power_address").(string),
-		CPUOverCommitRatio:    vmHost.CPUOverCommitRatio,
-		MemoryOverCommitRatio: vmHost.MemoryOverCommitRatio,
-		DefaultMacvlanMode:    vmHost.DefaultMACVLANMode,
-		Zone:                  vmHost.Zone.Name,
-		Pool:                  vmHost.Pool.Name,
-		Tags:                  strings.Join(vmHost.Tags, ","),
-	}
+func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.Pod, params *entity.PodParams) *entity.PodParams {
+	params.Type = vmHost.Type
+	params.Name = vmHost.Name
+	params.CPUOverCommitRatio = vmHost.CPUOverCommitRatio
+	params.MemoryOverCommitRatio = vmHost.MemoryOverCommitRatio
+	params.DefaultMacvlanMode = vmHost.DefaultMACVLANMode
+	params.Zone = vmHost.Zone.Name
+	params.Pool = vmHost.Pool.Name
+	params.Tags = strings.Join(vmHost.Tags, ",")
 
+	if p, ok := d.GetOk("power_address"); ok {
+		params.PowerAddress = p.(string)
+	}
 	if p, ok := d.GetOk("power_pass"); ok {
 		params.PowerPass = p.(string)
 	}
@@ -262,5 +317,50 @@ func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.Pod) *entity.P
 		params.DefaultMacvlanMode = p.(string)
 	}
 
-	return &params
+	return params
+}
+
+func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineIdentifier string, vmHostType string) (*entity.Pod, error) {
+	// Find machine
+	machine, err := findMachine(client, machineIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	// Allocate machine
+	allocateParams := entity.MachineAllocateParams{SystemID: machine.SystemID}
+	machine, err = client.Machines.Allocate(&allocateParams)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deploy machine
+	deployParams := entity.MachineDeployParams{
+		DistroSeries:   "focal",
+		InstallKVM:     (vmHostType == "virsh"),
+		RegisterVMHost: (vmHostType == "lxd"),
+	}
+	machine, err = client.Machine.Deploy(machine.SystemID, &deployParams)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for MAAS machine to be deployed
+	machine, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Deploying"}, []string{"Deployed"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the VM host
+	vmHosts, err := client.Pods.Get()
+	if err != nil {
+		return nil, err
+	}
+	for _, vmHost := range vmHosts {
+		if vmHost.Host.SystemID == machine.SystemID {
+			return &vmHost, nil
+		}
+	}
+
+	return nil, fmt.Errorf("cannot find registered VM host on machine '%s'", machineIdentifier)
 }

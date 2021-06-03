@@ -3,11 +3,8 @@ package maas
 import (
 	"context"
 	"fmt"
-	"log"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ionutbalutoiu/gomaasclient/client"
 	"github.com/ionutbalutoiu/gomaasclient/entity"
@@ -29,20 +26,19 @@ func resourceMaasVMHostMachine() *schema.Resource {
 			"cores": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Computed: true,
 				ForceNew: true,
+				Default:  1,
 			},
 			"pinned_cores": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Computed: true,
 				ForceNew: true,
 			},
 			"memory": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Computed: true,
 				ForceNew: true,
+				Default:  2048,
 			},
 			"storage": {
 				Type:     schema.TypeString,
@@ -113,16 +109,7 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m 
 	d.SetId(machine.SystemID)
 
 	// Wait for VM host machine to be ready
-	log.Printf("[DEBUG] Waiting for machine (%s) to become ready\n", machine.SystemID)
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"Commissioning", "Testing"},
-		Target:     []string{"Ready"},
-		Refresh:    getMachineStatusFunc(client, machine.SystemID),
-		Timeout:    10 * time.Minute,
-		Delay:      10 * time.Second,
-		MinTimeout: 3 * time.Second,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"})
 	if err != nil {
 		return diag.FromErr(err)
 	}

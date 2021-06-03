@@ -18,9 +18,10 @@ Parameters:
 | Name | Type | Required | Description
 | ---- | ---- | -------- | -----------
 | `type` | `string` | `true` | The type of VM host to create: `lxd` or `virsh`.
-| `power_address` | `string` | `true` | Address that gives MAAS access to the VM host power control. For example: `qemu+ssh://172.16.99.2/system`.
-| `power_user` | `string` | `false` | Username to use for power control of the VM host.
-| `power_pass` | `string` | `false` | Password to use for power control of the VM host.
+| `machine` | `string` | `false` | The identifier (`hostname`, `fqdn` or `system_id`) of a registered `Ready` MAAS machine. This is going to be deployed and registered as a new VM host.
+| `power_address` | `string` | `false` | Address that gives MAAS access to the VM host power control. For example: `qemu+ssh://172.16.99.2/system`. Cannot be set if `machine` parameter is used.
+| `power_user` | `string` | `false` | Username to use for power control of the VM host. Cannot be set if `machine` parameter is used.
+| `power_pass` | `string` | `false` | Password to use for power control of the VM host. Cannot be set if `machine` parameter is used.
 | `name` | `string` | `false` | The new VM host name.
 | `zone` | `string` | `false` | The new VM host zone.
 | `pool` | `string` | `false` | The name of the resource pool the new VM host will belong to. Machines composed from this VM host will be assigned to this resource pool by default.
