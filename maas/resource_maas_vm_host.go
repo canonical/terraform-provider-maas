@@ -129,7 +129,7 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	client := m.(*client.Client)
 
 	// Create VM host
-	var vmHost *entity.Pod
+	var vmHost *entity.VMHost
 	var err error
 	if p, ok := d.GetOk("machine"); ok {
 		// Deploy machine, and register it as VM host
@@ -138,7 +138,7 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.FromErr(err)
 		}
 	} else {
-		vmHost, err = client.Pods.Create(getVMHostCreateParams(d))
+		vmHost, err = client.VMHosts.Create(getVMHostCreateParams(d))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -159,7 +159,7 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, m interface
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	vmHost, err := client.Pod.Get(id)
+	vmHost, err := client.VMHost.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -207,17 +207,17 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	vmHost, err := client.Pod.Get(id)
+	vmHost, err := client.VMHost.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Update VM host options
-	vmHostParams, err := client.Pod.GetParameters(vmHost.ID)
+	vmHostParams, err := client.VMHost.GetParameters(vmHost.ID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Pod.Update(vmHost.ID, getVMHostUpdateParams(d, vmHost, vmHostParams))
+	_, err = client.VMHost.Update(vmHost.ID, getVMHostUpdateParams(d, vmHost, vmHostParams))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -233,24 +233,24 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	pod, err := client.Pod.Get(id)
+	vmHost, err := client.VMHost.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	err = client.Pod.Delete(pod.ID)
+	err = client.VMHost.Delete(vmHost.ID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// If the VM host was deployed from a machine, release the machine.
-	if pod.Host.SystemID != "" {
+	if vmHost.Host.SystemID != "" {
 		// Release machine
-		err = client.Machines.Release([]string{pod.Host.SystemID}, "Released by Terraform")
+		err = client.Machines.Release([]string{vmHost.Host.SystemID}, "Released by Terraform")
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		// Wait machine to be released
-		_, err = waitForMachineStatus(ctx, client, pod.Host.SystemID, []string{"Releasing"}, []string{"Ready"})
+		_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing"}, []string{"Ready"})
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -259,8 +259,8 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-func getVMHostCreateParams(d *schema.ResourceData) *entity.PodParams {
-	params := entity.PodParams{
+func getVMHostCreateParams(d *schema.ResourceData) *entity.VMHostParams {
+	params := entity.VMHostParams{
 		Type:                  d.Get("type").(string),
 		CPUOverCommitRatio:    d.Get("cpu_over_commit_ratio").(float64),
 		MemoryOverCommitRatio: d.Get("memory_over_commit_ratio").(float64),
@@ -279,7 +279,7 @@ func getVMHostCreateParams(d *schema.ResourceData) *entity.PodParams {
 	return &params
 }
 
-func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.Pod, params *entity.PodParams) *entity.PodParams {
+func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.VMHost, params *entity.VMHostParams) *entity.VMHostParams {
 	params.Type = vmHost.Type
 	params.Name = vmHost.Name
 	params.CPUOverCommitRatio = vmHost.CPUOverCommitRatio
@@ -320,7 +320,7 @@ func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.Pod, params *e
 	return params
 }
 
-func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineIdentifier string, vmHostType string) (*entity.Pod, error) {
+func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineIdentifier string, vmHostType string) (*entity.VMHost, error) {
 	// Find machine
 	machine, err := findMachine(client, machineIdentifier)
 	if err != nil {
@@ -352,7 +352,7 @@ func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineId
 	}
 
 	// Return the VM host
-	vmHosts, err := client.Pods.Get()
+	vmHosts, err := client.VMHosts.Get()
 	if err != nil {
 		return nil, err
 	}
