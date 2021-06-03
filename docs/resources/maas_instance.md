@@ -26,4 +26,3 @@ Parameters:
 | `deploy_distro_series` | `string` | `false` | Distro series used to deploy the MAAS machine. It defaults to `focal`.
 | `deploy_hwe_kernel` | `string` | `false` | Hardware enablement kernel to use with the image. Only used when deploying Ubuntu.
 | `deploy_user_data` | `string` | `false` | Cloud-init user data script that gets run on the machine once it has deployed.
-| `deploy_install_kvm` | `string` | `false` | Install KVM on machine.
