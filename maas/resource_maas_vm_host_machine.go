@@ -85,7 +85,7 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	// Create VM host machine
 	params := getVMHostMachineCreateParams(d)
-	machine, err := client.Pod.Compose(vmHost.ID, params)
+	machine, err := client.VMHost.Compose(vmHost.ID, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -172,8 +172,8 @@ func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-func findVMHost(client *client.Client, vmHostIdentifier string) (*entity.Pod, error) {
-	vmHosts, err := client.Pods.Get()
+func findVMHost(client *client.Client, vmHostIdentifier string) (*entity.VMHost, error) {
+	vmHosts, err := client.VMHosts.Get()
 	if err != nil {
 		return nil, err
 	}
@@ -187,8 +187,8 @@ func findVMHost(client *client.Client, vmHostIdentifier string) (*entity.Pod, er
 	return nil, fmt.Errorf("VM host (%s) not found", vmHostIdentifier)
 }
 
-func getVMHostMachineCreateParams(d *schema.ResourceData) *entity.PodMachineParams {
-	params := entity.PodMachineParams{}
+func getVMHostMachineCreateParams(d *schema.ResourceData) *entity.VMHostMachineParams {
+	params := entity.VMHostMachineParams{}
 
 	if p, ok := d.GetOk("cores"); ok {
 		params.Cores = p.(int)
