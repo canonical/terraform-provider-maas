@@ -84,16 +84,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(machine.SystemID)
 
 	// Wait for machine to be ready
-	log.Printf("[DEBUG] Waiting for machine (%s) to become ready\n", machine.SystemID)
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"Commissioning", "Testing"},
-		Target:     []string{"Ready"},
-		Refresh:    getMachineStatusFunc(client, machine.SystemID),
-		Timeout:    10 * time.Minute,
-		Delay:      10 * time.Second,
-		MinTimeout: 3 * time.Second,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"})
 	if err != nil {
 		return diag.FromErr(err)
 	}
