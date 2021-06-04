@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -40,15 +41,51 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				ForceNew: true,
 				Default:  2048,
 			},
-			"storage": {
-				Type:     schema.TypeString,
+			"network_interfaces": {
+				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"fabric": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"vlan": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"subnet_cidr": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"ip_address": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
 			},
-			"interfaces": {
-				Type:     schema.TypeString,
+			"storage_disks": {
+				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"size_gigabytes": {
+							Type:     schema.TypeInt,
+							Required: true,
+						},
+						"pool": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
 			},
 			"hostname": {
 				Type:     schema.TypeString,
@@ -84,7 +121,10 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	// Create VM host machine
-	params := getVMHostMachineCreateParams(d)
+	params, err := getVMHostMachineCreateParams(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	machine, err := client.VMHost.Compose(vmHost.ID, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -98,12 +138,6 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 	if err := d.Set("memory", params.Memory); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("storage", params.Storage); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("interfaces", params.Interfaces); err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(machine.SystemID)
@@ -187,7 +221,7 @@ func findVMHost(client *client.Client, vmHostIdentifier string) (*entity.VMHost,
 	return nil, fmt.Errorf("VM host (%s) not found", vmHostIdentifier)
 }
 
-func getVMHostMachineCreateParams(d *schema.ResourceData) *entity.VMHostMachineParams {
+func getVMHostMachineCreateParams(d *schema.ResourceData) (*entity.VMHostMachineParams, error) {
 	params := entity.VMHostMachineParams{}
 
 	if p, ok := d.GetOk("cores"); ok {
@@ -199,17 +233,21 @@ func getVMHostMachineCreateParams(d *schema.ResourceData) *entity.VMHostMachineP
 	if p, ok := d.GetOk("memory"); ok {
 		params.Memory = p.(int)
 	}
-	if p, ok := d.GetOk("storage"); ok {
-		params.Storage = p.(string)
+	if p, ok := d.GetOk("network_interfaces"); ok {
+		networkInterfaces, err := getVMHostMachineNetworkInterfaces(p.([]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		params.Interfaces = networkInterfaces
 	}
-	if p, ok := d.GetOk("interfaces"); ok {
-		params.Interfaces = p.(string)
+	if p, ok := d.GetOk("storage_disks"); ok {
+		params.Storage = getVMHostMachineStorageDisks(p.([]interface{}))
 	}
 	if p, ok := d.GetOk("hostname"); ok {
 		params.Hostname = p.(string)
 	}
 
-	return &params
+	return &params, nil
 }
 
 func getVMHostMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *entity.MachineParams {
@@ -237,4 +275,45 @@ func getVMHostMachineUpdateParams(d *schema.ResourceData, machine *entity.Machin
 	}
 
 	return &params
+}
+
+func getVMHostMachineNetworkInterfaces(networkInterfaces []interface{}) (string, error) {
+	vmHostNetworkInterfaces := []string{}
+	for _, networkInterface := range networkInterfaces {
+		n := networkInterface.(map[string]interface{})
+		vlan := n["vlan"].(string)
+		subnet := n["subnet_cidr"].(string)
+		ip := n["ip_address"].(string)
+		if vlan == "" && subnet == "" && ip == "" {
+			return "", fmt.Errorf("at least one of the network interface properties (vlan, subnet_cidr, ip_address) is required")
+		}
+		properties := []string{}
+		if fabric := n["fabric"].(string); fabric != "" {
+			properties = append(properties, fmt.Sprintf("fabric=%s", fabric))
+		}
+		if vlan != "" {
+			properties = append(properties, fmt.Sprintf("vlan=%s", vlan))
+		}
+		if subnet != "" {
+			properties = append(properties, fmt.Sprintf("subnet_cidr=%s", subnet))
+		}
+		if ip != "" {
+			properties = append(properties, fmt.Sprintf("ip=%s", ip))
+		}
+		vmHostNetworkInterfaces = append(vmHostNetworkInterfaces, fmt.Sprintf("%s:%s", n["name"].(string), strings.Join(properties, ",")))
+	}
+	return strings.Join(vmHostNetworkInterfaces, ";"), nil
+}
+
+func getVMHostMachineStorageDisks(storageDisks []interface{}) string {
+	vmHostStorageDisks := []string{}
+	for i, storageDisk := range storageDisks {
+		d := storageDisk.(map[string]interface{})
+		disk := fmt.Sprintf("disk%d:%d", i, d["size_gigabytes"].(int))
+		if pool := d["pool"].(string); pool != "" {
+			disk = fmt.Sprintf("%s(%s)", disk, pool)
+		}
+		vmHostStorageDisks = append(vmHostStorageDisks, disk)
+	}
+	return strings.Join(vmHostStorageDisks, ",")
 }
