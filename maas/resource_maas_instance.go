@@ -16,53 +16,64 @@ func resourceMaasInstance() *schema.Resource {
 		DeleteContext: resourceInstanceDelete,
 
 		Schema: map[string]*schema.Schema{
-			"allocate_min_cpu_count": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_min_memory": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_hostname": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_zone": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_pool": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_tags": {
+			"allocate_params": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"min_cpu_count": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+						"min_memory": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+						"hostname": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"zone": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"pool": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"tags": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+					},
 				},
 			},
-			"deploy_distro_series": {
-				Type:     schema.TypeString,
+			"deploy_params": {
+				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
-			},
-			"deploy_hwe_kernel": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"deploy_user_data": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"distro_series": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"hwe_kernel": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"user_data": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
 			},
 			"fqdn": {
 				Type:     schema.TypeString,
@@ -195,42 +206,30 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocateParams {
-	params := entity.MachineAllocateParams{}
-
-	if p, ok := d.GetOk("allocate_min_cpu_count"); ok {
-		params.CPUCount = p.(int)
+	p, ok := d.GetOk("allocate_params")
+	if !ok {
+		return &entity.MachineAllocateParams{}
 	}
-	if p, ok := d.GetOk("allocate_min_memory"); ok {
-		params.Mem = p.(int)
+	allocateParams := p.(*schema.Set).List()[0].(map[string]interface{})
+	return &entity.MachineAllocateParams{
+		CPUCount: allocateParams["min_cpu_count"].(int),
+		Mem:      allocateParams["min_memory"].(int),
+		Name:     allocateParams["hostname"].(string),
+		Zone:     allocateParams["zone"].(string),
+		Pool:     allocateParams["pool"].(string),
+		Tags:     convertToStringSlice(allocateParams["tags"].(*schema.Set).List()),
 	}
-	if p, ok := d.GetOk("allocate_hostname"); ok {
-		params.Name = p.(string)
-	}
-	if p, ok := d.GetOk("allocate_zone"); ok {
-		params.Zone = p.(string)
-	}
-	if p, ok := d.GetOk("allocate_pool"); ok {
-		params.Pool = p.(string)
-	}
-	if p, ok := d.GetOk("allocate_tags"); ok {
-		params.Tags = convertToStringSlice(p.(*schema.Set).List())
-	}
-
-	return &params
 }
 
 func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams {
-	params := entity.MachineDeployParams{}
-
-	if p, ok := d.GetOk("deploy_distro_series"); ok {
-		params.DistroSeries = p.(string)
+	p, ok := d.GetOk("deploy_params")
+	if !ok {
+		return &entity.MachineDeployParams{}
 	}
-	if p, ok := d.GetOk("deploy_hwe_kernel"); ok {
-		params.HWEKernel = p.(string)
+	deployParams := p.(*schema.Set).List()[0].(map[string]interface{})
+	return &entity.MachineDeployParams{
+		DistroSeries: deployParams["distro_series"].(string),
+		HWEKernel:    deployParams["hwe_kernel"].(string),
+		UserData:     base64Encode([]byte(deployParams["user_data"].(string))),
 	}
-	if p, ok := d.GetOk("deploy_user_data"); ok {
-		params.UserData = base64Encode([]byte(p.(string)))
-	}
-
-	return &params
 }
