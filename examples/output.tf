@@ -23,5 +23,6 @@ output "maas_tag_virtual" { value = maas_tag.virtual }
 output "maas_tag_ubuntu"  { value = maas_tag.ubuntu }
 
 # Instances
-output "maas_instance_1" { value = maas_instance.kvm[0] }
-output "maas_instance_2" { value = maas_instance.kvm[1] }
+output "maas_instance_1"          { value = maas_instance.kvm[0] }
+output "maas_instance_2"          { value = maas_instance.kvm[1] }
+output "maas_instance_machine_05" { value = maas_instance.machine_05 }

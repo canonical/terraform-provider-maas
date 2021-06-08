@@ -49,7 +49,7 @@ resource "maas_vm_host_machine" "maas_machine_2" {
 
   network_interfaces {
     name = "eth0"
-    ip_address = "10.113.1.107"
+    ip_address = "10.99.3.107"
   }
 
   storage_disks {
