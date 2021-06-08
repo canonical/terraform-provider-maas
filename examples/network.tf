@@ -13,7 +13,7 @@ data "maas_vlan" "vid10" {
 }
 
 data "maas_subnet" "pxe" {
-  cidr = "10.113.1.0/24"
+  cidr = "10.99.0.0/16"
   vlan_id = data.maas_vlan.default.id
 }
 

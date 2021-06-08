@@ -51,7 +51,7 @@ resource "maas_network_interface_link" "virsh_vm1_nic1" {
   network_interface_id = maas_network_interface_physical.virsh_vm1_nic1.id
   subnet_id = data.maas_subnet.pxe.id
   mode = "STATIC"
-  ip_address = "10.113.1.111"
+  ip_address = "10.99.4.111"
   default_gateway = true
 }
 
@@ -122,7 +122,7 @@ resource "maas_network_interface_link" "virsh_vm2_nic1" {
   network_interface_id = maas_network_interface_physical.virsh_vm2_nic1.id
   subnet_id = data.maas_subnet.pxe.id
   mode = "STATIC"
-  ip_address = "10.113.1.112"
+  ip_address = "10.99.4.112"
   default_gateway = true
 }
 
