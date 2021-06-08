@@ -17,6 +17,19 @@ func resourceMaasInstance() *schema.Resource {
 		CreateContext: resourceInstanceCreate,
 		ReadContext:   resourceInstanceRead,
 		DeleteContext: resourceInstanceDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				client := m.(*client.Client)
+				machine, err := findMachine(client, d.Id())
+				if err != nil {
+					return nil, err
+				}
+				if machine.StatusName != "Deployed" {
+					return nil, fmt.Errorf("machine '%s' needs to be already deployed to be imported as maas_instance resource", machine.Hostname)
+				}
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"allocate_params": {

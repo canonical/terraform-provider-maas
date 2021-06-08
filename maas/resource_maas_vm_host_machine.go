@@ -17,6 +17,29 @@ func resourceMaasVMHostMachine() *schema.Resource {
 		ReadContext:   resourceVMHostMachineRead,
 		UpdateContext: resourceVMHostMachineUpdate,
 		DeleteContext: resourceVMHostMachineDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				client := m.(*client.Client)
+				machine, err := findMachine(client, d.Id())
+				if err != nil {
+					return nil, err
+				}
+				if machine.VMHost.ID == 0 || machine.VMHost.Name == "" || machine.VMHost.ResourceURI == "" {
+					return nil, fmt.Errorf("machine (%s) is not a VM host machine", d.Id())
+				}
+				d.SetId(machine.SystemID)
+				if err := d.Set("vm_host", fmt.Sprintf("%v", machine.VMHost.ID)); err != nil {
+					return nil, err
+				}
+				if err := d.Set("cores", machine.CPUCount); err != nil {
+					return nil, err
+				}
+				if err := d.Set("memory", machine.Memory); err != nil {
+					return nil, err
+				}
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"vm_host": {

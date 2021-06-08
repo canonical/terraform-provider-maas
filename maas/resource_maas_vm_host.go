@@ -18,6 +18,8 @@ var (
 		"machine",
 		"power_address",
 	}
+	defaultCPUOverCommitRatio    = 1.0
+	defaultMemoryOverCommitRatio = 1.0
 )
 
 func resourceMaasVMHost() *schema.Resource {
@@ -26,6 +28,39 @@ func resourceMaasVMHost() *schema.Resource {
 		ReadContext:   resourceVMHostRead,
 		UpdateContext: resourceVMHostUpdate,
 		DeleteContext: resourceVMHostDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				client := m.(*client.Client)
+				vmHost, err := findVMHost(client, d.Id())
+				if err != nil {
+					return nil, err
+				}
+				d.SetId(fmt.Sprintf("%v", vmHost.ID))
+				if err := d.Set("type", vmHost.Type); err != nil {
+					return nil, err
+				}
+				if err := d.Set("cpu_over_commit_ratio", defaultCPUOverCommitRatio); err != nil {
+					return nil, err
+				}
+				if err := d.Set("memory_over_commit_ratio", defaultMemoryOverCommitRatio); err != nil {
+					return nil, err
+				}
+				if vmHost.Host.SystemID != "" {
+					if err := d.Set("machine", vmHost.Host.SystemID); err != nil {
+						return nil, err
+					}
+				} else {
+					vmHostParams, err := client.VMHost.GetParameters(vmHost.ID)
+					if err != nil {
+						return nil, err
+					}
+					if err := d.Set("power_address", vmHostParams.PowerAddress); err != nil {
+						return nil, err
+					}
+				}
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"type": {
@@ -85,12 +120,12 @@ func resourceMaasVMHost() *schema.Resource {
 			"cpu_over_commit_ratio": {
 				Type:     schema.TypeFloat,
 				Optional: true,
-				Default:  1.0,
+				Default:  defaultCPUOverCommitRatio,
 			},
 			"memory_over_commit_ratio": {
 				Type:     schema.TypeFloat,
 				Optional: true,
-				Default:  1.0,
+				Default:  defaultMemoryOverCommitRatio,
 			},
 			"default_macvlan_mode": {
 				Type:     schema.TypeString,
