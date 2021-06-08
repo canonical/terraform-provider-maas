@@ -29,10 +29,12 @@ func resourceMaasInstance() *schema.Resource {
 						"min_cpu_count": {
 							Type:     schema.TypeInt,
 							Optional: true,
+							Default:  0,
 						},
 						"min_memory": {
 							Type:     schema.TypeInt,
 							Optional: true,
+							Default:  0,
 						},
 						"hostname": {
 							Type:     schema.TypeString,
