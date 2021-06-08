@@ -15,6 +15,14 @@ func resourceMaasTag() *schema.Resource {
 		ReadContext:   resourceTagRead,
 		UpdateContext: resourceTagUpdate,
 		DeleteContext: resourceTagDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				if err := d.Set("name", d.Id()); err != nil {
+					return nil, err
+				}
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {

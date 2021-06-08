@@ -19,6 +19,17 @@ func resourceMaasMachine() *schema.Resource {
 		ReadContext:   resourceMachineRead,
 		UpdateContext: resourceMachineUpdate,
 		DeleteContext: resourceMachineDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				client := m.(*client.Client)
+				machine, err := findMachine(client, d.Id())
+				if err != nil {
+					return nil, err
+				}
+				d.SetId(machine.SystemID)
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"power_type": {
@@ -103,6 +114,19 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Set Terraform state
+	if err := d.Set("power_type", machine.PowerType); err != nil {
+		return diag.FromErr(err)
+	}
+	powerParams, err := client.Machine.GetPowerParameters(machine.SystemID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("power_parameters", powerParams); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("pxe_mac_address", machine.BootInterface.MACAddress); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("architecture", machine.Architecture); err != nil {
 		return diag.FromErr(err)
 	}
@@ -258,5 +282,5 @@ func findMachine(client *client.Client, identifier string) (*entity.Machine, err
 		}
 	}
 
-	return nil, fmt.Errorf("machine *%s' not found", identifier)
+	return nil, fmt.Errorf("machine '%s' not found", identifier)
 }
