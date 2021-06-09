@@ -12,12 +12,59 @@ import (
 	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
 
+var (
+	defaultVLAN     = "untagged"
+	defaultMTU      = 1500
+	defaultAcceptRA = false
+	defaultAutoconf = false
+)
+
 func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceNetworkInterfacePhysicalCreate,
 		ReadContext:   resourceNetworkInterfacePhysicalRead,
 		UpdateContext: resourceNetworkInterfacePhysicalUpdate,
 		DeleteContext: resourceNetworkInterfacePhysicalDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				idParts := strings.Split(d.Id(), ":")
+				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:NETWORK_INTERFACE", d.Id())
+				}
+				client := m.(*client.Client)
+				machine, err := findMachine(client, idParts[0])
+				if err != nil {
+					return nil, err
+				}
+				networkInterface, err := findNetworkInterfacePhysical(client, machine.SystemID, idParts[1])
+				if err != nil {
+					return nil, err
+				}
+				if networkInterface == nil {
+					return nil, fmt.Errorf("physical network interface (%s) was not found on machine (%s)", idParts[1], machine.Hostname)
+				}
+				if err := d.Set("machine_id", machine.SystemID); err != nil {
+					return nil, err
+				}
+				if err := d.Set("mac_address", networkInterface.MACAddress); err != nil {
+					return nil, err
+				}
+				if err := d.Set("vlan", defaultVLAN); err != nil {
+					return nil, err
+				}
+				if err := d.Set("mtu", defaultMTU); err != nil {
+					return nil, err
+				}
+				if err := d.Set("accept_ra", defaultAcceptRA); err != nil {
+					return nil, err
+				}
+				if err := d.Set("autoconf", defaultAutoconf); err != nil {
+					return nil, err
+				}
+				d.SetId(fmt.Sprintf("%v", networkInterface.ID))
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"machine_id": {
@@ -45,22 +92,22 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 			"vlan": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "untagged",
+				Default:  defaultVLAN,
 			},
 			"mtu": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  1500,
+				Default:  defaultMTU,
 			},
 			"accept_ra": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  false,
+				Default:  defaultAcceptRA,
 			},
 			"autoconf": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  false,
+				Default:  defaultAutoconf,
 			},
 		},
 	}
@@ -70,7 +117,7 @@ func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.Resou
 	client := m.(*client.Client)
 
 	machineId := d.Get("machine_id").(string)
-	networkInterface, err := findNetworkInterfacePhysical(client, d)
+	networkInterface, err := findNetworkInterfacePhysical(client, d.Get("machine_id").(string), d.Get("mac_address").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -157,16 +204,17 @@ func getNetworkInterfacePhysicalParams(d *schema.ResourceData) *entity.NetworkIn
 	return &params
 }
 
-func findNetworkInterfacePhysical(client *client.Client, d *schema.ResourceData) (*entity.NetworkInterface, error) {
-	machineId := d.Get("machine_id").(string)
+func findNetworkInterfacePhysical(client *client.Client, machineId string, identifier string) (*entity.NetworkInterface, error) {
 	networkInterfaces, err := client.NetworkInterfaces.Get(machineId)
 	if err != nil {
 		return nil, err
 	}
 
-	macAddress := d.Get("mac_address").(string)
 	for _, n := range networkInterfaces {
-		if n.MACAddress == macAddress {
+		if n.Type != "physical" {
+			continue
+		}
+		if n.MACAddress == identifier || n.Name == identifier || fmt.Sprintf("%v", n.ID) == identifier {
 			return &n, nil
 		}
 	}

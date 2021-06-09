@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -13,12 +14,14 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"api_key": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     os.Getenv("MAAS_API_KEY"),
 				Description: "The MAAS API key",
 			},
 			"api_url": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     os.Getenv("MAAS_API_URL"),
 				Description: "The MAAS API URL (eg: http://127.0.0.1:5240/MAAS)",
 			},
 			"api_version": {
@@ -30,8 +33,8 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"maas_instance":                   resourceMaasInstance(),
-			"maas_pod":                        resourceMaasPod(),
-			"maas_pod_machine":                resourceMaasPodMachine(),
+			"maas_vm_host":                    resourceMaasVMHost(),
+			"maas_vm_host_machine":            resourceMaasVMHostMachine(),
 			"maas_machine":                    resourceMaasMachine(),
 			"maas_network_interface_physical": resourceMaasNetworkInterfacePhysical(),
 			"maas_network_interface_link":     resourceMaasNetworkInterfaceLink(),
@@ -47,9 +50,17 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	apiKey := d.Get("api_key").(string)
+	if apiKey == "" {
+		return nil, diag.FromErr(fmt.Errorf("MAAS API key cannot be empty"))
+	}
+	apiURL := d.Get("api_url").(string)
+	if apiURL == "" {
+		return nil, diag.FromErr(fmt.Errorf("MAAS API URL cannot be empty"))
+	}
 	config := Config{
-		APIKey:     d.Get("api_key").(string),
-		APIURL:     d.Get("api_url").(string),
+		APIKey:     apiKey,
+		APIURL:     apiURL,
 		ApiVersion: d.Get("api_version").(string),
 	}
 

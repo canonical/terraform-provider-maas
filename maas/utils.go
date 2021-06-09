@@ -2,10 +2,6 @@ package maas
 
 import (
 	"encoding/base64"
-	"log"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/ionutbalutoiu/gomaasclient/client"
 )
 
 func base64Encode(data []byte) string {
@@ -31,15 +27,4 @@ func convertToStringSlice(field interface{}) []string {
 		result[i] = value.(string)
 	}
 	return result
-}
-
-func getMachineStatusFunc(client *client.Client, systemId string) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
-		machine, err := client.Machine.Get(systemId)
-		if err != nil {
-			return nil, "", err
-		}
-		log.Printf("[DEBUG] Machine (%s) status: %s\n", systemId, machine.StatusName)
-		return machine, machine.StatusName, nil
-	}
 }

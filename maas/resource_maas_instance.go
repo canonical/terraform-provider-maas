@@ -2,11 +2,11 @@ package maas
 
 import (
 	"context"
-	"log"
-	"time"
+	"fmt"
+	"net"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/ionutbalutoiu/gomaasclient/client"
 	"github.com/ionutbalutoiu/gomaasclient/entity"
@@ -17,60 +17,110 @@ func resourceMaasInstance() *schema.Resource {
 		CreateContext: resourceInstanceCreate,
 		ReadContext:   resourceInstanceRead,
 		DeleteContext: resourceInstanceDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				client := m.(*client.Client)
+				machine, err := findMachine(client, d.Id())
+				if err != nil {
+					return nil, err
+				}
+				if machine.StatusName != "Deployed" {
+					return nil, fmt.Errorf("machine '%s' needs to be already deployed to be imported as maas_instance resource", machine.Hostname)
+				}
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
-			"allocate_min_cpu_count": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_min_memory": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_hostname": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_zone": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_pool": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"allocate_tags": {
+			"allocate_params": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"min_cpu_count": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  0,
+						},
+						"min_memory": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  0,
+						},
+						"hostname": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"zone": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"pool": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"tags": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+					},
 				},
 			},
-			"deploy_distro_series": {
-				Type:     schema.TypeString,
+			"deploy_params": {
+				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"distro_series": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"hwe_kernel": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"user_data": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
 			},
-			"deploy_hwe_kernel": {
-				Type:     schema.TypeString,
+			"network_interfaces": {
+				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
-			},
-			"deploy_user_data": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"deploy_install_kvm": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"subnet_cidr": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"ip_address": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "",
+							ValidateDiagFunc: func(value interface{}, path cty.Path) diag.Diagnostics {
+								v := value.(string)
+								if ip := net.ParseIP(v); ip == nil {
+									return diag.FromErr(fmt.Errorf("ip_address must be a valid IP address (got '%s')", v))
+								}
+								return nil
+							},
+						},
+					},
+				},
 			},
 			"fqdn": {
 				Type:     schema.TypeString,
@@ -126,6 +176,12 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m inter
 	// Save system id
 	d.SetId(machine.SystemID)
 
+	// Configure network interfaces
+	err = configureInstanceNetworkInterfaces(client, d, machine)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	// Deploy MAAS machine
 	machine, err = client.Machine.Deploy(machine.SystemID, getMachineDeployParams(d))
 	if err != nil {
@@ -133,16 +189,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Wait for MAAS machine to be deployed
-	log.Printf("[DEBUG] Waiting for machine (%s) to become deployed\n", machine.SystemID)
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"Deploying"},
-		Target:     []string{"Deployed"},
-		Refresh:    getMachineStatusFunc(client, machine.SystemID),
-		Timeout:    30 * time.Minute,
-		Delay:      10 * time.Second,
-		MinTimeout: 3 * time.Second,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Deploying"}, []string{"Deployed"})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -203,15 +250,7 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Wait MAAS machine to be released
-	log.Printf("[DEBUG] Waiting for machine (%s) to be released\n", d.Id())
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"Releasing"},
-		Target:     []string{"Ready"},
-		Refresh:    getMachineStatusFunc(client, d.Id()),
-		Timeout:    1 * time.Minute,
-		MinTimeout: 3 * time.Second,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
+	_, err = waitForMachineStatus(ctx, client, d.Id(), []string{"Releasing"}, []string{"Ready"})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -220,45 +259,107 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocateParams {
-	params := entity.MachineAllocateParams{}
-
-	if p, ok := d.GetOk("allocate_min_cpu_count"); ok {
-		params.CPUCount = p.(int)
+	p, ok := d.GetOk("allocate_params")
+	if !ok {
+		return &entity.MachineAllocateParams{}
 	}
-	if p, ok := d.GetOk("allocate_min_memory"); ok {
-		params.Mem = p.(int)
+	allocateParams := p.(*schema.Set).List()[0].(map[string]interface{})
+	return &entity.MachineAllocateParams{
+		CPUCount: allocateParams["min_cpu_count"].(int),
+		Mem:      allocateParams["min_memory"].(int),
+		Name:     allocateParams["hostname"].(string),
+		Zone:     allocateParams["zone"].(string),
+		Pool:     allocateParams["pool"].(string),
+		Tags:     convertToStringSlice(allocateParams["tags"].(*schema.Set).List()),
 	}
-	if p, ok := d.GetOk("allocate_hostname"); ok {
-		params.Name = p.(string)
-	}
-	if p, ok := d.GetOk("allocate_zone"); ok {
-		params.Zone = p.(string)
-	}
-	if p, ok := d.GetOk("allocate_pool"); ok {
-		params.Pool = p.(string)
-	}
-	if p, ok := d.GetOk("allocate_tags"); ok {
-		params.Tags = convertToStringSlice(p.(*schema.Set).List())
-	}
-
-	return &params
 }
 
 func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams {
-	params := entity.MachineDeployParams{}
+	p, ok := d.GetOk("deploy_params")
+	if !ok {
+		return &entity.MachineDeployParams{}
+	}
+	deployParams := p.(*schema.Set).List()[0].(map[string]interface{})
+	return &entity.MachineDeployParams{
+		DistroSeries: deployParams["distro_series"].(string),
+		HWEKernel:    deployParams["hwe_kernel"].(string),
+		UserData:     base64Encode([]byte(deployParams["user_data"].(string))),
+	}
+}
 
-	if p, ok := d.GetOk("deploy_distro_series"); ok {
-		params.DistroSeries = p.(string)
+func configureInstanceNetworkInterfaces(client *client.Client, d *schema.ResourceData, machine *entity.Machine) error {
+	p, ok := d.GetOk("network_interfaces")
+	if !ok {
+		return nil
 	}
-	if p, ok := d.GetOk("deploy_hwe_kernel"); ok {
-		params.HWEKernel = p.(string)
+	machineNics, err := client.NetworkInterfaces.Get(machine.SystemID)
+	if err != nil {
+		return err
 	}
-	if p, ok := d.GetOk("deploy_user_data"); ok {
-		params.UserData = base64Encode([]byte(p.(string)))
+	subnets, err := client.Subnets.Get()
+	if err != nil {
+		return err
 	}
-	if p, ok := d.GetOk("deploy_install_kvm"); ok {
-		params.InstallKVM = p.(bool)
+	nics := p.([]interface{})
+	for _, nic := range nics {
+		n := nic.(map[string]interface{})
+		// Find the machine network interface
+		name := n["name"].(string)
+		var nicFound *entity.NetworkInterface = nil
+		for _, machineNic := range machineNics {
+			if machineNic.Name == name {
+				nicFound = &machineNic
+				break
+			}
+		}
+		if nicFound == nil {
+			return fmt.Errorf("network interface '%s' was not found on allocated instance '%s'", name, machine.FQDN)
+		}
+		subnetCidr := n["subnet_cidr"].(string)
+		ipAddress := n["ip_address"].(string)
+		if subnetCidr == "" {
+			if ipAddress == "" {
+				// Clear existing network interface links
+				_, err := client.NetworkInterface.Disconnect(machine.SystemID, nicFound.ID)
+				if err != nil {
+					return err
+				}
+				continue
+			} else {
+				return fmt.Errorf("network interface '%s': the 'subnet_cidr' is required when 'ip_address' is set", name)
+			}
+		}
+		// Find the subnet
+		var subnetFound *entity.Subnet = nil
+		for _, subnet := range subnets {
+			if subnet.CIDR == subnetCidr {
+				subnetFound = &subnet
+				break
+			}
+		}
+		if subnetFound == nil {
+			return fmt.Errorf("subnet with CIDR '%s' was not found", subnetCidr)
+		}
+		// Prepare the network interface link parameters
+		mode := "AUTO"
+		if ipAddress != "" {
+			mode = "STATIC"
+		}
+		params := entity.NetworkInterfaceLinkParams{
+			Mode:      mode,
+			Subnet:    subnetFound.ID,
+			IPAddress: ipAddress,
+		}
+		// Clear existing network interface links
+		_, err := client.NetworkInterface.Disconnect(machine.SystemID, nicFound.ID)
+		if err != nil {
+			return err
+		}
+		// Create new network interface link
+		_, err = client.NetworkInterface.LinkSubnet(machine.SystemID, nicFound.ID, &params)
+		if err != nil {
+			return err
+		}
 	}
-
-	return &params
+	return nil
 }

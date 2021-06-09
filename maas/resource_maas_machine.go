@@ -19,6 +19,17 @@ func resourceMaasMachine() *schema.Resource {
 		ReadContext:   resourceMachineRead,
 		UpdateContext: resourceMachineUpdate,
 		DeleteContext: resourceMachineDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				client := m.(*client.Client)
+				machine, err := findMachine(client, d.Id())
+				if err != nil {
+					return nil, err
+				}
+				d.SetId(machine.SystemID)
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"power_type": {
@@ -84,16 +95,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(machine.SystemID)
 
 	// Wait for machine to be ready
-	log.Printf("[DEBUG] Waiting for machine (%s) to become ready\n", machine.SystemID)
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"Commissioning", "Testing"},
-		Target:     []string{"Ready"},
-		Refresh:    getMachineStatusFunc(client, machine.SystemID),
-		Timeout:    10 * time.Minute,
-		Delay:      10 * time.Second,
-		MinTimeout: 3 * time.Second,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -112,6 +114,19 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Set Terraform state
+	if err := d.Set("power_type", machine.PowerType); err != nil {
+		return diag.FromErr(err)
+	}
+	powerParams, err := client.Machine.GetPowerParameters(machine.SystemID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("power_parameters", powerParams); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("pxe_mac_address", machine.BootInterface.MACAddress); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("architecture", machine.Architecture); err != nil {
 		return diag.FromErr(err)
 	}
@@ -225,4 +240,47 @@ func getMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *en
 	}
 
 	return &params
+}
+
+func getMachineStatusFunc(client *client.Client, systemId string) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		machine, err := client.Machine.Get(systemId)
+		if err != nil {
+			return nil, "", err
+		}
+		log.Printf("[DEBUG] Machine (%s) status: %s\n", systemId, machine.StatusName)
+		return machine, machine.StatusName, nil
+	}
+}
+
+func waitForMachineStatus(ctx context.Context, client *client.Client, systemID string, pendingStates []string, targetStates []string) (*entity.Machine, error) {
+	log.Printf("[DEBUG] Waiting for machine (%s) status to be one of %s\n", systemID, targetStates)
+	stateConf := &resource.StateChangeConf{
+		Pending:    pendingStates,
+		Target:     targetStates,
+		Refresh:    getMachineStatusFunc(client, systemID),
+		Timeout:    30 * time.Minute,
+		Delay:      10 * time.Second,
+		MinTimeout: 3 * time.Second,
+	}
+	result, err := stateConf.WaitForStateContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return result.(*entity.Machine), nil
+}
+
+func findMachine(client *client.Client, identifier string) (*entity.Machine, error) {
+	machines, err := client.Machines.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, m := range machines {
+		if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier {
+			return &m, nil
+		}
+	}
+
+	return nil, fmt.Errorf("machine '%s' not found", identifier)
 }
