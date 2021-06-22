@@ -139,3 +139,44 @@ resource "maas_network_interface_link" "virsh_vm2_nic3" {
   subnet_id = data.maas_subnet.pxe.id
   mode = "AUTO"
 }
+
+resource "maas_block_device" "vdb" {
+  machine = maas_machine.virsh_vm2.id
+  name = "vdb"
+  id_path = "/dev/vdb"
+  size_gigabytes = 27
+  tags = [
+    "ssd",
+  ]
+
+  partitions {
+    size_gigabytes = 10
+    fs_type = "ext4"
+    label = "media"
+    mount_point = "/media"
+  }
+
+  partitions {
+    size_gigabytes = 15
+    fs_type = "ext4"
+    mount_point = "/storage"
+  }
+}
+
+resource "maas_block_device" "vdc" {
+  machine = maas_machine.virsh_vm2.id
+  name = "vdc"
+  id_path = "/dev/vdc"
+  size_gigabytes = 33
+
+  partitions {
+    size_gigabytes = 11
+  }
+
+  partitions {
+    size_gigabytes = 13
+    fs_type = "ext4"
+    label = "images"
+    mount_point = "/images"
+  }
+}
