@@ -57,6 +57,12 @@ func resourceMaasVMHost() *schema.Resource {
 					if err := d.Set("power_address", vmHostParams.PowerAddress); err != nil {
 						return nil, err
 					}
+					if err := d.Set("power_user", vmHostParams.PowerUser); err != nil {
+						return nil, err
+					}
+					if err := d.Set("power_pass", vmHostParams.PowerPass); err != nil {
+						return nil, err
+					}
 				}
 				return []*schema.ResourceData{d}, nil
 			},
@@ -212,6 +218,9 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, m interface
 	if err := d.Set("tags", vmHost.Tags); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := d.Set("default_macvlan_mode", vmHost.DefaultMACVLANMode); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("resources_cores_available", vmHost.Available.Cores); err != nil {
 		return diag.FromErr(err)
 	}
@@ -317,8 +326,8 @@ func getVMHostCreateParams(d *schema.ResourceData) *entity.VMHostParams {
 func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.VMHost, params *entity.VMHostParams) *entity.VMHostParams {
 	params.Type = vmHost.Type
 	params.Name = vmHost.Name
-	params.CPUOverCommitRatio = vmHost.CPUOverCommitRatio
-	params.MemoryOverCommitRatio = vmHost.MemoryOverCommitRatio
+	params.CPUOverCommitRatio = d.Get("cpu_over_commit_ratio").(float64)
+	params.MemoryOverCommitRatio = d.Get("memory_over_commit_ratio").(float64)
 	params.DefaultMacvlanMode = vmHost.DefaultMACVLANMode
 	params.Zone = vmHost.Zone.Name
 	params.Pool = vmHost.Pool.Name
@@ -341,12 +350,6 @@ func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.VMHost, params
 	}
 	if p, ok := d.GetOk("tags"); ok {
 		params.Tags = strings.Join(convertToStringSlice(p.(*schema.Set).List()), ",")
-	}
-	if p, ok := d.GetOk("cpu_over_commit_ratio"); ok {
-		params.CPUOverCommitRatio = p.(float64)
-	}
-	if p, ok := d.GetOk("memory_over_commit_ratio"); ok {
-		params.MemoryOverCommitRatio = p.(float64)
 	}
 	if p, ok := d.GetOk("default_macvlan_mode"); ok {
 		params.DefaultMacvlanMode = p.(string)

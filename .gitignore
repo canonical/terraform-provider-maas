@@ -16,6 +16,7 @@ website/node_modules
 *.backup
 ./*.tfstate
 .terraform.tfstate.lock.info
+.terraform.lock.hcl
 .terraform/
 *.log
 *.bak

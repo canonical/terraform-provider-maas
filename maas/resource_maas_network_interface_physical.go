@@ -49,6 +49,9 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 				if err := d.Set("mac_address", networkInterface.MACAddress); err != nil {
 					return nil, err
 				}
+				if err := d.Set("tags", networkInterface.Tags); err != nil {
+					return nil, err
+				}
 				if err := d.Set("vlan", defaultVLAN); err != nil {
 					return nil, err
 				}
