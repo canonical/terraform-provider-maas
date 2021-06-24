@@ -26,6 +26,22 @@ func resourceMaasMachine() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+				if err := d.Set("power_type", machine.PowerType); err != nil {
+					return nil, err
+				}
+				powerParams, err := client.Machine.GetPowerParameters(machine.SystemID)
+				if err != nil {
+					return nil, err
+				}
+				if err := d.Set("power_parameters", powerParams); err != nil {
+					return nil, err
+				}
+				if err := d.Set("pxe_mac_address", machine.BootInterface.MACAddress); err != nil {
+					return nil, err
+				}
+				if err := d.Set("architecture", machine.Architecture); err != nil {
+					return nil, err
+				}
 				d.SetId(machine.SystemID)
 				return []*schema.ResourceData{d}, nil
 			},
@@ -114,22 +130,6 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Set Terraform state
-	if err := d.Set("power_type", machine.PowerType); err != nil {
-		return diag.FromErr(err)
-	}
-	powerParams, err := client.Machine.GetPowerParameters(machine.SystemID)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("power_parameters", powerParams); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("pxe_mac_address", machine.BootInterface.MACAddress); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("architecture", machine.Architecture); err != nil {
-		return diag.FromErr(err)
-	}
 	if err := d.Set("min_hwe_kernel", machine.MinHWEKernel); err != nil {
 		return diag.FromErr(err)
 	}

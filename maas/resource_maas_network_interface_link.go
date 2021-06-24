@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -54,7 +53,7 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
-				Default:  "",
+				Computed: true,
 				ValidateDiagFunc: func(value interface{}, path cty.Path) diag.Diagnostics {
 					v := value.(string)
 					if ip := net.ParseIP(v); ip == nil {
@@ -110,9 +109,6 @@ func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Set the Terraform state
-	if err := d.Set("mode", strings.ToUpper(link.Mode)); err != nil {
-		return diag.FromErr(err)
-	}
 	if err := d.Set("ip_address", link.IPAddress); err != nil {
 		return diag.FromErr(err)
 	}

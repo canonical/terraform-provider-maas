@@ -153,16 +153,7 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 
-	// Set Terraform state
-	if err := d.Set("cores", params.Cores); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("pinned_cores", params.PinnedCores); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("memory", params.Memory); err != nil {
-		return diag.FromErr(err)
-	}
+	// Save system id
 	d.SetId(machine.SystemID)
 
 	// Wait for VM host machine to be ready
