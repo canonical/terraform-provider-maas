@@ -180,3 +180,49 @@ resource "maas_block_device" "vdc" {
     mount_point = "/images"
   }
 }
+
+#
+# Machine 3
+#
+resource "maas_machine" "virsh_vm3" {
+  power_type = "virsh"
+  power_parameters = {
+    power_address = "qemu+ssh://ubuntu@10.113.1.21/system"
+    power_id = "machine-01"
+  }
+  pxe_mac_address = "52:54:00:16:78:ec"
+}
+
+resource "maas_network_interface_physical" "virsh_vm3_nic1" {
+  machine_id = maas_machine.virsh_vm3.id
+  mac_address = "52:54:00:16:78:ec"
+  name = "eth0"
+  vlan = data.maas_vlan.default.id
+}
+
+resource "maas_network_interface_physical" "virsh_vm3_nic2" {
+  machine_id = maas_machine.virsh_vm3.id
+  mac_address = "52:54:00:37:19:da"
+  name = "eth1"
+  vlan = data.maas_vlan.vid10.id
+}
+
+resource "maas_network_interface_link" "virsh_vm3_nic1" {
+  machine_id = maas_machine.virsh_vm3.id
+  network_interface_id = maas_network_interface_physical.virsh_vm3_nic1.id
+  subnet_id = data.maas_subnet.pxe.id
+  mode = "AUTO"
+  default_gateway = true
+}
+
+#
+# Machine 4
+#
+resource "maas_machine" "virsh_vm4" {
+  power_type = "virsh"
+  power_parameters = {
+    power_address = "qemu+ssh://ubuntu@10.113.1.22/system"
+    power_id = "machine-05"
+  }
+  pxe_mac_address = "52:54:00:c4:74:96"
+}
