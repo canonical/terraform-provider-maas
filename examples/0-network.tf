@@ -57,3 +57,28 @@ resource "maas_subnet" "tf_subnet" {
     end_ip = "10.88.88.254"
   }
 }
+
+resource "maas_subnet" "tf_subnet_2" {
+  cidr = "10.77.77.0/24"
+  name = "tf_subnet_2"
+  fabric = maas_fabric.tf_fabric.id
+  gateway_ip = "10.77.77.1"
+  dns_servers = [
+    "1.1.1.1",
+  ]
+}
+
+resource "maas_subnet_ip_range" "dynamic_ip_range" {
+  subnet = maas_subnet.tf_subnet_2.id
+  type = "dynamic"
+  start_ip = "10.77.77.2"
+  end_ip = "10.77.77.60"
+}
+
+resource "maas_subnet_ip_range" "reserved_ip_range" {
+  subnet = maas_subnet.tf_subnet_2.id
+  type = "reserved"
+  start_ip = "10.77.77.200"
+  end_ip = "10.77.77.254"
+  comment = "Reserved for Static IPs"
+}

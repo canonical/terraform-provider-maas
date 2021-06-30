@@ -21,7 +21,7 @@ resource "maas_vm_host_machine" "kvm" {
 
 resource "maas_vm_host" "maas_machine" {
   type = "virsh"
-  machine = "machine-01"
+  machine = maas_machine.virsh_vm3.hostname
 }
 
 resource "maas_vm_host_machine" "maas_machine_1" {
