@@ -3,7 +3,6 @@ package maas
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -33,22 +32,14 @@ func resourceMaasVlan() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				if err := d.Set("fabric", fmt.Sprintf("%v", fabric.ID)); err != nil {
+				tfState := map[string]interface{}{
+					"id":     fmt.Sprintf("%v", vlan.ID),
+					"fabric": fmt.Sprintf("%v", fabric.ID),
+					"vid":    vlan.VID,
+				}
+				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
-				if err := d.Set("vid", vlan.VID); err != nil {
-					return nil, err
-				}
-				if err := d.Set("name", vlan.Name); err != nil {
-					return nil, err
-				}
-				if err := d.Set("mtu", vlan.MTU); err != nil {
-					return nil, err
-				}
-				if err := d.Set("space", vlan.Space); err != nil {
-					return nil, err
-				}
-				d.SetId(fmt.Sprintf("%v", vlan.VID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -67,7 +58,12 @@ func resourceMaasVlan() *schema.Resource {
 			"mtu": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  1500,
+				Computed: true,
+			},
+			"dhcp_on": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
@@ -94,7 +90,7 @@ func resourceVlanCreate(ctx context.Context, d *schema.ResourceData, m interface
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("%v", vlan.VID))
+	d.SetId(fmt.Sprintf("%v", vlan.ID))
 
 	return resourceVlanUpdate(ctx, d, m)
 }
@@ -106,8 +102,17 @@ func resourceVlanRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = getVlan(client, fabric.ID, d.Id())
+	vlan, err := getVlan(client, fabric.ID, d.Id())
 	if err != nil {
+		return diag.FromErr(err)
+	}
+	tfState := map[string]interface{}{
+		"mtu":     vlan.MTU,
+		"dhcp_on": vlan.DHCPOn,
+		"name":    vlan.Name,
+		"space":   vlan.Space,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -117,16 +122,15 @@ func resourceVlanRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceVlanUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.VLAN.Update(fabric.ID, id, getVlanParams(d))
+	vlan, err := getVlan(client, fabric.ID, d.Id())
 	if err != nil {
+		return diag.FromErr(err)
+	}
+	if _, err := client.VLAN.Update(fabric.ID, vlan.VID, getVlanParams(d)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -136,16 +140,15 @@ func resourceVlanUpdate(ctx context.Context, d *schema.ResourceData, m interface
 func resourceVlanDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	err = client.VLAN.Delete(fabric.ID, id)
+	vlan, err := getVlan(client, fabric.ID, d.Id())
 	if err != nil {
+		return diag.FromErr(err)
+	}
+	if err := client.VLAN.Delete(fabric.ID, vlan.VID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -153,17 +156,13 @@ func resourceVlanDelete(ctx context.Context, d *schema.ResourceData, m interface
 }
 
 func getVlanParams(d *schema.ResourceData) *entity.VLANParams {
-	params := entity.VLANParams{
-		VID: d.Get("vid").(int),
-		MTU: d.Get("mtu").(int),
+	return &entity.VLANParams{
+		VID:    d.Get("vid").(int),
+		MTU:    d.Get("mtu").(int),
+		DHCPOn: d.Get("dhcp_on").(bool),
+		Name:   d.Get("name").(string),
+		Space:  d.Get("space").(string),
 	}
-	if p, ok := d.GetOk("name"); ok {
-		params.Name = p.(string)
-	}
-	if p, ok := d.GetOk("space"); ok {
-		params.Space = p.(string)
-	}
-	return &params
 }
 
 func findVlan(client *client.Client, fabricID int, identifier string) (*entity.VLAN, error) {
@@ -172,7 +171,7 @@ func findVlan(client *client.Client, fabricID int, identifier string) (*entity.V
 		return nil, err
 	}
 	for _, v := range vlans {
-		if fmt.Sprintf("%v", v.VID) == identifier || fmt.Sprintf("%v", v.ID) == identifier || fmt.Sprintf("%v", v.Name) == identifier {
+		if fmt.Sprintf("%v", v.VID) == identifier || fmt.Sprintf("%v", v.ID) == identifier {
 			return &v, nil
 		}
 	}

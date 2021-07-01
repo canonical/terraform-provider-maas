@@ -22,27 +22,24 @@ func resourceMaasMachine() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 				client := m.(*client.Client)
-				machine, err := findMachine(client, d.Id())
+				machine, err := getMachine(client, d.Id())
 				if err != nil {
-					return nil, err
-				}
-				if err := d.Set("power_type", machine.PowerType); err != nil {
 					return nil, err
 				}
 				powerParams, err := client.Machine.GetPowerParameters(machine.SystemID)
 				if err != nil {
 					return nil, err
 				}
-				if err := d.Set("power_parameters", powerParams); err != nil {
+				tfState := map[string]interface{}{
+					"id":               machine.SystemID,
+					"power_type":       machine.PowerType,
+					"power_parameters": powerParams,
+					"pxe_mac_address":  machine.BootInterface.MACAddress,
+					"architecture":     machine.Architecture,
+				}
+				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
-				if err := d.Set("pxe_mac_address", machine.BootInterface.MACAddress); err != nil {
-					return nil, err
-				}
-				if err := d.Set("architecture", machine.Architecture); err != nil {
-					return nil, err
-				}
-				d.SetId(machine.SystemID)
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -102,7 +99,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*client.Client)
 
 	// Create MAAS machine
-	machine, err := client.Machines.Create(getMachineCreateParams(d), getMachinePowerParams(d))
+	machine, err := client.Machines.Create(getMachineParams(d), getMachinePowerParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -130,19 +127,15 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Set Terraform state
-	if err := d.Set("min_hwe_kernel", machine.MinHWEKernel); err != nil {
-		return diag.FromErr(err)
+	tfState := map[string]interface{}{
+		"architecture":   machine.Architecture,
+		"min_hwe_kernel": machine.MinHWEKernel,
+		"hostname":       machine.Hostname,
+		"domain":         machine.Domain.Name,
+		"zone":           machine.Zone.Name,
+		"pool":           machine.Pool.Name,
 	}
-	if err := d.Set("hostname", machine.Hostname); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("domain", machine.Domain.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("zone", machine.Zone.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("pool", machine.Pool.Name); err != nil {
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -157,8 +150,7 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Machine.Update(machine.SystemID, getMachineUpdateParams(d, machine), getMachinePowerParams(d))
-	if err != nil {
+	if _, err := client.Machine.Update(machine.SystemID, getMachineParams(d), getMachinePowerParams(d)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -169,8 +161,7 @@ func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*client.Client)
 
 	// Delete machine
-	err := client.Machine.Delete(d.Id())
-	if err != nil {
+	if err := client.Machine.Delete(d.Id()); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -186,60 +177,18 @@ func getMachinePowerParams(d *schema.ResourceData) map[string]string {
 	return params
 }
 
-func getMachineCreateParams(d *schema.ResourceData) *entity.MachineParams {
-	params := entity.MachineParams{
+func getMachineParams(d *schema.ResourceData) *entity.MachineParams {
+	return &entity.MachineParams{
+		Commission:    true,
 		PowerType:     d.Get("power_type").(string),
 		PXEMacAddress: d.Get("pxe_mac_address").(string),
-		Commission:    true,
+		Architecture:  d.Get("architecture").(string),
+		MinHWEKernel:  d.Get("min_hwe_kernel").(string),
+		Hostname:      d.Get("hostname").(string),
+		Domain:        d.Get("domain").(string),
+		Zone:          d.Get("zone").(string),
+		Pool:          d.Get("pool").(string),
 	}
-
-	if p, ok := d.GetOk("architecture"); ok {
-		params.Architecture = p.(string)
-	}
-	if p, ok := d.GetOk("min_hwe_kernel"); ok {
-		params.MinHWEKernel = p.(string)
-	}
-	if p, ok := d.GetOk("hostname"); ok {
-		params.Hostname = p.(string)
-	}
-	if p, ok := d.GetOk("domain"); ok {
-		params.Domain = p.(string)
-	}
-
-	return &params
-}
-
-func getMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *entity.MachineParams {
-	params := entity.MachineParams{
-		PowerType:    d.Get("power_type").(string),
-		CPUCount:     machine.CPUCount,
-		Memory:       machine.Memory,
-		SwapSize:     machine.SwapSize,
-		Architecture: machine.Architecture,
-		MinHWEKernel: machine.MinHWEKernel,
-		Description:  machine.Description,
-	}
-
-	if p, ok := d.GetOk("architecture"); ok {
-		params.Architecture = p.(string)
-	}
-	if p, ok := d.GetOk("min_hwe_kernel"); ok {
-		params.MinHWEKernel = p.(string)
-	}
-	if p, ok := d.GetOk("hostname"); ok {
-		params.Hostname = p.(string)
-	}
-	if p, ok := d.GetOk("domain"); ok {
-		params.Domain = p.(string)
-	}
-	if p, ok := d.GetOk("zone"); ok {
-		params.Zone = p.(string)
-	}
-	if p, ok := d.GetOk("pool"); ok {
-		params.Pool = p.(string)
-	}
-
-	return &params
 }
 
 func getMachineStatusFunc(client *client.Client, systemId string) resource.StateRefreshFunc {
@@ -270,17 +219,15 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 	return result.(*entity.Machine), nil
 }
 
-func findMachine(client *client.Client, identifier string) (*entity.Machine, error) {
+func getMachine(client *client.Client, identifier string) (*entity.Machine, error) {
 	machines, err := client.Machines.Get()
 	if err != nil {
 		return nil, err
 	}
-
 	for _, m := range machines {
 		if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier {
 			return &m, nil
 		}
 	}
-
-	return nil, fmt.Errorf("machine '%s' not found", identifier)
+	return nil, fmt.Errorf("machine (%s) not found", identifier)
 }

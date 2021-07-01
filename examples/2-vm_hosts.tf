@@ -1,3 +1,6 @@
+#
+# VM Host 1
+#
 resource "maas_vm_host" "kvm" {
   type = "virsh"
   power_address = "qemu+ssh://ubuntu@10.113.1.24/system"
@@ -19,6 +22,9 @@ resource "maas_vm_host_machine" "kvm" {
   }
 }
 
+#
+# VM Host 2
+#
 resource "maas_vm_host" "maas_machine" {
   type = "virsh"
   machine = maas_machine.virsh_vm3.hostname
@@ -30,10 +36,6 @@ resource "maas_vm_host_machine" "maas_machine_1" {
   network_interfaces {
     name = "eth0"
     subnet_cidr = data.maas_subnet.pxe.cidr
-  }
-  network_interfaces {
-    name = "eth1"
-    subnet_cidr = data.maas_subnet.vid10.cidr
   }
 
   storage_disks {
