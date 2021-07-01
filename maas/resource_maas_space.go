@@ -24,10 +24,13 @@ func resourceMaasSpace() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				if err := d.Set("name", space.Name); err != nil {
+				tfState := map[string]interface{}{
+					"id":   fmt.Sprintf("%v", space.ID),
+					"name": space.Name,
+				}
+				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
-				d.SetId(fmt.Sprintf("%v", space.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -60,8 +63,7 @@ func resourceSpaceRead(ctx context.Context, d *schema.ResourceData, m interface{
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Space.Get(id)
-	if err != nil {
+	if _, err := client.Space.Get(id); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -75,8 +77,7 @@ func resourceSpaceUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Space.Update(id, d.Get("name").(string))
-	if err != nil {
+	if _, err := client.Space.Update(id, d.Get("name").(string)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -90,8 +91,7 @@ func resourceSpaceDelete(ctx context.Context, d *schema.ResourceData, m interfac
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	err = client.Space.Delete(id)
-	if err != nil {
+	if err := client.Space.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
 

@@ -3,12 +3,11 @@ package maas
 import (
 	"context"
 	"fmt"
-	"net"
 	"strconv"
 
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/ionutbalutoiu/gomaasclient/client"
 	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
@@ -21,51 +20,39 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 		DeleteContext: resourceNetworkInterfaceLinkDelete,
 
 		Schema: map[string]*schema.Schema{
-			"machine_id": {
+			"machine": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"network_interface_id": {
-				Type:     schema.TypeInt,
+			"network_interface": {
+				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"subnet_id": {
-				Type:     schema.TypeInt,
+			"subnet": {
+				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 			"mode": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-				Default:  "AUTO",
-				ValidateDiagFunc: func(value interface{}, path cty.Path) diag.Diagnostics {
-					v := value.(string)
-					if !(v == "AUTO" || v == "DHCP" || v == "STATIC") {
-						return diag.FromErr(fmt.Errorf("mode must be 'AUTO', 'DHCP', or 'STATIC' (got '%s')", v))
-					}
-					return nil
-				},
-			},
-			"ip_address": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-				Computed: true,
-				ValidateDiagFunc: func(value interface{}, path cty.Path) diag.Diagnostics {
-					v := value.(string)
-					if ip := net.ParseIP(v); ip == nil {
-						return diag.FromErr(fmt.Errorf("ip_address must be a valid IP address (got '%s')", v))
-					}
-					return nil
-				},
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				Default:          "AUTO",
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"AUTO", "DHCP", "STATIC", "LINK_UP"}, false)),
 			},
 			"default_gateway": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
+			},
+			"ip_address": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				Computed:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
 			},
 		},
 	}
@@ -74,13 +61,20 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	// Get params for the create operation
-	machineId := d.Get("machine_id").(string)
-	networkInterfaceId := d.Get("network_interface_id").(int)
-	params := getNetworkInterfaceLinkParams(client, d)
-
 	// Create network interface link
-	link, err := createNetworkInterfaceLink(client, machineId, networkInterfaceId, params)
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	networkInterface, err := getNetworkInterface(client, machine.SystemID, d.Get("network_interface").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	subnet, err := getSubnet(client, d.Get("subnet").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	link, err := createNetworkInterfaceLink(client, machine.SystemID, networkInterface.ID, getNetworkInterfaceLinkParams(d, subnet.ID))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -95,15 +89,21 @@ func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceDat
 	client := m.(*client.Client)
 
 	// Get params for the read operation
-	linkId, err := strconv.Atoi(d.Id())
+	linkID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machineId := d.Get("machine_id").(string)
-	networkInterfaceId := d.Get("network_interface_id").(int)
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	networkInterface, err := getNetworkInterface(client, machine.SystemID, d.Get("network_interface").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Get the network interface link
-	link, err := getNetworkInterfaceLink(client, machineId, networkInterfaceId, linkId)
+	link, err := getNetworkInterfaceLink(client, machine.SystemID, networkInterface.ID, linkID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -120,22 +120,25 @@ func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceD
 	client := m.(*client.Client)
 
 	// Get params for the update operation
-	linkId, err := strconv.Atoi(d.Id())
+	linkID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machineId := d.Get("machine_id").(string)
-	networkInterfaceId := d.Get("network_interface_id").(int)
-	params := getNetworkInterfaceLinkParams(client, d)
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	networkInterface, err := getNetworkInterface(client, machine.SystemID, d.Get("network_interface").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Run update operation
-	_, err = client.Machine.ClearDefaultGateways(machineId)
-	if err != nil {
+	if _, err := client.Machine.ClearDefaultGateways(machine.SystemID); err != nil {
 		return diag.FromErr(err)
 	}
-	if params.DefaultGateway {
-		_, err = client.NetworkInterface.SetDefaultGateway(machineId, networkInterfaceId, linkId)
-		if err != nil {
+	if d.Get("default_gateway").(bool) {
+		if _, err := client.NetworkInterface.SetDefaultGateway(machine.SystemID, networkInterface.ID, linkID); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -147,68 +150,64 @@ func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceD
 	client := m.(*client.Client)
 
 	// Get params for the delete operation
-	linkId, err := strconv.Atoi(d.Id())
+	linkID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machineId := d.Get("machine_id").(string)
-	networkInterfaceId := d.Get("network_interface_id").(int)
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	networkInterface, err := getNetworkInterface(client, machine.SystemID, d.Get("network_interface").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Delete the network interface link
-	err = deleteNetworkInterfaceLink(client, machineId, networkInterfaceId, linkId)
-	if err != nil {
+	if err := deleteNetworkInterfaceLink(client, machine.SystemID, networkInterface.ID, linkID); err != nil {
 		return diag.FromErr(err)
 	}
 
 	return nil
 }
 
-func getNetworkInterfaceLinkParams(client *client.Client, d *schema.ResourceData) *entity.NetworkInterfaceLinkParams {
-	params := entity.NetworkInterfaceLinkParams{
-		Subnet:         d.Get("subnet_id").(int),
+func getNetworkInterfaceLinkParams(d *schema.ResourceData, subnetID int) *entity.NetworkInterfaceLinkParams {
+	return &entity.NetworkInterfaceLinkParams{
+		Subnet:         subnetID,
 		Mode:           d.Get("mode").(string),
 		DefaultGateway: d.Get("default_gateway").(bool),
+		IPAddress:      d.Get("ip_address").(string),
 	}
-
-	if p, ok := d.GetOk("ip_address"); ok {
-		params.IPAddress = p.(string)
-	}
-
-	return &params
 }
 
-func createNetworkInterfaceLink(client *client.Client, machineId string, networkInterfaceId int, params *entity.NetworkInterfaceLinkParams) (*entity.NetworkInterfaceLink, error) {
+func createNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterfaceID int, params *entity.NetworkInterfaceLinkParams) (*entity.NetworkInterfaceLink, error) {
 	// Clear existing links
-	_, err := client.NetworkInterface.Disconnect(machineId, networkInterfaceId)
+	_, err := client.NetworkInterface.Disconnect(machineSystemID, networkInterfaceID)
 	if err != nil {
 		return nil, err
 	}
-
 	// Create new link
-	networkInterface, err := client.NetworkInterface.LinkSubnet(machineId, networkInterfaceId, params)
+	networkInterface, err := client.NetworkInterface.LinkSubnet(machineSystemID, networkInterfaceID, params)
 	if err != nil {
 		return nil, err
 	}
-
 	return &networkInterface.Links[0], nil
 }
 
-func getNetworkInterfaceLink(client *client.Client, machineId string, networkInterfaceId int, linkId int) (*entity.NetworkInterfaceLink, error) {
-	networkInterface, err := client.NetworkInterface.Get(machineId, networkInterfaceId)
+func getNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterfaceID int, linkID int) (*entity.NetworkInterfaceLink, error) {
+	networkInterface, err := client.NetworkInterface.Get(machineSystemID, networkInterfaceID)
 	if err != nil {
 		return nil, err
 	}
-
 	for _, link := range networkInterface.Links {
-		if link.ID == linkId {
+		if link.ID == linkID {
 			return &link, nil
 		}
 	}
-
-	return nil, fmt.Errorf("cannot find link with id '%v'", linkId)
+	return nil, fmt.Errorf("cannot find link (%v) on the network interface (%v) from machine (%s)", linkID, networkInterfaceID, machineSystemID)
 }
 
-func deleteNetworkInterfaceLink(client *client.Client, machineId string, networkInterfaceId int, linkId int) (err error) {
-	_, err = client.NetworkInterface.UnlinkSubnet(machineId, networkInterfaceId, linkId)
-	return
+func deleteNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterfaceID int, linkID int) error {
+	_, err := client.NetworkInterface.UnlinkSubnet(machineSystemID, networkInterfaceID, linkID)
+	return err
 }

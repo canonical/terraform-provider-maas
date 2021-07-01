@@ -60,8 +60,7 @@ func resourceFabricRead(ctx context.Context, d *schema.ResourceData, m interface
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Fabric.Get(id)
-	if err != nil {
+	if _, err := client.Fabric.Get(id); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -75,8 +74,7 @@ func resourceFabricUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Fabric.Update(id, getFabricParams(d))
-	if err != nil {
+	if _, err := client.Fabric.Update(id, getFabricParams(d)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -90,8 +88,7 @@ func resourceFabricDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	err = client.Fabric.Delete(id)
-	if err != nil {
+	if err := client.Fabric.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
 

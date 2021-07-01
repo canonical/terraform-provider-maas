@@ -3,11 +3,10 @@ package maas
 import (
 	"context"
 	"fmt"
-	"net"
 
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/ionutbalutoiu/gomaasclient/client"
 	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
@@ -20,13 +19,14 @@ func resourceMaasInstance() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 				client := m.(*client.Client)
-				machine, err := findMachine(client, d.Id())
+				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
 				if machine.StatusName != "Deployed" {
 					return nil, fmt.Errorf("machine '%s' needs to be already deployed to be imported as maas_instance resource", machine.Hostname)
 				}
+				d.SetId(machine.SystemID)
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -94,7 +94,7 @@ func resourceMaasInstance() *schema.Resource {
 				},
 			},
 			"network_interfaces": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
@@ -108,16 +108,9 @@ func resourceMaasInstance() *schema.Resource {
 							Optional: true,
 						},
 						"ip_address": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Default:  "",
-							ValidateDiagFunc: func(value interface{}, path cty.Path) diag.Diagnostics {
-								v := value.(string)
-								if ip := net.ParseIP(v); ip == nil {
-									return diag.FromErr(fmt.Errorf("ip_address must be a valid IP address (got '%s')", v))
-								}
-								return nil
-							},
+							Type:             schema.TypeString,
+							Optional:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
 						},
 					},
 				},
@@ -206,34 +199,22 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	// Set Terraform state
-	if err := d.Set("fqdn", machine.FQDN); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("hostname", machine.Hostname); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("zone", machine.Zone.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("pool", machine.Pool.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("tags", machine.TagNames); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("cpu_count", machine.CPUCount); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("memory", machine.Memory); err != nil {
-		return diag.FromErr(err)
-	}
 	ipAddresses := make([]string, len(machine.IPAddresses))
 	for i, ip := range machine.IPAddresses {
 		ipAddresses[i] = ip.String()
 	}
-	if err := d.Set("ip_addresses", ipAddresses); err != nil {
+	tfState := map[string]interface{}{
+		"fqdn":         machine.FQDN,
+		"hostname":     machine.Hostname,
+		"zone":         machine.Zone.Name,
+		"pool":         machine.Pool.Name,
+		"tags":         machine.TagNames,
+		"cpu_count":    machine.CPUCount,
+		"memory":       machine.Memory,
+		"ip_addresses": ipAddresses,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -288,76 +269,48 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 }
 
 func configureInstanceNetworkInterfaces(client *client.Client, d *schema.ResourceData, machine *entity.Machine) error {
-	p, ok := d.GetOk("network_interfaces")
-	if !ok {
-		return nil
-	}
-	machineNics, err := client.NetworkInterfaces.Get(machine.SystemID)
-	if err != nil {
-		return err
-	}
-	subnets, err := client.Subnets.Get()
-	if err != nil {
-		return err
-	}
-	nics := p.([]interface{})
-	for _, nic := range nics {
-		n := nic.(map[string]interface{})
+	for _, networkInterface := range d.Get("network_interfaces").(*schema.Set).List() {
+		n := networkInterface.(map[string]interface{})
 		// Find the machine network interface
 		name := n["name"].(string)
-		var nicFound *entity.NetworkInterface = nil
-		for _, machineNic := range machineNics {
-			if machineNic.Name == name {
-				nicFound = &machineNic
-				break
-			}
+		nic, err := getNetworkInterface(client, machine.SystemID, name)
+		if err != nil {
+			return err
 		}
-		if nicFound == nil {
-			return fmt.Errorf("network interface '%s' was not found on allocated instance '%s'", name, machine.FQDN)
-		}
-		subnetCidr := n["subnet_cidr"].(string)
+		// Validate the given network configs
+		subnetCIDR := n["subnet_cidr"].(string)
 		ipAddress := n["ip_address"].(string)
-		if subnetCidr == "" {
-			if ipAddress == "" {
-				// Clear existing network interface links
-				_, err := client.NetworkInterface.Disconnect(machine.SystemID, nicFound.ID)
-				if err != nil {
-					return err
-				}
-				continue
-			} else {
-				return fmt.Errorf("network interface '%s': the 'subnet_cidr' is required when 'ip_address' is set", name)
+		if subnetCIDR == "" {
+			if ipAddress != "" {
+				return fmt.Errorf("network interface (%s): 'subnet_cidr' is required when 'ip_address' is set", name)
 			}
+			// Clear existing network interface links
+			// This will leave the network interface disconnected
+			if _, err := client.NetworkInterface.Disconnect(machine.SystemID, nic.ID); err != nil {
+				return err
+			}
+			continue
 		}
 		// Find the subnet
-		var subnetFound *entity.Subnet = nil
-		for _, subnet := range subnets {
-			if subnet.CIDR == subnetCidr {
-				subnetFound = &subnet
-				break
-			}
+		subnet, err := getSubnet(client, subnetCIDR)
+		if err != nil {
+			return err
 		}
-		if subnetFound == nil {
-			return fmt.Errorf("subnet with CIDR '%s' was not found", subnetCidr)
+		// Clear existing network interface links
+		if _, err := client.NetworkInterface.Disconnect(machine.SystemID, nic.ID); err != nil {
+			return err
 		}
-		// Prepare the network interface link parameters
+		// Create new network interface link
 		mode := "AUTO"
 		if ipAddress != "" {
 			mode = "STATIC"
 		}
 		params := entity.NetworkInterfaceLinkParams{
 			Mode:      mode,
-			Subnet:    subnetFound.ID,
+			Subnet:    subnet.ID,
 			IPAddress: ipAddress,
 		}
-		// Clear existing network interface links
-		_, err := client.NetworkInterface.Disconnect(machine.SystemID, nicFound.ID)
-		if err != nil {
-			return err
-		}
-		// Create new network interface link
-		_, err = client.NetworkInterface.LinkSubnet(machine.SystemID, nicFound.ID, &params)
-		if err != nil {
+		if _, err = client.NetworkInterface.LinkSubnet(machine.SystemID, nic.ID, &params); err != nil {
 			return err
 		}
 	}

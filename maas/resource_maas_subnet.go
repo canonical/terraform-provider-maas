@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/go-cty/cty/gocty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -27,28 +25,20 @@ func resourceMaasSubnet() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				dnsServers := make([]string, len(subnet.DNSServers))
-				for i, ip := range subnet.DNSServers {
-					dnsServers[i] = ip.String()
-				}
 				tfState := map[string]interface{}{
+					"id":          fmt.Sprintf("%v", subnet.ID),
 					"cidr":        subnet.CIDR,
 					"name":        subnet.Name,
 					"fabric":      fmt.Sprintf("%v", subnet.VLAN.FabricID),
 					"vlan":        fmt.Sprintf("%v", subnet.VLAN.VID),
-					"gateway_ip":  subnet.GatewayIP.String(),
-					"dns_servers": dnsServers,
 					"rdns_mode":   subnet.RDNSMode,
 					"allow_dns":   subnet.AllowDNS,
 					"allow_proxy": subnet.AllowProxy,
 					"managed":     subnet.Managed,
 				}
-				for k, v := range tfState {
-					if err := d.Set(k, v); err != nil {
-						return nil, err
-					}
+				if err := setTerraformState(d, tfState); err != nil {
+					return nil, err
 				}
-				d.SetId(fmt.Sprintf("%v", subnet.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -70,44 +60,6 @@ func resourceMaasSubnet() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"fabric"},
-			},
-			"gateway_ip": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
-			},
-			"dns_servers": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Schema{
-					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
-						var diags diag.Diagnostics
-
-						attr := p[len(p)-1].(cty.IndexStep)
-						var index int
-						if err := gocty.FromCtyValue(attr.Key, &index); err != nil {
-							return diag.FromErr(err)
-						}
-						ws, es := validation.IsIPAddress(i, fmt.Sprintf("dns_servers[%v]", index))
-
-						for _, w := range ws {
-							diags = append(diags, diag.Diagnostic{
-								Severity:      diag.Warning,
-								Summary:       w,
-								AttributePath: p,
-							})
-						}
-						for _, e := range es {
-							diags = append(diags, diag.Diagnostic{
-								Severity:      diag.Error,
-								Summary:       e.Error(),
-								AttributePath: p,
-							})
-						}
-						return diags
-					},
-					Type: schema.TypeString,
-				},
 			},
 			"ip_ranges": {
 				Type:     schema.TypeSet,
@@ -137,8 +89,10 @@ func resourceMaasSubnet() *schema.Resource {
 				},
 			},
 			"rdns_mode": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Type:             schema.TypeInt,
+				Optional:         true,
+				Default:          2,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2)),
 			},
 			"allow_dns": {
 				Type:     schema.TypeBool,
@@ -154,6 +108,21 @@ func resourceMaasSubnet() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
+			},
+			"gateway_ip": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+			},
+			"dns_servers": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem: &schema.Schema{
+					ValidateDiagFunc: isElementIPAddress,
+					Type:             schema.TypeString,
+				},
 			},
 		},
 	}
@@ -182,8 +151,23 @@ func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interface
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Subnet.Get(id)
+	subnet, err := client.Subnet.Get(id)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+	gatewayIp := subnet.GatewayIP.String()
+	if gatewayIp == "<nil>" {
+		gatewayIp = ""
+	}
+	dnsServers := make([]string, len(subnet.DNSServers))
+	for i, ip := range subnet.DNSServers {
+		dnsServers[i] = ip.String()
+	}
+	tfState := map[string]interface{}{
+		"gateway_ip":  gatewayIp,
+		"dns_servers": dnsServers,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -201,8 +185,7 @@ func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.Subnet.Update(id, params)
-	if err != nil {
+	if _, err := client.Subnet.Update(id, params); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := updateIPRanges(client, d, id); err != nil {
@@ -219,8 +202,7 @@ func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	err = client.Subnet.Delete(id)
-	if err != nil {
+	if err := client.Subnet.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -255,8 +237,7 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 			EndIP:   ipr["end_ip"].(string),
 			Comment: ipr["comment"].(string),
 		}
-		_, err := client.IPRanges.Create(&params)
-		if err != nil {
+		if _, err := client.IPRanges.Create(&params); err != nil {
 			return err
 		}
 	}
@@ -266,12 +247,13 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.SubnetParams, error) {
 	params := entity.SubnetParams{
 		CIDR:       d.Get("cidr").(string),
+		Name:       d.Get("name").(string),
+		RDNSMode:   d.Get("rdns_mode").(int),
 		AllowDNS:   d.Get("allow_dns").(bool),
 		AllowProxy: d.Get("allow_proxy").(bool),
 		Managed:    d.Get("managed").(bool),
-	}
-	if p, ok := d.GetOk("name"); ok {
-		params.Name = p.(string)
+		GatewayIP:  d.Get("gateway_ip").(string),
+		DNSServers: convertToStringSlice(d.Get("dns_servers")),
 	}
 	if p, ok := d.GetOk("fabric"); ok {
 		fabric, err := getFabric(client, p.(string))
@@ -288,15 +270,6 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 			params.VID = vlan.VID
 		}
 	}
-	if p, ok := d.GetOk("gateway_ip"); ok {
-		params.GatewayIP = p.(string)
-	}
-	if p, ok := d.GetOk("dns_servers"); ok {
-		params.DNSServers = convertToStringSlice(p)
-	}
-	if p, ok := d.GetOk("rdns_mode"); ok {
-		params.RDNSMode = p.(int)
-	}
 	return &params, nil
 }
 
@@ -306,7 +279,7 @@ func findSubnet(client *client.Client, identifier string) (*entity.Subnet, error
 		return nil, err
 	}
 	for _, s := range subnets {
-		if fmt.Sprintf("%v", s.ID) == identifier || s.CIDR == identifier || s.Name == identifier {
+		if fmt.Sprintf("%v", s.ID) == identifier || s.CIDR == identifier {
 			return &s, nil
 		}
 	}

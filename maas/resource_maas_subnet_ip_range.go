@@ -44,18 +44,15 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 					}
 				}
 				tfState := map[string]interface{}{
-					"subnet":   ipRange.Subnet.ID,
+					"id":       fmt.Sprintf("%v", ipRange.ID),
+					"subnet":   fmt.Sprintf("%v", ipRange.Subnet.ID),
 					"type":     ipRange.Type,
 					"start_ip": ipRange.StartIP.String(),
 					"end_ip":   ipRange.EndIP.String(),
-					"comment":  ipRange.Comment,
 				}
-				for k, v := range tfState {
-					if err := d.Set(k, v); err != nil {
-						return nil, err
-					}
+				if err := setTerraformState(d, tfState); err != nil {
+					return nil, err
 				}
-				d.SetId(fmt.Sprintf("%v", ipRange.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -83,6 +80,7 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 			"comment": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 		},
 	}
@@ -111,8 +109,14 @@ func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.IPRange.Get(id)
+	ipRange, err := client.IPRange.Get(id)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+	tfState := map[string]interface{}{
+		"comment": ipRange.Comment,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
