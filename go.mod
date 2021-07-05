@@ -5,6 +5,6 @@ go 1.16
 require (
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.6.1
-	github.com/ionutbalutoiu/gomaasclient v0.0.0-20210702152754-2e8e72fa2af2
+	github.com/ionutbalutoiu/gomaasclient v0.0.0-20210706123835-65b3275559c2
 	github.com/stretchr/testify v1.7.0
 )
