@@ -92,3 +92,34 @@ resource "maas_subnet_ip_range" "reserved_ip_range" {
   end_ip = "10.77.77.254"
   comment = "Reserved for Static IPs"
 }
+
+#
+# DNS Domains
+#
+resource "maas_dns_domain" "cloudbase" {
+  name = "cloudbase"
+  ttl = 3600
+  authoritative = true
+}
+
+#
+# DNS Records
+#
+resource "maas_dns_record" "test_a" {
+  type = "A/AAAA"
+  data = "10.99.11.33"
+  fqdn = "test-a.${maas_dns_domain.cloudbase.name}"
+}
+
+resource "maas_dns_record" "test_aaaa" {
+  type = "A/AAAA"
+  data = "2001:db8:3333:4444:5555:6666:7777:8888"
+  fqdn = "test-aaaa.${maas_dns_domain.cloudbase.name}"
+}
+
+resource "maas_dns_record" "test_txt" {
+  type = "TXT"
+  data = "@"
+  name = "test-txt"
+  domain = maas_dns_domain.cloudbase.name
+}
