@@ -11,6 +11,10 @@ output "maas_subnet_tf_subnet"         { value = maas_subnet.tf_subnet }
 output "maas_subnet_tf_subnet_2"       { value = maas_subnet.tf_subnet_2 }
 output "maas_subnet_ip_range_dynamic"  { value = maas_subnet_ip_range.dynamic_ip_range }
 output "maas_subnet_ip_range_reserved" { value = maas_subnet_ip_range.reserved_ip_range }
+output "maas_dns_domain_cloudbase"     { value = maas_dns_domain.cloudbase }
+output "maas_dns_record_test_a"        { value = maas_dns_record.test_a }
+output "maas_dns_record_test_aaaa"     { value = maas_dns_record.test_aaaa }
+output "maas_dns_record_test_txt"      { value = maas_dns_record.test_txt }
 
 # Machines
 output "maas_machine_1" { value = maas_machine.virsh_vm1.hostname }
