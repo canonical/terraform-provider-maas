@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/ionutbalutoiu/gomaasclient/client"
 	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
@@ -48,6 +49,13 @@ func resourceMaasMachine() *schema.Resource {
 			"power_type": {
 				Type:     schema.TypeString,
 				Required: true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(
+					[]string{
+						"amt", "apc", "dli", "eaton", "hmc", "ipmi", "manual", "moonshot",
+						"mscm", "msftocs", "nova", "openbmc", "proxmox", "recs_box", "redfish",
+						"sm15k", "ucsm", "vmware", "webhook", "wedge", "lxd", "virsh",
+					},
+					false)),
 			},
 			"power_parameters": {
 				Type:      schema.TypeMap,
