@@ -1,15 +1,17 @@
-# `maas_network_interface_physical`
 
-Configures a physical network interface from an existing MAAS machine.
+# Resource: maas_network_interface_physical
 
-Example:
+Provides a resource to manage a physical network interface from an existing MAAS machine.
 
-```hcl
+## Example Usage
+
+```terraform
 resource "maas_network_interface_physical" "virsh_vm1_nic1" {
-  machine_id = maas_machine.virsh_vm1.id
+  machine = maas_machine.virsh_vm1.id
   mac_address = "52:54:00:89:f5:3e"
-  name = "eth0"
   vlan = data.maas_vlan.default.id
+  name = "eth0"
+  mtu = 1450
   tags = [
     "nic1-tag1",
     "nic1-tag2",
@@ -18,15 +20,27 @@ resource "maas_network_interface_physical" "virsh_vm1_nic1" {
 }
 ```
 
-Parameters:
+## Argument Reference
 
-| Name | Type | Required | Description
-| ---- | ---- | -------- | -----------
-| `machine_id` | `string` | `true` | Machine system id.
-| `mac_address` | `string` | `true` | The physical networking interface MAC address.
-| `name` | `string` | `false` | The physical networking interface name.
-| `tags` | `[]string` | `false` | Tags for the interface.
-| `vlan` | `string` | `false` | VLAN the interface is connected to. Defaults to `untagged`.
-| `mtu` | `int` | `false` | Maximum transmission unit. Defaults to `1500`.
-| `accept_ra` | `bool` | `false` | Accept router advertisements (IPv6 only).
-| `autoconf` | `bool` | `false` | Perform stateless autoconfiguration (IPv6 only).
+The following arguments are supported:
+
+* `machine` - (Required) The identifier (system ID, hostname, or FQDN) of the machine with the physical network interface.
+* `mac_address` - (Required) The physical network interface MAC address.
+* `vlan` - (Optional) VLAN the physical network interface is connected to. Defaults to `untagged`.
+* `name` - (Optional) The physical network interface name. This argument is computed if it's not set.
+* `mtu` - (Optional) The MTU of the physical network interface. This argument is computed if it's not set.
+* `tags` - (Optional) A set of tag names to be assigned to the physical network interface. This argument is computed if it's not set.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The physical network interface ID.
+
+## Import
+
+A physical network interface can be imported using the machine identifier (system ID, hostname, or FQDN) and its own identifier (MAC address, name, or ID). e.g.
+
+```shell
+terraform import maas_network_interface_physical.virsh_vm1 vm1:eth0
+```

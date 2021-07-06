@@ -1,23 +1,28 @@
-# `maas_vlan`
+# Data Source: maas_vlan
 
-Get an existing MAAS VLAN.
+Provides details about an existing MAAS VLAN.
 
-Example:
+## Example Usage
 
-```hcl
-data "maas_fabric" "default" {
-  name = "maas"
-}
-
-data "maas_vlan" "default" {
-  fabric_id = data.maas_fabric.default.id
-  vid = 0
+```terraform
+data "maas_vlan" "vid10" {
+  fabric = data.maas_fabric.default.id
+  vlan = 10
 }
 ```
 
-Parameters:
+## Argument Reference
 
-| Name | Type | Required | Description
-| ---- | ---- | -------- | -----------
-| `fabric_id` | `int` | `true` | The ID of the fabric containing the VLAN.
-| `vid` | `int` | `true` | The VLAN traffic segregation ID.
+The following arguments are supported:
+
+* `fabric` - (Required) The fabric identifier (ID or name) for the VLAN.
+* `vlan` - (Required) The VLAN identifier (ID or traffic segregation ID).
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `mtu` - The MTU used on the VLAN.
+* `dhcp_on` - Boolean value indicating if DHCP is enabled on the VLAN.
+* `name` - The VLAN name.
+* `space` - The VLAN space.
