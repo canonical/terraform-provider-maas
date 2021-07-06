@@ -1,17 +1,23 @@
-# `maas_fabric`
+# Data Source: maas_fabric
 
-Get an existing MAAS fabric.
+Provides details about an existing MAAS network fabric.
 
-Example:
+## Example Usage
 
-```hcl
+```terraform
 data "maas_fabric" "default" {
   name = "maas"
 }
 ```
 
-Parameters:
+## Argument Reference
 
-| Name | Type | Required | Description
-| ---- | ---- | -------- | -----------
-| `name` | `string` | `true` | The fabric name.
+The following arguments are supported:
+
+* `name` - (Required) The fabric name.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The fabric ID.
