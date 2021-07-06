@@ -34,7 +34,6 @@ func resourceMaasSubnet() *schema.Resource {
 					"rdns_mode":   subnet.RDNSMode,
 					"allow_dns":   subnet.AllowDNS,
 					"allow_proxy": subnet.AllowProxy,
-					"managed":     subnet.Managed,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -100,11 +99,6 @@ func resourceMaasSubnet() *schema.Resource {
 				Default:  true,
 			},
 			"allow_proxy": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-			"managed": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
@@ -251,9 +245,9 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 		RDNSMode:   d.Get("rdns_mode").(int),
 		AllowDNS:   d.Get("allow_dns").(bool),
 		AllowProxy: d.Get("allow_proxy").(bool),
-		Managed:    d.Get("managed").(bool),
 		GatewayIP:  d.Get("gateway_ip").(string),
 		DNSServers: convertToStringSlice(d.Get("dns_servers")),
+		Managed:    true,
 	}
 	if p, ok := d.GetOk("fabric"); ok {
 		fabric, err := getFabric(client, p.(string))

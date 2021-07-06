@@ -42,10 +42,6 @@ func dataSourceMaasSubnet() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
-			"managed": {
-				Type:     schema.TypeBool,
-				Computed: true,
-			},
 			"gateway_ip": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -84,7 +80,6 @@ func dataSourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interfa
 		"rdns_mode":   subnet.RDNSMode,
 		"allow_dns":   subnet.AllowDNS,
 		"allow_proxy": subnet.AllowProxy,
-		"managed":     subnet.Managed,
 		"gateway_ip":  gatewayIp,
 		"dns_servers": dnsServers,
 	}
