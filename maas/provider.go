@@ -47,6 +47,7 @@ func Provider() *schema.Provider {
 			"maas_space":                      resourceMaasSpace(),
 			"maas_block_device":               resourceMaasBlockDevice(),
 			"maas_tag":                        resourceMaasTag(),
+			"maas_user":                       resourceMaasUser(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"maas_fabric": dataSourceMaasFabric(),

@@ -3,6 +3,7 @@ package maas
 import (
 	"encoding/base64"
 	"fmt"
+	"net/mail"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-cty/cty/gocty"
@@ -62,6 +63,30 @@ func isElementIPAddress(i interface{}, p cty.Path) diag.Diagnostics {
 			AttributePath: p,
 		})
 	}
+	return diags
+}
+
+func isEmailAddress(i interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	attr := p[len(p)-1].(cty.GetAttrStep)
+
+	v, ok := i.(string)
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity:      diag.Error,
+			Summary:       fmt.Sprintf("expected type of %q to be string", attr.Name),
+			AttributePath: p,
+		})
+	}
+
+	if _, err := mail.ParseAddress(i.(string)); err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity:      diag.Error,
+			Summary:       fmt.Sprintf("expected %s to be a valid e-mail address, got: %s", attr.Name, v),
+			AttributePath: p,
+		})
+	}
+
 	return diags
 }
 
