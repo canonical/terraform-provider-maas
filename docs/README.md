@@ -23,3 +23,4 @@
 1. [maas_space](/docs/resources/maas_space.md)
 1. [maas_block_device](/docs/resources/maas_block_device.md)
 1. [maas_tag](/docs/resources/maas_tag.md)
+1. [maas_user](/docs/resources/maas_user.md)
