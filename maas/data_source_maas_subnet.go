@@ -18,24 +18,28 @@ func dataSourceMaasSubnet() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"vlan_id": {
-				Type:     schema.TypeInt,
-				Optional: true,
+			"fabric": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"vid": {
 				Type:     schema.TypeInt,
-				Computed: true,
-			},
-			"fabric": {
-				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"space": {
-				Type:     schema.TypeString,
+			"rdns_mode": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+			"allow_dns": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+			"allow_proxy": {
+				Type:     schema.TypeBool,
 				Computed: true,
 			},
 			"gateway_ip": {
@@ -43,15 +47,11 @@ func dataSourceMaasSubnet() *schema.Resource {
 				Computed: true,
 			},
 			"dns_servers": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-			},
-			"rdns_mode": {
-				Type:     schema.TypeInt,
-				Computed: true,
 			},
 		},
 	}
@@ -60,55 +60,32 @@ func dataSourceMaasSubnet() *schema.Resource {
 func dataSourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	subnets, err := client.Subnets.Get()
+	subnet, err := getSubnet(client, d.Get("cidr").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	cidr := d.Get("cidr").(string)
-	vlanId, vlanIdOk := d.GetOk("vlan_id")
-
-	for _, subnet := range subnets {
-		if cidr != subnet.CIDR {
-			continue
-		}
-		if vlanIdOk {
-			if vlanId.(int) != subnet.VLAN.ID {
-				continue
-			}
-		}
-		if err := d.Set("vid", subnet.VLAN.VID); err != nil {
-			return diag.FromErr(err)
-		}
-		if err := d.Set("fabric", subnet.VLAN.Fabric); err != nil {
-			return diag.FromErr(err)
-		}
-		if err := d.Set("name", subnet.Name); err != nil {
-			return diag.FromErr(err)
-		}
-		if err := d.Set("space", subnet.Space); err != nil {
-			return diag.FromErr(err)
-		}
-		gatewayIp := subnet.GatewayIP.String()
-		if gatewayIp == "<nil>" {
-			gatewayIp = ""
-		}
-		if err := d.Set("gateway_ip", gatewayIp); err != nil {
-			return diag.FromErr(err)
-		}
-		dnsServers := make([]string, len(subnet.DNSServers))
-		for i, ip := range subnet.DNSServers {
-			dnsServers[i] = ip.String()
-		}
-		if err := d.Set("dns_servers", dnsServers); err != nil {
-			return diag.FromErr(err)
-		}
-		if err := d.Set("rdns_mode", subnet.RDNSMode); err != nil {
-			return diag.FromErr(err)
-		}
-		d.SetId(fmt.Sprintf("%v", subnet.ID))
-		return nil
+	gatewayIp := subnet.GatewayIP.String()
+	if gatewayIp == "<nil>" {
+		gatewayIp = ""
+	}
+	dnsServers := make([]string, len(subnet.DNSServers))
+	for i, ip := range subnet.DNSServers {
+		dnsServers[i] = ip.String()
+	}
+	tfState := map[string]interface{}{
+		"id":          fmt.Sprintf("%v", subnet.ID),
+		"fabric":      subnet.VLAN.Fabric,
+		"vid":         subnet.VLAN.VID,
+		"name":        subnet.Name,
+		"rdns_mode":   subnet.RDNSMode,
+		"allow_dns":   subnet.AllowDNS,
+		"allow_proxy": subnet.AllowProxy,
+		"gateway_ip":  gatewayIp,
+		"dns_servers": dnsServers,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
+		return diag.FromErr(err)
 	}
 
-	return diag.FromErr(fmt.Errorf("could not find matching subnet"))
+	return nil
 }

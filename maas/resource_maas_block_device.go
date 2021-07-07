@@ -12,11 +12,6 @@ import (
 	"github.com/ionutbalutoiu/gomaasclient/entity"
 )
 
-var (
-	defaultBlockSize    = 512
-	defaultIsBootDevice = false
-)
-
 func resourceMaasBlockDevice() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceBlockDeviceCreate,
@@ -30,34 +25,24 @@ func resourceMaasBlockDevice() *schema.Resource {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BLOCK_DEVICE", d.Id())
 				}
 				client := m.(*client.Client)
-				machine, err := findMachine(client, idParts[0])
+				machine, err := getMachine(client, idParts[0])
 				if err != nil {
 					return nil, err
 				}
-				blockDevice, err := findBlockDevice(client, machine.SystemID, idParts[1])
+				blockDevice, err := getBlockDevice(client, machine.SystemID, idParts[1])
 				if err != nil {
 					return nil, err
 				}
-				if blockDevice == nil {
-					return nil, fmt.Errorf("block device (%s) was not found on machine (%s)", idParts[1], machine.Hostname)
+				tfState := map[string]interface{}{
+					"id":             fmt.Sprintf("%v", blockDevice.ID),
+					"machine":        machine.SystemID,
+					"name":           blockDevice.Name,
+					"size_gigabytes": int(blockDevice.Size / (1024 * 1024 * 1024)),
+					"block_size":     blockDevice.BlockSize,
 				}
-				if err := d.Set("machine", machine.SystemID); err != nil {
+				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
-				if err := d.Set("name", blockDevice.Name); err != nil {
-					return nil, err
-				}
-				sizeGigabytes := blockDevice.Size / (1024 * 1024 * 1024)
-				if err := d.Set("size_gigabytes", int(sizeGigabytes)); err != nil {
-					return nil, err
-				}
-				if err := d.Set("block_size", defaultBlockSize); err != nil {
-					return nil, err
-				}
-				if err := d.Set("is_boot_device", defaultIsBootDevice); err != nil {
-					return nil, err
-				}
-				d.SetId(fmt.Sprintf("%v", blockDevice.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -79,12 +64,11 @@ func resourceMaasBlockDevice() *schema.Resource {
 			"block_size": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  defaultBlockSize,
+				Default:  512,
 			},
 			"is_boot_device": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  defaultIsBootDevice,
 			},
 			"partitions": {
 				Type:     schema.TypeList,
@@ -99,7 +83,6 @@ func resourceMaasBlockDevice() *schema.Resource {
 						"bootable": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  false,
 						},
 						"tags": {
 							Type:     schema.TypeSet,
@@ -176,7 +159,7 @@ func resourceMaasBlockDevice() *schema.Resource {
 func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	machine, err := findMachine(client, d.Get("machine").(string))
+	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -202,7 +185,7 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, m inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machine, err := findMachine(client, d.Get("machine").(string))
+	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -210,26 +193,16 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, m inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	if err := d.Set("model", blockDevice.Model); err != nil {
-		return diag.FromErr(err)
+	tfState := map[string]interface{}{
+		"partitions": getBlockDevicePartitionsTFState(blockDevice),
+		"model":      blockDevice.Model,
+		"serial":     blockDevice.Serial,
+		"id_path":    blockDevice.IDPath,
+		"tags":       blockDevice.Tags,
+		"uuid":       blockDevice.UUID,
+		"path":       blockDevice.Path,
 	}
-	if err := d.Set("serial", blockDevice.Serial); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("id_path", blockDevice.IDPath); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("tags", blockDevice.Tags); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("uuid", blockDevice.UUID); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("path", blockDevice.IDPath); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := setBlockDevicePartitionsTFState(d, blockDevice); err != nil {
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -243,7 +216,7 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machine, err := findMachine(client, d.Get("machine").(string))
+	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -251,20 +224,15 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	if err := setBlockDeviceTags(client, d, blockDevice); err != nil {
 		return diag.FromErr(err)
 	}
-
-	if p, ok := d.GetOk("is_boot_device"); ok {
-		if p.(bool) {
-			if err := client.BlockDevice.SetBootDisk(machine.SystemID, id); err != nil {
-				return diag.FromErr(err)
-			}
+	if p, ok := d.GetOk("is_boot_device"); ok && p.(bool) {
+		if err := client.BlockDevice.SetBootDisk(machine.SystemID, id); err != nil {
+			return diag.FromErr(err)
 		}
 	}
-
-	if err := createBlockDevicePartitions(client, d, blockDevice); err != nil {
+	if err := updateBlockDevicePartitions(client, d, blockDevice); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -278,7 +246,7 @@ func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machine, err := findMachine(client, d.Get("machine").(string))
+	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -290,21 +258,14 @@ func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func getBlockDeviceParams(d *schema.ResourceData) *entity.BlockDeviceParams {
-	params := entity.BlockDeviceParams{
+	return &entity.BlockDeviceParams{
 		Name:      d.Get("name").(string),
 		Size:      d.Get("size_gigabytes").(int) * 1024 * 1024 * 1024,
 		BlockSize: d.Get("block_size").(int),
+		Model:     d.Get("model").(string),
+		Serial:    d.Get("serial").(string),
+		IDPath:    d.Get("id_path").(string),
 	}
-	if p, ok := d.GetOk("model"); ok {
-		params.Model = p.(string)
-	}
-	if p, ok := d.GetOk("serial"); ok {
-		params.Serial = p.(string)
-	}
-	if p, ok := d.GetOk("id_path"); ok {
-		params.IDPath = p.(string)
-	}
-	return &params
 }
 
 func findBlockDevice(client *client.Client, machineID string, identifier string) (*entity.BlockDevice, error) {
@@ -312,14 +273,23 @@ func findBlockDevice(client *client.Client, machineID string, identifier string)
 	if err != nil {
 		return nil, err
 	}
-
 	for _, b := range blockDevices {
 		if fmt.Sprintf("%v", b.ID) == identifier || b.Name == identifier || b.IDPath == identifier || b.Path == identifier {
 			return &b, nil
 		}
 	}
-
 	return nil, nil
+}
+
+func getBlockDevice(client *client.Client, machineID string, identifier string) (*entity.BlockDevice, error) {
+	blockDevice, err := findBlockDevice(client, machineID, identifier)
+	if err != nil {
+		return nil, err
+	}
+	if blockDevice == nil {
+		return nil, fmt.Errorf("block device (%s) was not found on machine (%s)", identifier, machineID)
+	}
+	return blockDevice, nil
 }
 
 func setBlockDeviceTags(client *client.Client, d *schema.ResourceData, blockDevice *entity.BlockDevice) error {
@@ -347,28 +317,25 @@ func setBlockDeviceTags(client *client.Client, d *schema.ResourceData, blockDevi
 	return nil
 }
 
-func setBlockDevicePartitionsTFState(d *schema.ResourceData, blockDevice *entity.BlockDevice) error {
+func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[string]interface{} {
 	partitions := make([]map[string]interface{}, len(blockDevice.Partitions))
 	for i, p := range blockDevice.Partitions {
 		part := map[string]interface{}{
 			"size_gigabytes": int(p.Size / (1024 * 1024 * 1024)),
 			"bootable":       p.Bootable,
 			"tags":           p.Tags,
-			"path":           p.Path,
 			"fs_type":        p.FileSystem.FSType,
 			"label":          p.FileSystem.Label,
 			"mount_point":    p.FileSystem.MountPoint,
 			"mount_options":  p.FileSystem.MountOptions,
+			"path":           p.Path,
 		}
 		partitions[i] = part
 	}
-	if err := d.Set("partitions", partitions); err != nil {
-		return err
-	}
-	return nil
+	return partitions
 }
 
-func createBlockDevicePartitions(client *client.Client, d *schema.ResourceData, blockDevice *entity.BlockDevice) error {
+func updateBlockDevicePartitions(client *client.Client, d *schema.ResourceData, blockDevice *entity.BlockDevice) error {
 	p, ok := d.GetOk("partitions")
 	if !ok {
 		return nil

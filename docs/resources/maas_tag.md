@@ -1,14 +1,14 @@
 
-# `maas_tag`
+# Resource: maas_tag
 
-Create a new MAAS tag, and use it to tag MAAS machines.
+Provides a resource to manage a MAAS tag.
 
-Example:
+## Example Usage
 
-```hcl
+```terraform
 resource "maas_tag" "kvm" {
   name = "kvm"
-  machine_ids = [
+  machines = [
     maas_vm_host_machine.kvm[0].id,
     maas_vm_host_machine.kvm[1].id,
     maas_machine.virsh_vm1.id,
@@ -17,9 +17,23 @@ resource "maas_tag" "kvm" {
 }
 ```
 
-Parameters:
+## Argument Reference
 
-| Name | Type | Required | Description
-| ---- | ---- | -------- | -----------
-| `name` | `string` | `true` | The new tag name. Because the name will be used in urls, it should be short.
-| `machine_ids` | `[]string` | `false` | List of MAAS machines' ids that will be tagged.
+The following arguments are supported:
+
+* `name` - (Required) The new tag name. Because the name will be used in urls, it should be short.
+* `machines` - (Optional) List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The tag name.
+
+## Import
+
+An existing tag can be imported using its name. e.g.
+
+```shell
+terraform import maas_tag.kvm kvm
+```
