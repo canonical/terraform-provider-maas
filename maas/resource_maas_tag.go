@@ -2,6 +2,7 @@ package maas
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -17,7 +18,25 @@ func resourceMaasTag() *schema.Resource {
 		DeleteContext: resourceTagDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				if err := d.Set("name", d.Id()); err != nil {
+				client := m.(*client.Client)
+				tag, err := getTag(client, d.Id())
+				if err != nil {
+					return nil, err
+				}
+				machines, err := client.Tag.GetMachines(tag.Name)
+				if err != nil {
+					return nil, err
+				}
+				machinesSystemIDs := make([]string, len(machines))
+				for i, machine := range machines {
+					machinesSystemIDs[i] = machine.SystemID
+				}
+				tfState := map[string]interface{}{
+					"id":       tag.Name,
+					"name":     tag.Name,
+					"machines": machinesSystemIDs,
+				}
+				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
 				return []*schema.ResourceData{d}, nil
@@ -30,7 +49,7 @@ func resourceMaasTag() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"machine_ids": {
+			"machines": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -55,7 +74,6 @@ func resourceTagCreate(ctx context.Context, d *schema.ResourceData, m interface{
 			return diag.FromErr(err)
 		}
 	}
-
 	d.SetId(tag.Name)
 
 	return resourceTagUpdate(ctx, d, m)
@@ -64,8 +82,7 @@ func resourceTagCreate(ctx context.Context, d *schema.ResourceData, m interface{
 func resourceTagRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	_, err := client.Tag.Get(d.Id())
-	if err != nil {
+	if _, err := client.Tag.Get(d.Id()); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -75,15 +92,18 @@ func resourceTagRead(ctx context.Context, d *schema.ResourceData, m interface{})
 func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	if p, ok := d.GetOk("machine_ids"); ok {
-		machineIds := convertToStringSlice(p.(*schema.Set).List())
+	tagMachinesIDs, err := getTagTFMachinesSystemIDs(client, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if len(tagMachinesIDs) > 0 {
 		// Tag specified machines
-		err := client.Tag.AddMachines(d.Id(), machineIds)
+		err := client.Tag.AddMachines(d.Id(), tagMachinesIDs)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		// Untag previously tagged machines
-		err = untagOtherMachines(client, d.Id(), machineIds)
+		err = untagOtherMachines(client, d.Id(), tagMachinesIDs)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -95,8 +115,7 @@ func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 func resourceTagDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	err := client.Tag.Delete(d.Id())
-	if err != nil {
+	if err := client.Tag.Delete(d.Id()); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -122,16 +141,42 @@ func findTag(client *client.Client, tagName string) (*entity.Tag, error) {
 	return nil, nil
 }
 
-func untagOtherMachines(client *client.Client, tagName string, taggedMachineIds []string) error {
+func getTag(client *client.Client, tagName string) (*entity.Tag, error) {
+	tag, err := findTag(client, tagName)
+	if err != nil {
+		return nil, err
+	}
+	if tag == nil {
+		return nil, fmt.Errorf("tag (%s) was not found", tagName)
+	}
+	return tag, nil
+}
+
+func getTagTFMachinesSystemIDs(client *client.Client, d *schema.ResourceData) ([]string, error) {
+	p, ok := d.GetOk("machines")
+	if !ok {
+		return nil, nil
+	}
+	machinesSystemIDs := []string{}
+	for _, machineIdentifier := range convertToStringSlice(p.(*schema.Set).List()) {
+		machine, err := getMachine(client, machineIdentifier)
+		if err != nil {
+			return nil, err
+		}
+		machinesSystemIDs = append(machinesSystemIDs, machine.SystemID)
+	}
+	return machinesSystemIDs, nil
+}
+
+func untagOtherMachines(client *client.Client, tagName string, taggedMachineIDs []string) error {
 	machines, err := client.Tag.GetMachines(tagName)
 	if err != nil {
 		return err
 	}
-
 	otherMachines := []string{}
 	for _, m := range machines {
 		found := false
-		for _, id := range taggedMachineIds {
+		for _, id := range taggedMachineIDs {
 			if m.SystemID == id {
 				found = true
 				break
@@ -142,10 +187,8 @@ func untagOtherMachines(client *client.Client, tagName string, taggedMachineIds 
 		}
 		otherMachines = append(otherMachines, m.SystemID)
 	}
-
 	if len(otherMachines) > 0 {
 		client.Tag.RemoveMachines(tagName, otherMachines)
 	}
-
 	return nil
 }

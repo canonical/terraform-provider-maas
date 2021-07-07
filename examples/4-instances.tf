@@ -15,9 +15,9 @@ resource "maas_instance" "kvm" {
   }
 }
 
-resource "maas_instance" "machine_05" {
+resource "maas_instance" "virsh_vm4" {
   allocate_params {
-    hostname = "machine-05"
+    hostname = maas_machine.virsh_vm4.hostname
   }
   deploy_params {
     distro_series = "focal"

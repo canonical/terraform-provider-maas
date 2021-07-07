@@ -20,21 +20,20 @@ func resourceMaasVMHostMachine() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 				client := m.(*client.Client)
-				machine, err := findMachine(client, d.Id())
+				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
 				if machine.VMHost.ID == 0 || machine.VMHost.Name == "" || machine.VMHost.ResourceURI == "" {
 					return nil, fmt.Errorf("machine (%s) is not a VM host machine", d.Id())
 				}
-				d.SetId(machine.SystemID)
-				if err := d.Set("vm_host", fmt.Sprintf("%v", machine.VMHost.ID)); err != nil {
-					return nil, err
+				tfState := map[string]interface{}{
+					"id":      machine.SystemID,
+					"vm_host": fmt.Sprintf("%v", machine.VMHost.ID),
+					"cores":   machine.CPUCount,
+					"memory":  machine.Memory,
 				}
-				if err := d.Set("cores", machine.CPUCount); err != nil {
-					return nil, err
-				}
-				if err := d.Set("memory", machine.Memory); err != nil {
+				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
 				return []*schema.ResourceData{d}, nil
@@ -51,7 +50,6 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
-				Default:  1,
 			},
 			"pinned_cores": {
 				Type:     schema.TypeInt,
@@ -62,7 +60,6 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
-				Default:  2048,
 			},
 			"network_interfaces": {
 				Type:     schema.TypeList,
@@ -138,13 +135,13 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*client.Client)
 
 	// Find VM host
-	vmHost, err := findVMHost(client, d.Get("vm_host").(string))
+	vmHost, err := getVMHost(client, d.Get("vm_host").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Create VM host machine
-	params, err := getVMHostMachineCreateParams(d)
+	params, err := getVMHostMachineParams(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -153,16 +150,7 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 
-	// Set Terraform state
-	if err := d.Set("cores", params.Cores); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("pinned_cores", params.PinnedCores); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("memory", params.Memory); err != nil {
-		return diag.FromErr(err)
-	}
+	// Save system id
 	d.SetId(machine.SystemID)
 
 	// Wait for VM host machine to be ready
@@ -185,16 +173,13 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	// Set Terraform state
-	if err := d.Set("hostname", machine.Hostname); err != nil {
-		return diag.FromErr(err)
+	tfState := map[string]interface{}{
+		"hostname": machine.Hostname,
+		"domain":   machine.Domain.Name,
+		"zone":     machine.Zone.Name,
+		"pool":     machine.Pool.Name,
 	}
-	if err := d.Set("domain", machine.Domain.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("zone", machine.Zone.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("pool", machine.Pool.Name); err != nil {
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -205,12 +190,7 @@ func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*client.Client)
 
 	// Update VM host machine
-	machine, err := client.Machine.Get(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	_, err = client.Machine.Update(machine.SystemID, getVMHostMachineUpdateParams(d, machine), map[string]string{})
-	if err != nil {
+	if _, err := client.Machine.Update(d.Id(), getVMHostMachineUpdateParams(d), map[string]string{}); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -229,75 +209,29 @@ func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-func findVMHost(client *client.Client, vmHostIdentifier string) (*entity.VMHost, error) {
-	vmHosts, err := client.VMHosts.Get()
+func getVMHostMachineParams(d *schema.ResourceData) (*entity.VMHostMachineParams, error) {
+	networkInterfaces, err := getVMHostMachineNetworkInterfaces(d.Get("network_interfaces").([]interface{}))
 	if err != nil {
 		return nil, err
 	}
-
-	for _, vmHost := range vmHosts {
-		if fmt.Sprintf("%v", vmHost.ID) == vmHostIdentifier || vmHost.Name == vmHostIdentifier {
-			return &vmHost, err
-		}
+	params := entity.VMHostMachineParams{
+		Hostname:    d.Get("hostname").(string),
+		Cores:       d.Get("cores").(int),
+		PinnedCores: d.Get("pinned_cores").(int),
+		Memory:      d.Get("memory").(int),
+		Interfaces:  networkInterfaces,
+		Storage:     getVMHostMachineStorageDisks(d.Get("storage_disks").([]interface{})),
 	}
-
-	return nil, fmt.Errorf("VM host (%s) not found", vmHostIdentifier)
-}
-
-func getVMHostMachineCreateParams(d *schema.ResourceData) (*entity.VMHostMachineParams, error) {
-	params := entity.VMHostMachineParams{}
-
-	if p, ok := d.GetOk("cores"); ok {
-		params.Cores = p.(int)
-	}
-	if p, ok := d.GetOk("pinned_cores"); ok {
-		params.PinnedCores = p.(int)
-	}
-	if p, ok := d.GetOk("memory"); ok {
-		params.Memory = p.(int)
-	}
-	if p, ok := d.GetOk("network_interfaces"); ok {
-		networkInterfaces, err := getVMHostMachineNetworkInterfaces(p.([]interface{}))
-		if err != nil {
-			return nil, err
-		}
-		params.Interfaces = networkInterfaces
-	}
-	if p, ok := d.GetOk("storage_disks"); ok {
-		params.Storage = getVMHostMachineStorageDisks(p.([]interface{}))
-	}
-	if p, ok := d.GetOk("hostname"); ok {
-		params.Hostname = p.(string)
-	}
-
 	return &params, nil
 }
 
-func getVMHostMachineUpdateParams(d *schema.ResourceData, machine *entity.Machine) *entity.MachineParams {
-	params := entity.MachineParams{
-		CPUCount:     machine.CPUCount,
-		Memory:       machine.Memory,
-		SwapSize:     machine.SwapSize,
-		Architecture: machine.Architecture,
-		MinHWEKernel: machine.MinHWEKernel,
-		PowerType:    machine.PowerType,
-		Description:  machine.Description,
+func getVMHostMachineUpdateParams(d *schema.ResourceData) *entity.MachineParams {
+	return &entity.MachineParams{
+		Hostname: d.Get("hostname").(string),
+		Domain:   d.Get("domain").(string),
+		Zone:     d.Get("zone").(string),
+		Pool:     d.Get("pool").(string),
 	}
-
-	if p, ok := d.GetOk("hostname"); ok {
-		params.Hostname = p.(string)
-	}
-	if p, ok := d.GetOk("domain"); ok {
-		params.Domain = p.(string)
-	}
-	if p, ok := d.GetOk("zone"); ok {
-		params.Zone = p.(string)
-	}
-	if p, ok := d.GetOk("pool"); ok {
-		params.Pool = p.(string)
-	}
-
-	return &params
 }
 
 func getVMHostMachineNetworkInterfaces(networkInterfaces []interface{}) (string, error) {

@@ -18,8 +18,6 @@ var (
 		"machine",
 		"power_address",
 	}
-	defaultCPUOverCommitRatio    = 1.0
-	defaultMemoryOverCommitRatio = 1.0
 )
 
 func resourceMaasVMHost() *schema.Resource {
@@ -31,32 +29,29 @@ func resourceMaasVMHost() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 				client := m.(*client.Client)
-				vmHost, err := findVMHost(client, d.Id())
+				vmHost, err := getVMHost(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
-				d.SetId(fmt.Sprintf("%v", vmHost.ID))
-				if err := d.Set("type", vmHost.Type); err != nil {
-					return nil, err
-				}
-				if err := d.Set("cpu_over_commit_ratio", defaultCPUOverCommitRatio); err != nil {
-					return nil, err
-				}
-				if err := d.Set("memory_over_commit_ratio", defaultMemoryOverCommitRatio); err != nil {
-					return nil, err
+				tfState := map[string]interface{}{
+					"id":   fmt.Sprintf("%v", vmHost.ID),
+					"type": vmHost.Type,
 				}
 				if vmHost.Host.SystemID != "" {
-					if err := d.Set("machine", vmHost.Host.SystemID); err != nil {
-						return nil, err
-					}
+					tfState["machine"] = vmHost.Host.SystemID
 				} else {
 					vmHostParams, err := client.VMHost.GetParameters(vmHost.ID)
 					if err != nil {
 						return nil, err
 					}
-					if err := d.Set("power_address", vmHostParams.PowerAddress); err != nil {
-						return nil, err
+					for _, k := range []string{"power_address", "power_user", "power_pass"} {
+						if val, ok := vmHostParams[k]; ok {
+							tfState[k] = val
+						}
 					}
+				}
+				if err := setTerraformState(d, tfState); err != nil {
+					return nil, err
 				}
 				return []*schema.ResourceData{d}, nil
 			},
@@ -64,11 +59,10 @@ func resourceMaasVMHost() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"type": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-				ValidateDiagFunc: validation.ToDiagFunc(
-					validation.StringInSlice([]string{"lxd", "virsh"}, false)),
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"lxd", "virsh"}, false)),
 			},
 			"machine": {
 				Type:          schema.TypeString,
@@ -120,28 +114,16 @@ func resourceMaasVMHost() *schema.Resource {
 			"cpu_over_commit_ratio": {
 				Type:     schema.TypeFloat,
 				Optional: true,
-				Default:  defaultCPUOverCommitRatio,
+				Computed: true,
 			},
 			"memory_over_commit_ratio": {
 				Type:     schema.TypeFloat,
 				Optional: true,
-				Default:  defaultMemoryOverCommitRatio,
+				Computed: true,
 			},
 			"default_macvlan_mode": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
-			},
-			"resources_cores_available": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-			"resources_memory_available": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-			"resources_local_storage_available": {
-				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"resources_cores_total": {
@@ -173,7 +155,7 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.FromErr(err)
 		}
 	} else {
-		vmHost, err = client.VMHosts.Create(getVMHostCreateParams(d))
+		vmHost, err = client.VMHosts.Create(getVMHostParams(d))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -200,34 +182,19 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	// Set Terraform state
-	if err := d.Set("name", vmHost.Name); err != nil {
-		return diag.FromErr(err)
+	tfState := map[string]interface{}{
+		"name":                          vmHost.Name,
+		"zone":                          vmHost.Zone.Name,
+		"pool":                          vmHost.Pool.Name,
+		"tags":                          vmHost.Tags,
+		"cpu_over_commit_ratio":         vmHost.CPUOverCommitRatio,
+		"memory_over_commit_ratio":      vmHost.MemoryOverCommitRatio,
+		"default_macvlan_mode":          vmHost.DefaultMACVLANMode,
+		"resources_cores_total":         vmHost.Total.Cores,
+		"resources_memory_total":        vmHost.Total.Memory,
+		"resources_local_storage_total": vmHost.Total.LocalStorage,
 	}
-	if err := d.Set("zone", vmHost.Zone.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("pool", vmHost.Pool.Name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("tags", vmHost.Tags); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("resources_cores_available", vmHost.Available.Cores); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("resources_cores_total", vmHost.Total.Cores); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("resources_memory_available", vmHost.Available.Memory); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("resources_memory_total", vmHost.Total.Memory); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("resources_local_storage_available", vmHost.Available.LocalStorage); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("resources_local_storage_total", vmHost.Total.LocalStorage); err != nil {
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -248,11 +215,7 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Update VM host options
-	vmHostParams, err := client.VMHost.GetParameters(vmHost.ID)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	_, err = client.VMHost.Update(vmHost.ID, getVMHostUpdateParams(d, vmHost, vmHostParams))
+	_, err = client.VMHost.Update(vmHost.ID, getVMHostParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -294,70 +257,25 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-func getVMHostCreateParams(d *schema.ResourceData) *entity.VMHostParams {
-	params := entity.VMHostParams{
+func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
+	return &entity.VMHostParams{
+		Name:                  d.Get("name").(string),
 		Type:                  d.Get("type").(string),
+		PowerAddress:          d.Get("power_address").(string),
+		PowerUser:             d.Get("power_user").(string),
+		PowerPass:             d.Get("power_pass").(string),
 		CPUOverCommitRatio:    d.Get("cpu_over_commit_ratio").(float64),
 		MemoryOverCommitRatio: d.Get("memory_over_commit_ratio").(float64),
+		DefaultMacvlanMode:    d.Get("default_macvlan_mode").(string),
+		Zone:                  d.Get("zone").(string),
+		Pool:                  d.Get("pool").(string),
+		Tags:                  strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
 	}
-
-	if p, ok := d.GetOk("power_address"); ok {
-		params.PowerAddress = p.(string)
-	}
-	if p, ok := d.GetOk("power_user"); ok {
-		params.PowerUser = p.(string)
-	}
-	if p, ok := d.GetOk("power_pass"); ok {
-		params.PowerPass = p.(string)
-	}
-
-	return &params
-}
-
-func getVMHostUpdateParams(d *schema.ResourceData, vmHost *entity.VMHost, params *entity.VMHostParams) *entity.VMHostParams {
-	params.Type = vmHost.Type
-	params.Name = vmHost.Name
-	params.CPUOverCommitRatio = vmHost.CPUOverCommitRatio
-	params.MemoryOverCommitRatio = vmHost.MemoryOverCommitRatio
-	params.DefaultMacvlanMode = vmHost.DefaultMACVLANMode
-	params.Zone = vmHost.Zone.Name
-	params.Pool = vmHost.Pool.Name
-	params.Tags = strings.Join(vmHost.Tags, ",")
-
-	if p, ok := d.GetOk("power_address"); ok {
-		params.PowerAddress = p.(string)
-	}
-	if p, ok := d.GetOk("power_pass"); ok {
-		params.PowerPass = p.(string)
-	}
-	if p, ok := d.GetOk("name"); ok {
-		params.Name = p.(string)
-	}
-	if p, ok := d.GetOk("zone"); ok {
-		params.Zone = p.(string)
-	}
-	if p, ok := d.GetOk("pool"); ok {
-		params.Pool = p.(string)
-	}
-	if p, ok := d.GetOk("tags"); ok {
-		params.Tags = strings.Join(convertToStringSlice(p.(*schema.Set).List()), ",")
-	}
-	if p, ok := d.GetOk("cpu_over_commit_ratio"); ok {
-		params.CPUOverCommitRatio = p.(float64)
-	}
-	if p, ok := d.GetOk("memory_over_commit_ratio"); ok {
-		params.MemoryOverCommitRatio = p.(float64)
-	}
-	if p, ok := d.GetOk("default_macvlan_mode"); ok {
-		params.DefaultMacvlanMode = p.(string)
-	}
-
-	return params
 }
 
 func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineIdentifier string, vmHostType string) (*entity.VMHost, error) {
 	// Find machine
-	machine, err := findMachine(client, machineIdentifier)
+	machine, err := getMachine(client, machineIdentifier)
 	if err != nil {
 		return nil, err
 	}
@@ -398,4 +316,17 @@ func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineId
 	}
 
 	return nil, fmt.Errorf("cannot find registered VM host on machine '%s'", machineIdentifier)
+}
+
+func getVMHost(client *client.Client, identifier string) (*entity.VMHost, error) {
+	vmHosts, err := client.VMHosts.Get()
+	if err != nil {
+		return nil, err
+	}
+	for _, vmHost := range vmHosts {
+		if fmt.Sprintf("%v", vmHost.ID) == identifier || vmHost.Name == identifier {
+			return &vmHost, err
+		}
+	}
+	return nil, fmt.Errorf("VM host (%s) not found", identifier)
 }
