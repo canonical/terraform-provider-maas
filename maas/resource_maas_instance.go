@@ -247,7 +247,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, m interfa
 
     d.SetConnInfo(map[string]string{
         "type": "ssh",
-		"user": "ubuntu",
+        "user": "ubuntu",
         "host": ipAddresses[0],
     })
 
