@@ -3,7 +3,7 @@ HOSTNAME=registry.terraform.io
 NAMESPACE=ionutbalutoiu
 NAME=maas
 BINARY=terraform-provider-${NAME}
-VERSION=0.1.0
+VERSION=1.0.1
 OS?=$$(go env GOOS)
 ARCH?=$$(go env GOARCH)
 
