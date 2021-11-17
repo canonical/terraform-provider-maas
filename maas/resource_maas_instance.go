@@ -97,6 +97,7 @@ func resourceMaasInstance() *schema.Resource {
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
@@ -111,6 +112,14 @@ func resourceMaasInstance() *schema.Resource {
 							Type:             schema.TypeString,
 							Optional:         true,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+						},
+						"enabled": {
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
+						"space": {
+							Type:     schema.TypeString,
+							Optional: true,
 						},
 					},
 				},
@@ -144,6 +153,10 @@ func resourceMaasInstance() *schema.Resource {
 			},
 			"memory": {
 				Type:     schema.TypeInt,
+				Computed: true,
+			},
+			"ip_address": {
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"ip_addresses": {
@@ -204,19 +217,43 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	for i, ip := range machine.IPAddresses {
 		ipAddresses[i] = ip.String()
 	}
+	networkInterfaces := make([]interface{}, len(machine.InterfaceSet))
+	for i, iface := range machine.InterfaceSet {
+		subnet_cidr := ""
+		ip_address := ""
+		if len(iface.Links) > 0 {
+			subnet_cidr = iface.Links[0].Subnet.CIDR
+			ip_address = iface.Links[0].IPAddress
+		}
+		networkInterfaces[i] = map[string]interface{}{
+			"name":        iface.Name,
+			"subnet_cidr": subnet_cidr,
+			"ip_address":  ip_address,
+			"space":       iface.VLAN.Space,
+			"enabled":     iface.Enabled,
+		}
+	}
 	tfState := map[string]interface{}{
-		"fqdn":         machine.FQDN,
-		"hostname":     machine.Hostname,
-		"zone":         machine.Zone.Name,
-		"pool":         machine.Pool.Name,
-		"tags":         machine.TagNames,
-		"cpu_count":    machine.CPUCount,
-		"memory":       machine.Memory,
-		"ip_addresses": ipAddresses,
+		"fqdn":               machine.FQDN,
+		"hostname":           machine.Hostname,
+		"zone":               machine.Zone.Name,
+		"pool":               machine.Pool.Name,
+		"tags":               machine.TagNames,
+		"cpu_count":          machine.CPUCount,
+		"memory":             machine.Memory,
+		"ip_address":         machine.BootInterface.Links[0].IPAddress,
+		"ip_addresses":       ipAddresses,
+		"network_interfaces": networkInterfaces,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
+
+	d.SetConnInfo(map[string]string{
+		"type": "ssh",
+		"user": "ubuntu",
+		"host": machine.BootInterface.Links[0].IPAddress,
+	})
 
 	return nil
 }
