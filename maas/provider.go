@@ -54,6 +54,7 @@ func Provider() *schema.Provider {
 			"maas_vlan":   dataSourceMaasVlan(),
 			"maas_subnet": dataSourceMaasSubnet(),
 			"maas_machine": dataSourceMaasMachine(),
+			"maas_network_interface_physical": dataSourceMaasNetworkInterfacePhysical(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
