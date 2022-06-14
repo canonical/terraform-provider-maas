@@ -8,3 +8,5 @@ require (
 	github.com/ionutbalutoiu/gomaasclient v0.0.0-20210707081625-0c69fffd5a8c
 	github.com/stretchr/testify v1.7.0
 )
+
+replace github.com/ionutbalutoiu/gomaasclient => github.com/maas/gomaasclient v0.0.0-20220614142745-556bd092b2db
