@@ -59,28 +59,33 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"subnet": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The subnet identifier (ID or CIDR) for the new IP range.",
 			},
 			"type": {
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"dynamic", "reserved"}, false)),
+				Description:      "The IP range type. Valid options are: `dynamic`, `reserved`.",
 			},
 			"start_ip": {
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "The start IP for the new IP range (inclusive).",
 			},
 			"end_ip": {
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "The end IP for the new IP range (inclusive).",
 			},
 			"comment": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "A description of this range. This argument is computed if it's not set.",
 			},
 		},
 	}

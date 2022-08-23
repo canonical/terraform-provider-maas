@@ -40,22 +40,26 @@ func resourceMaasDnsDomain() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the new DNS domain.",
 			},
 			"ttl": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The default TTL for the new DNS domain.",
 			},
 			"authoritative": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Boolean value indicating if the new DNS domain is authoritative. Defaults to `false`.",
 			},
 			"is_default": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Boolean value indicating if the new DNS domain will be set as the default in the MAAS environment. Defaults to `false`.",
 			},
 		},
 	}
