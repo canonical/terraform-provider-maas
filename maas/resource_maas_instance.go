@@ -126,7 +126,7 @@ func resourceMaasInstance() *schema.Resource {
 							Type:             schema.TypeString,
 							Optional:         true,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
-							Description:      "Static IP address to be configured on the network interface. If this is set, the `subnet_cidr` is required.",
+							Description:      "Static IP address to be configured on the network interface. If this is set, the `subnet_cidr` is required.\n\n**NOTE:** If both `subnet_cidr` and `ip_address` are not defined, the interface will not be configured on the allocated machine.",
 						},
 					},
 				},
