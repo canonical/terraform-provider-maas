@@ -16,6 +16,7 @@ import (
 
 func resourceMaasMachine() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS machines.",
 		CreateContext: resourceMachineCreate,
 		ReadContext:   resourceMachineRead,
 		UpdateContext: resourceMachineUpdate,

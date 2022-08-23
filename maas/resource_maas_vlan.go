@@ -13,6 +13,7 @@ import (
 
 func resourceMaasVlan() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network VLANs.",
 		CreateContext: resourceVlanCreate,
 		ReadContext:   resourceVlanRead,
 		UpdateContext: resourceVlanUpdate,

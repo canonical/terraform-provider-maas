@@ -13,6 +13,7 @@ import (
 
 func resourceMaasDnsDomain() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS DNS domains.",
 		CreateContext: resourceDnsDomainCreate,
 		ReadContext:   resourceDnsDomainRead,
 		UpdateContext: resourceDnsDomainUpdate,

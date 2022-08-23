@@ -12,6 +12,7 @@ import (
 
 func resourceMaasTag() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage a MAAS tag.",
 		CreateContext: resourceTagCreate,
 		ReadContext:   resourceTagRead,
 		UpdateContext: resourceTagUpdate,

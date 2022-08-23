@@ -12,6 +12,7 @@ import (
 
 func resourceMaasUser() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS users.",
 		CreateContext: resourceUserCreate,
 		ReadContext:   resourceUserRead,
 		DeleteContext: resourceUserDelete,

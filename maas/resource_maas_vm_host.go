@@ -22,6 +22,7 @@ var (
 
 func resourceMaasVMHost() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS VM hosts.",
 		CreateContext: resourceVMHostCreate,
 		ReadContext:   resourceVMHostRead,
 		UpdateContext: resourceVMHostUpdate,

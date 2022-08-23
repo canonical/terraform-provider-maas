@@ -11,6 +11,7 @@ import (
 
 func dataSourceMaasSubnet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Provides details about an existing MAAS network subnet.",
 		ReadContext: dataSourceSubnetRead,
 
 		Schema: map[string]*schema.Schema{

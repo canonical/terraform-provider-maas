@@ -14,6 +14,7 @@ import (
 
 func resourceMaasBlockDevice() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS machines' block devices.",
 		CreateContext: resourceBlockDeviceCreate,
 		ReadContext:   resourceBlockDeviceRead,
 		UpdateContext: resourceBlockDeviceUpdate,

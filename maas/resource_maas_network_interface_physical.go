@@ -14,6 +14,7 @@ import (
 
 func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage a physical network interface from an existing MAAS machine.",
 		CreateContext: resourceNetworkInterfacePhysicalCreate,
 		ReadContext:   resourceNetworkInterfacePhysicalRead,
 		UpdateContext: resourceNetworkInterfacePhysicalUpdate,

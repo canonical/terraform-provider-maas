@@ -13,6 +13,7 @@ import (
 
 func resourceMaasSpace() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network spaces.",
 		CreateContext: resourceSpaceCreate,
 		ReadContext:   resourceSpaceRead,
 		UpdateContext: resourceSpaceUpdate,

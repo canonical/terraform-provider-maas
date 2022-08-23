@@ -13,6 +13,7 @@ import (
 
 func resourceMaasFabric() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network fabrics.",
 		CreateContext: resourceFabricCreate,
 		ReadContext:   resourceFabricRead,
 		UpdateContext: resourceFabricUpdate,

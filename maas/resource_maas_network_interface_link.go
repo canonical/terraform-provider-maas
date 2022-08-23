@@ -14,6 +14,7 @@ import (
 
 func resourceMaasNetworkInterfaceLink() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage network configuration on a network interface.",
 		CreateContext: resourceNetworkInterfaceLinkCreate,
 		ReadContext:   resourceNetworkInterfaceLinkRead,
 		UpdateContext: resourceNetworkInterfaceLinkUpdate,

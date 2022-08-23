@@ -11,6 +11,7 @@ import (
 
 func dataSourceMaasFabric() *schema.Resource {
 	return &schema.Resource{
+		Description: "Provides details about an existing MAAS network fabric.",
 		ReadContext: dataSourceFabricRead,
 
 		Schema: map[string]*schema.Schema{

@@ -15,6 +15,7 @@ import (
 
 func resourceMaasSubnetIPRange() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network subnets IP ranges.",
 		CreateContext: resourceSubnetIPRangeCreate,
 		ReadContext:   resourceSubnetIPRangeRead,
 		UpdateContext: resourceSubnetIPRangeUpdate,

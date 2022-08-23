@@ -13,6 +13,7 @@ import (
 
 func resourceMaasVMHostMachine() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS VM host machines.",
 		CreateContext: resourceVMHostMachineCreate,
 		ReadContext:   resourceVMHostMachineRead,
 		UpdateContext: resourceVMHostMachineUpdate,

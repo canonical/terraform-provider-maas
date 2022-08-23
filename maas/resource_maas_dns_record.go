@@ -19,6 +19,7 @@ var (
 
 func resourceMaasDnsRecord() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS DNS domain records.",
 		CreateContext: resourceDnsRecordCreate,
 		ReadContext:   resourceDnsRecordRead,
 		UpdateContext: resourceDnsRecordUpdate,

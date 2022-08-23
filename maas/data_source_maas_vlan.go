@@ -11,6 +11,7 @@ import (
 
 func dataSourceMaasVlan() *schema.Resource {
 	return &schema.Resource{
+		Description: "Provides details about an existing MAAS VLAN.",
 		ReadContext: dataSourceVlanRead,
 
 		Schema: map[string]*schema.Schema{
