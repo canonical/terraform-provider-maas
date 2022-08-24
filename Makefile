@@ -22,6 +22,7 @@ $(BIN)/%:
 build:
 	mkdir -p $(BIN)
 	go build -o $(BIN)/${BINARY}
+	@sh -c "'$(CURDIR)/scripts/generate-dev-overrides.sh'"
 
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS}_${ARCH}
