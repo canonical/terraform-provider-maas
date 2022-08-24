@@ -17,7 +17,7 @@ $(BIN)/%:
 	@echo "Installing tools from tools/tools.go"
 	@cat tools/tools.go | grep _ | awk -F '"' '{print $$2}' | GOBIN=$(BIN) xargs -tI {} go install {}
 
-.PHONY: build install clean test testacc
+.PHONY: build install clean clean_install test testacc tfproviderlintx tfproviderlint
 
 build:
 	mkdir -p $(BIN)
@@ -30,6 +30,9 @@ install: build
 
 clean:
 	rm -rf $(BIN)
+
+clean_install: clean
+	rm -rf ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}
 
 test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=$(TEST_PARALLELISM)
