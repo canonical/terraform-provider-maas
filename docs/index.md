@@ -22,7 +22,7 @@ description: |-
 terraform {
   required_providers {
     maas = {
-      source  = "ionutbalutoiu/maas" // TODO: change to maas/maas after release
+      source  = "maas/maas"
       version = "~>1.0"
     }
   }
