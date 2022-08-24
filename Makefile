@@ -4,6 +4,7 @@ NAMESPACE=ionutbalutoiu
 NAME=maas
 BINARY=terraform-provider-${NAME}
 VERSION=1.0.1
+
 OS?=$$(go env GOOS)
 ARCH?=$$(go env GOARCH)
 
@@ -18,6 +19,10 @@ build:
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS}_${ARCH}
 	mv ./bin/${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS}_${ARCH}
+
+.PHONY: clean
+clean:
+	rm -rf ./bin
 
 .PHONY: test
 test:
