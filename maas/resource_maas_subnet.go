@@ -14,6 +14,7 @@ import (
 
 func resourceMaasSubnet() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network subnets.\n\n**NOTE:** The MAAS provider currently supports both standalone resources and in-line resources for subnet IP ranges. You cannot use in-line `ip_ranges` in conjunction with standalone `maas_subnet_ip_range` resources. Doing so will cause conflicts and will overwrite subnet IP ranges.",
 		CreateContext: resourceSubnetCreate,
 		ReadContext:   resourceSubnetRead,
 		UpdateContext: resourceSubnetUpdate,
@@ -44,45 +45,54 @@ func resourceMaasSubnet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"cidr": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The subnet CIDR.",
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The subnet name.",
 			},
 			"fabric": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The fabric identifier (ID or name) for the new subnet.",
 			},
 			"vlan": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"fabric"},
+				Description:  "The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required.",
 			},
 			"ip_ranges": {
-				Type:     schema.TypeSet,
-				Optional: true,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Description: "A set of IP ranges configured on the new subnet. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"type": {
 							Type:             schema.TypeString,
 							Required:         true,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"dynamic", "reserved"}, false)),
+							Description:      "The IP range type. Valid options are: `dynamic`, `reserved`.",
 						},
 						"start_ip": {
 							Type:             schema.TypeString,
 							Required:         true,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+							Description:      "The start IP for the new IP range (inclusive).",
 						},
 						"end_ip": {
 							Type:             schema.TypeString,
 							Required:         true,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+							Description:      "The end IP for the new IP range (inclusive).",
 						},
 						"comment": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "A description of this range.",
 						},
 					},
 				},
@@ -92,27 +102,32 @@ func resourceMaasSubnet() *schema.Resource {
 				Optional:         true,
 				Default:          2,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2)),
+				Description:      "How reverse DNS is handled for this subnet. Defaults to `2`. Valid options are:\n\t* `0` - Disabled, no reverse zone is created.\n\t* `1` - Enabled, generate reverse zone.\n\t* `2` - RFC2317, extends `1` to create the necessary parent zone with the appropriate CNAME resource records for the network, if the network is small enough to require the support described in RFC2317.",
 			},
 			"allow_dns": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Boolean value that indicates if the MAAS DNS resolution is enabled for this subnet. Defaults to `true`.",
 			},
 			"allow_proxy": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Boolean value that indicates if `maas-proxy` allows requests from this subnet. Defaults to `true`.",
 			},
 			"gateway_ip": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "Gateway IP address for the new subnet. This argument is computed if it's not set.",
 			},
 			"dns_servers": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				Description: "List of IP addresses set as DNS servers for the new subnet. This argument is computed if it's not set.",
 				Elem: &schema.Schema{
 					ValidateDiagFunc: isElementIPAddress,
 					Type:             schema.TypeString,

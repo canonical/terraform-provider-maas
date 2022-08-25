@@ -13,6 +13,7 @@ import (
 
 func resourceMaasSpace() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network spaces.",
 		CreateContext: resourceSpaceCreate,
 		ReadContext:   resourceSpaceRead,
 		UpdateContext: resourceSpaceUpdate,
@@ -37,8 +38,9 @@ func resourceMaasSpace() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the new space.",
 			},
 		},
 	}

@@ -1,6 +1,6 @@
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=registry.terraform.io
-NAMESPACE=ionutbalutoiu
+NAMESPACE=maas
 NAME=maas
 BINARY=terraform-provider-${NAME}
 VERSION=1.0.1
@@ -17,7 +17,7 @@ $(BIN)/%:
 	@echo "Installing tools from tools/tools.go"
 	@cat tools/tools.go | grep _ | awk -F '"' '{print $$2}' | GOBIN=$(BIN) xargs -tI {} go install {}
 
-.PHONY: build install clean clean_install test testacc tfproviderlintx tfproviderlint
+.PHONY: build install clean clean_install test testacc generate_docs validate_docs tfproviderlintx tfproviderlint
 
 build:
 	mkdir -p $(BIN)
@@ -41,6 +41,13 @@ test:
 
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m -parallel=$(TEST_PARALLELISM)
+
+generate_docs: $(BIN)/tfplugindocs
+	$(BIN)/tfplugindocs generate --provider-name $(NAME)
+
+validate_docs: $(BIN)/tfplugindocs
+	$(BIN)/tfplugindocs validate
+
 
 tfproviderlintx: $(BIN)/tfproviderlint
 	$(BIN)/tfproviderlintx $(TFPROVIDERLINT_ARGS) ./...
