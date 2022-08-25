@@ -23,7 +23,7 @@ build:
 	mkdir -p $(BIN)
 	go build -o $(BIN)/${BINARY}
 	
-create-dev-overrides: build
+create_dev_overrides: build
 	@sh -c "'$(CURDIR)/scripts/generate-dev-overrides.sh'"
 
 install: build
