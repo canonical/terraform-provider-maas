@@ -51,8 +51,7 @@ The [docs](/docs) section contains details about each supported Terraform resour
 
 1. Create a new branch from `master` as `release-vX.X.X`
    ```bash
-   git checkout master  
-   git checkout -b release-vX.X.X
+   git branch release-vX.X.X master
    git push -u origin release-vX.X.X
    ```
 2. Raise a PR on github, title of the PR should be in the following format
