@@ -49,7 +49,7 @@ The [docs](/docs) section contains details about each supported Terraform resour
 
 ### Release process
 
-1. Checkout master and create a new branch as `release-vX.X.X`
+1. Create a new branch from `master` as `release-vX.X.X`
    ```bash
    git checkout master  
    git checkout -b release-vX.X.X
@@ -62,7 +62,7 @@ The [docs](/docs) section contains details about each supported Terraform resour
 5. Click [Draft a new release](https://github.com/maas/terraform-provider-maas/releases/new)
 6. On `Target` choose the lastest commit you want to release for
 7. Set the `release title` to the release version, for example `v1.0.1`
-8. Copy and paste the relevant CHNAGELOG.md entries to the release description
+8. Copy and paste the relevant CHANGELOG.md entries to the release description
 9. Click `Publish release`
 10. The new version should be available on the [Releases](https://github.com/maas/terraform-provider-maas/releases) page
    
