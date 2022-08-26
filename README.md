@@ -59,7 +59,7 @@ The [docs](/docs) section contains details about each supported Terraform resour
 3. Update the `CHANGELOG.md` with your release version, date and change details.
 4. Go to [Releases](https://github.com/maas/terraform-provider-maas/releases) over on github
 5. Click [Draft a new release](https://github.com/maas/terraform-provider-maas/releases/new)
-6. On `Target` choose the lastest commit you want to release for
+6. On `Target` choose the latest commit you want to release for
 7. Set the `release title` to the release version, for example `v1.0.1`
 8. Copy and paste the relevant CHANGELOG.md entries to the release description
 9. Click `Publish release`
