@@ -49,9 +49,9 @@ The [docs](/docs) section contains details about each supported Terraform resour
 
 ### Release process
 
-1. Checkout main and create a new branch as `release-vX.X.X`
+1. Checkout master and create a new branch as `release-vX.X.X`
    ```bash
-   git checkout main  
+   git checkout master  
    git checkout -b release-vX.X.X
    git push -u origin release-vX.X.X
    ```
