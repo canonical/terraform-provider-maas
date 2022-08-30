@@ -40,10 +40,6 @@ test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=$(TEST_PARALLELISM)
 
 testacc:
-# TODO: do these values also need to be added here
-# MAAS_API_VERSION=2.0
-# MAAS_API_KEY=// TODO this will need to be dynamically allocated
-# MAAS_API_URL=http://127.0.0.1:5240/MAAS
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m -parallel=$(TEST_PARALLELISM)
 
 generate_docs: $(BIN)/tfplugindocs

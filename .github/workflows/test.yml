@@ -77,8 +77,5 @@ jobs:
       - run: go mod download
       - env:
           TF_ACC: "1"
-          MAAS_API_VERSION: 2.0
-          MAAS_API_KEY:  # TODO this will need to be dynamically allocated
-          MAAS_API_URL: http://127.0.0.1:5240/MAAS
         run: go test -v -cover ./maas/
         timeout-minutes: 10
