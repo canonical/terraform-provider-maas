@@ -76,9 +76,10 @@ jobs:
           terraform_wrapper: false
       - run: go mod download
       - env:
-          TF_ACC: "1"
-          MAAS_API_VERSION: 2.0
-          MAAS_API_KEY:  # TODO this will need to be dynamically allocated
-          MAAS_API_URL: http://127.0.0.1:5240/MAAS
+          TF_ACC: "0" # Set to "1" after QA environment set up to run acceptance tests 
+          # These will need to be set after a QA environment is set up
+          # MAAS_API_VERSION: 2.0
+          # MAAS_API_KEY: < QA env API key >
+          # MAAS_API_URL: < URL of QA env >
         run: go test -v -cover ./maas/
         timeout-minutes: 10
