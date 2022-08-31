@@ -40,7 +40,7 @@ test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=$(TEST_PARALLELISM)
 
 testacc:
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m -parallel=$(TEST_PARALLELISM)
+	TF_ACC=0 go test $(TEST) -v $(TESTARGS) -timeout 120m -parallel=$(TEST_PARALLELISM)
 
 generate_docs: $(BIN)/tfplugindocs
 	$(BIN)/tfplugindocs generate --provider-name $(NAME)
