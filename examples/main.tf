@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     maas = {
-      source = "registry.terraform.io/ionutbalutoiu/maas"
+      source = "registry.terraform.io/maas/maas"
     }
   }
 }
