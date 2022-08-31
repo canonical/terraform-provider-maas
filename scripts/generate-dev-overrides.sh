@@ -7,7 +7,7 @@ cat << EOF > $BIN_DIR/$OVERRIDES_FILENAME
 provider_installation {
 
   dev_overrides {
-    "registry.terraform.io/ionutbalutoiu/maas" = "$BIN_DIR"
+    "registry.terraform.io/maas/maas" = "$BIN_DIR"
   }
 
   direct {}
