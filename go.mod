@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.21.0
-	github.com/ionutbalutoiu/gomaasclient v0.0.0-20220614142745-556bd092b2db
+	github.com/maas/gomaasclient v0.0.0-20220831151024-14c6f5604abb
 	github.com/stretchr/testify v1.8.0
 )
 
@@ -85,5 +85,3 @@ require (
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/ionutbalutoiu/gomaasclient => github.com/maas/gomaasclient v0.0.0-20220614142745-556bd092b2db
