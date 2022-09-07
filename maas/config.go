@@ -1,7 +1,7 @@
 package maas
 
 import (
-	"github.com/ionutbalutoiu/gomaasclient/client"
+	"github.com/maas/gomaasclient/client"
 )
 
 type Config struct {
