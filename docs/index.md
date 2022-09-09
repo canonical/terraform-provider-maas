@@ -5,8 +5,6 @@ description: |-
   
 ---
 <!-- "MAAS Terraform provider reference" -->
-If you wish to use MAAS with [Terraform](https://www.terraform.io/), there is a [provider avaiable](https://github.com/maas/terraform-provider-maas), supplied by a third party.  This article provides reference information about the data sources and resources available through the provider.  It does not attempt to explain the mechanics or usage of Terraform or offer any tutorial information related to this MAAS Terraform provider.
-
 <a href="#heading--what-is-this"><h1 id="heading--what-is-this">The MAAS Terraform provider</h1></a>
 
 The MAAS provider is a Terraform provider that allows you to manage MAAS resources using the Terraform (CRUD) tool. This provider can be used to manage many aspects of a MAAS environment, including networking, users, machines, and VM hosts.
