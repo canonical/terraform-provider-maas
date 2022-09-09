@@ -80,7 +80,7 @@ Optional:
 
 Read-Only:
 
-- `path` (String)
+- `path` (String) The path of the partition.
 
 ## Import
 
