@@ -121,11 +121,10 @@ func resourceMaasBlockDevice() *schema.Resource {
 							Optional:    true,
 							Description: "The options used for the partition mount.",
 						},
-						// TODO: this field is missing from the docs
 						"path": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "",
+							Description: "The path of the partition.",
 						},
 					},
 				},
