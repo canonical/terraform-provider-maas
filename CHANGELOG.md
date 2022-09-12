@@ -1,8 +1,18 @@
 ## 1.0.1 (Unreleased)
 
+NEW:
+
+* Add release process guide 
+* Add GitHub Actions workflow for releasing
+* Add Dependabot configuration
+
 IMPROVEMENTS:
 
-* Updates documentation structure to use terraform-plugin-docs tool
+* Update documentation and documentation structure to use terraform-plugin-docs tool
+* Refactor API client references to use the maas repo
+* Update dependencies
+* Update Go version to 1.19
+
 
 ## 1.0.0 (Jul 21, 2021)
 
