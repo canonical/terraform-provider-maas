@@ -8,12 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasNetworkInterfaceLink() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage network configuration on a network interface.",
 		CreateContext: resourceNetworkInterfaceLinkCreate,
 		ReadContext:   resourceNetworkInterfaceLinkRead,
 		UpdateContext: resourceNetworkInterfaceLinkUpdate,
@@ -21,19 +22,22 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"machine": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the network interface.",
 			},
 			"network_interface": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (MAC address, name, or ID) of the network interface.",
 			},
 			"subnet": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (CIDR or ID) of the subnet to be connected.",
 			},
 			"mode": {
 				Type:             schema.TypeString,
@@ -41,11 +45,13 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 				ForceNew:         true,
 				Default:          "AUTO",
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"AUTO", "DHCP", "STATIC", "LINK_UP"}, false)),
+				Description:      "Connection mode to subnet. It defaults to `AUTO`. Valid options are:\n\t* `AUTO` - Random static IP address from the subnet.\n\t* `DHCP` - IP address from the DHCP on the given subnet.\n\t* `STATIC` - Use `ip_address` as static IP address.\n\t* `LINK_UP` - Bring the interface up only on the given subnet. No IP address will be assigned.",
 			},
 			"default_gateway": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Boolean value. When enabled, it sets the subnet gateway IP address as the default gateway for the machine the interface belongs to. This option can only be used with the `AUTO` and `STATIC` modes. Defaults to `false`.",
 			},
 			"ip_address": {
 				Type:             schema.TypeString,
@@ -53,6 +59,7 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 				ForceNew:         true,
 				Computed:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "Valid IP address (from the given subnet) to be configured on the network interface. Only used when `mode` is set to `STATIC`.",
 			},
 		},
 	}

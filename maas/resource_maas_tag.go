@@ -6,12 +6,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasTag() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage a MAAS tag.",
 		CreateContext: resourceTagCreate,
 		ReadContext:   resourceTagRead,
 		UpdateContext: resourceTagUpdate,
@@ -45,13 +46,15 @@ func resourceMaasTag() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The new tag name. Because the name will be used in urls, it should be short.",
 			},
 			"machines": {
-				Type:     schema.TypeSet,
-				Optional: true,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},

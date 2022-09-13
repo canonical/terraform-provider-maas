@@ -8,12 +8,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage a physical network interface from an existing MAAS machine.",
 		CreateContext: resourceNetworkInterfacePhysicalCreate,
 		ReadContext:   resourceNetworkInterfacePhysicalRead,
 		UpdateContext: resourceNetworkInterfacePhysicalUpdate,
@@ -48,23 +49,27 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"machine": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the physical network interface.",
 			},
 			"mac_address": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The physical network interface MAC address.",
 			},
 			"vlan": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "VLAN the physical network interface is connected to. Defaults to `untagged`.",
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The physical network interface name. This argument is computed if it's not set.",
 			},
 			"tags": {
 				Type:     schema.TypeSet,
@@ -73,11 +78,13 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "A set of tag names to be assigned to the physical network interface. This argument is computed if it's not set.",
 			},
 			"mtu": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+				Description: "The MTU of the physical network interface. This argument is computed if it's not set.",
 			},
 		},
 	}

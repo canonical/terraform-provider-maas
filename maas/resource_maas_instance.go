@@ -7,12 +7,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasInstance() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to deploy and release machines already configured in MAAS, based on the specified parameters. If no parameters are given, a random machine will be allocated and deployed using the defaults.\n\n**NOTE:** The MAAS provider currently provides both standalone resources and in-line resources for network interfaces. You cannot use in-line network interfaces in conjunction with any standalone network interfaces resources. Doing so will cause conflicts and will overwrite network configs.",
 		CreateContext: resourceInstanceCreate,
 		ReadContext:   resourceInstanceRead,
 		DeleteContext: resourceInstanceDelete,
@@ -33,37 +34,44 @@ func resourceMaasInstance() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"allocate_params": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				ForceNew: true,
-				MaxItems: 1,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				ForceNew:    true,
+				MaxItems:    1,
+				Description: "Nested argument with the constraints used to machine allocation. Defined below.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"min_cpu_count": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  0,
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     0,
+							Description: "The minimum number of cores used to allocate the MAAS machine.",
 						},
 						"min_memory": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  0,
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     0,
+							Description: "The minimum RAM memory size (in MB) used to allocate the MAAS machine.",
 						},
 						"hostname": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The hostname of the MAAS machine to be allocated.",
 						},
 						"zone": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The zone name of the MAAS machine to be allocated.",
 						},
 						"pool": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The pool name of the MAAS machine to be allocated.",
 						},
 						"tags": {
-							Type:     schema.TypeSet,
-							Optional: true,
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Description: "A set of tag names that must be assigned on the MAAS machine to be allocated.",
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
@@ -72,83 +80,99 @@ func resourceMaasInstance() *schema.Resource {
 				},
 			},
 			"deploy_params": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				ForceNew: true,
-				MaxItems: 1,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				ForceNew:    true,
+				MaxItems:    1,
+				Description: "Nested argument with the config used to deploy the allocated machine. Defined below.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"distro_series": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The distro series used to deploy the allocated MAAS machine. If it's not given, the MAAS server default value is used.",
 						},
 						"hwe_kernel": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Hardware enablement kernel to use with the image. Only used when deploying Ubuntu.",
 						},
 						"user_data": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Cloud-init user data script that gets run on the machine once it has deployed. A good practice is to set this with `file(\"/tmp/user-data.txt\")`, where `/tmp/user-data.txt` is a cloud-init script.",
 						},
 					},
 				},
 			},
 			"network_interfaces": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "Specifies a network interface configuration done before the machine is deployed. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The name of the network interface to be configured on the allocated machine.",
 						},
 						"subnet_cidr": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "An existing subnet CIDR used to configure the network interface. Unless `ip_address` is defined, a free IP address is allocated from the subnet.",
 						},
 						"ip_address": {
 							Type:             schema.TypeString,
 							Optional:         true,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+							Description:      "Static IP address to be configured on the network interface. If this is set, the `subnet_cidr` is required.\n\n**NOTE:** If both `subnet_cidr` and `ip_address` are not defined, the interface will not be configured on the allocated machine.",
 						},
 					},
 				},
 			},
 			"fqdn": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The deployed MAAS machine FQDN.",
 			},
 			"hostname": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The deployed MAAS machine hostname.",
 			},
 			"zone": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The deployed MAAS machine zone name.",
 			},
 			"pool": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The deployed MAAS machine pool name.",
 			},
 			"tags": {
-				Type:     schema.TypeSet,
-				Computed: true,
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Description: "A set of tag names associated to the deployed MAAS machine.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 			},
 			"cpu_count": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The number of CPU cores of the deployed MAAS machine.",
 			},
 			"memory": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The RAM memory size (in GiB) of the deployed MAAS machine.",
 			},
 			"ip_addresses": {
-				Type:     schema.TypeSet,
-				Computed: true,
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Description: "A set of IP addressed assigned to the deployed MAAS machine.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
