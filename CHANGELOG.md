@@ -11,7 +11,7 @@ IMPROVEMENTS:
 * Update documentation and documentation structure to use terraform-plugin-docs tool
 * Refactor API client references to use the maas repo
 * Update dependencies
-* Update Go version to 1.19
+* Update Go version to 1.18
 
 
 ## 1.0.0 (Jul 21, 2021)
