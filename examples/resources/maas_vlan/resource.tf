@@ -4,3 +4,4 @@ resource "maas_vlan" "tf_vlan" {
   name = "tf-vlan14"
   space = maas_space.tf_space.name
 }
+
