@@ -9,8 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 var (
@@ -19,6 +19,7 @@ var (
 
 func resourceMaasDnsRecord() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS DNS domain records.",
 		CreateContext: resourceDnsRecordCreate,
 		ReadContext:   resourceDnsRecordRead,
 		UpdateContext: resourceDnsRecordUpdate,
@@ -78,30 +79,36 @@ func resourceMaasDnsRecord() *schema.Resource {
 				Required:         true,
 				ForceNew:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validDnsRecordTypes, false)),
+				Description:      "The DNS record type. Valid options are: `A/AAAA`, `CNAME`, `MX`, `NS`, `SRV`, `SSHFP`, `TXT`.",
 			},
 			"data": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The data set for the new DNS record.",
 			},
 			"name": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"domain"},
 				ExactlyOneOf: []string{"name", "fqdn"},
+				Description:  "The new DNS record resource name. Used in conjunction with `domain`. It conflicts with `fqdn` argument.",
 			},
 			"domain": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"name"},
+				Description:  "The domain of the new DNS record. Used in conjunction with `name`. It conflicts with `fqdn` argument.",
 			},
 			"fqdn": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ExactlyOneOf: []string{"name", "fqdn"},
+				Description:  "The fully qualified domain name of the new DNS record. This contains the name and the domain of the new DNS record. It conflicts with `name` and `domain` arguments.",
 			},
 			"ttl": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The TTL of the new DNS record.",
 			},
 		},
 	}

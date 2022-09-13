@@ -7,12 +7,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasFabric() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network fabrics.",
 		CreateContext: resourceFabricCreate,
 		ReadContext:   resourceFabricRead,
 		UpdateContext: resourceFabricUpdate,
@@ -34,8 +35,9 @@ func resourceMaasFabric() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The fabric name.",
 			},
 		},
 	}

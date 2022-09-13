@@ -6,17 +6,19 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/client"
+	"github.com/maas/gomaasclient/client"
 )
 
 func dataSourceMaasFabric() *schema.Resource {
 	return &schema.Resource{
+		Description: "Provides details about an existing MAAS network fabric.",
 		ReadContext: dataSourceFabricRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The fabric name.",
 			},
 		},
 	}

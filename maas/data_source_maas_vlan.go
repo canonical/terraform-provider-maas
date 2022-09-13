@@ -6,37 +6,44 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/client"
+	"github.com/maas/gomaasclient/client"
 )
 
 func dataSourceMaasVlan() *schema.Resource {
 	return &schema.Resource{
+		Description: "Provides details about an existing MAAS VLAN.",
 		ReadContext: dataSourceVlanRead,
 
 		Schema: map[string]*schema.Schema{
 			"fabric": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The fabric identifier (ID or name) for the VLAN.",
 			},
 			"vlan": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The VLAN identifier (ID or traffic segregation ID).",
 			},
 			"mtu": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The MTU used on the VLAN.",
 			},
 			"dhcp_on": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Boolean value indicating if DHCP is enabled on the VLAN.",
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The VLAN name.",
 			},
 			"space": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The VLAN space.",
 			},
 		},
 	}

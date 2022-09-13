@@ -9,12 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasSubnetIPRange() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network subnets IP ranges.",
 		CreateContext: resourceSubnetIPRangeCreate,
 		ReadContext:   resourceSubnetIPRangeRead,
 		UpdateContext: resourceSubnetIPRangeUpdate,
@@ -59,28 +60,33 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"subnet": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The subnet identifier (ID or CIDR) for the new IP range.",
 			},
 			"type": {
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"dynamic", "reserved"}, false)),
+				Description:      "The IP range type. Valid options are: `dynamic`, `reserved`.",
 			},
 			"start_ip": {
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "The start IP for the new IP range (inclusive).",
 			},
 			"end_ip": {
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "The end IP for the new IP range (inclusive).",
 			},
 			"comment": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "A description of this range. This argument is computed if it's not set.",
 			},
 		},
 	}

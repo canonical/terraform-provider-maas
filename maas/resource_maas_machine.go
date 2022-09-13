@@ -10,12 +10,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasMachine() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS machines.",
 		CreateContext: resourceMachineCreate,
 		ReadContext:   resourceMachineRead,
 		UpdateContext: resourceMachineUpdate,
@@ -47,8 +48,9 @@ func resourceMaasMachine() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"power_type": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "A power management type (e.g. `ipmi`).",
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(
 					[]string{
 						"amt", "apc", "dli", "eaton", "hmc", "ipmi", "manual", "moonshot",
@@ -58,46 +60,54 @@ func resourceMaasMachine() *schema.Resource {
 					false)),
 			},
 			"power_parameters": {
-				Type:      schema.TypeMap,
-				Required:  true,
-				Sensitive: true,
+				Type:        schema.TypeMap,
+				Required:    true,
+				Sensitive:   true,
+				Description: "A map with the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 			},
 			"pxe_mac_address": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The MAC address of the machine's PXE boot NIC.",
 			},
 			"architecture": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "amd64/generic",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "amd64/generic",
+				Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
 			},
 			"min_hwe_kernel": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.",
 			},
 			"hostname": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The machine hostname. This is computed if it's not set.",
 			},
 			"domain": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The domain of the machine. This is computed if it's not set.",
 			},
 			"zone": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The zone of the machine. This is computed if it's not set.",
 			},
 			"pool": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The resource pool of the machine. This is computed if it's not set.",
 			},
 		},
 	}

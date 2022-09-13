@@ -7,12 +7,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/ionutbalutoiu/gomaasclient/client"
-	"github.com/ionutbalutoiu/gomaasclient/entity"
+	"github.com/maas/gomaasclient/client"
+	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasSpace() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS network spaces.",
 		CreateContext: resourceSpaceCreate,
 		ReadContext:   resourceSpaceRead,
 		UpdateContext: resourceSpaceUpdate,
@@ -37,8 +38,9 @@ func resourceMaasSpace() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the new space.",
 			},
 		},
 	}
