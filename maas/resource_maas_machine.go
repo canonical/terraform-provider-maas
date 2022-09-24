@@ -110,6 +110,9 @@ func resourceMaasMachine() *schema.Resource {
 				Description: "The resource pool of the machine. This is computed if it's not set.",
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(20 * time.Minute),
+		},
 	}
 }
 
