@@ -1,3 +1,10 @@
+## 1.0.1.1
+
+IMPROVEMENTS:
+
+* Modify Resource `maas_machine` with timeouts support
+* Modify Resource `maas_instance` with timeouts support
+
 ## 1.0.1 (Unreleased)
 
 NEW:
