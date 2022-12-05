@@ -79,3 +79,22 @@ jobs:
           TF_ACC: "1"
         run: go test -v -cover ./maas/
         timeout-minutes: 10     
+
+  check_e2e_test_status:
+    name: Check End to End Tests Status
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-mines: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        terraform:
+          - '1.0.*'
+          - '1.1.*'
+          - '1.2.*'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install apt Dependencies
+        run: apt install -y curl jq
+      - name: Check Status of The End to End Tests
+        run: ./scripts/check-e2e-tests.sh
