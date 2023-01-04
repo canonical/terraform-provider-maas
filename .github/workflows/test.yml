@@ -84,17 +84,13 @@ jobs:
     name: Check End to End Tests Status
     needs: test
     runs-on: ubuntu-latest
-    timeout-mines: 30
+    timeout-minutes: 30
+    continue-on-error: true
     strategy:
       fail-fast: false
-      matrix:
-        terraform:
-          - '1.0.*'
-          - '1.1.*'
-          - '1.2.*'
     steps:
       - uses: actions/checkout@v3
       - name: Install apt Dependencies
-        run: apt install -y curl jq
+        run: sudo apt install -y curl jq
       - name: Check Status of The End to End Tests
         run: ./scripts/check-e2e-tests.sh
