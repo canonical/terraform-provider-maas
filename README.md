@@ -66,4 +66,9 @@ The [docs](/docs) section contains details about each supported Terraform resour
 10. Copy and paste the relevant CHANGELOG.md entries to the release description
 11. Click `Publish release`
 12. The new version should be available on the [Releases](https://github.com/maas/terraform-provider-maas/releases) page
-   
+
+## Additional Info
+
+### Testing
+
+Unit tests run with every pull request and merge to master. The end to end tests run on a nightly basis against a hosted MAAS deployment, results can be found [here](https://raw.githubusercontent.com/maas/maas-terraform-e2e-tests/main/results.json?token=GHSAT0AAAAAAB3FX6R5C67Q4LH7ADOO5O3IY4ODCNA) and are checked on each PR, with a warning if failed.   
