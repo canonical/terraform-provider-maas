@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.21.0
-	github.com/maas/gomaasclient v0.0.0-20220831151024-14c6f5604abb
+	github.com/maas/gomaasclient v0.0.0-20230221172003-f5121e22cda9
 	github.com/stretchr/testify v1.8.0
 )
 
@@ -46,12 +46,12 @@ require (
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
-	github.com/juju/collections v0.0.0-20200605021417-0d0ec82b7271 // indirect
-	github.com/juju/errors v0.0.0-20200330140219-3fe23663418f // indirect
-	github.com/juju/gomaasapi v0.0.0-20200602032615-aa561369c767 // indirect
-	github.com/juju/loggo v0.0.0-20200526014432-9ce3a2e09b5e // indirect
-	github.com/juju/mgo/v2 v2.0.0-20210302023703-70d5d206e208 // indirect
-	github.com/juju/schema v1.0.0 // indirect
+	github.com/juju/collections v0.0.0-20220203020748-febd7cad8a7a // indirect
+	github.com/juju/errors v0.0.0-20220203013757-bd733f3c86b9 // indirect
+	github.com/juju/gomaasapi/v2 v2.0.1 // indirect
+	github.com/juju/loggo v0.0.0-20210728185423-eebad3a902c4 // indirect
+	github.com/juju/mgo/v2 v2.0.0-20220111072304-f200228f1090 // indirect
+	github.com/juju/schema v1.0.1-0.20190814234152-1f8aaeef0989 // indirect
 	github.com/juju/version v0.0.0-20210303051006-2015802527a8 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
@@ -73,7 +73,7 @@ require (
 	github.com/zclconf/go-cty v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/mod v0.3.0 // indirect
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
+	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
 	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.0.0-20201028111035-eafbe7b904eb // indirect
@@ -82,6 +82,5 @@ require (
 	google.golang.org/genproto v0.0.0-20200904004341-0bd0a958aa1d // indirect
 	google.golang.org/grpc v1.48.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
-	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
