@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -177,6 +178,9 @@ func resourceMaasInstance() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(20 * time.Minute),
 		},
 	}
 }
