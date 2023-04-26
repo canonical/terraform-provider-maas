@@ -103,6 +103,11 @@ func resourceMaasInstance() *schema.Resource {
 							Optional:    true,
 							Description: "Cloud-init user data script that gets run on the machine once it has deployed. A good practice is to set this with `file(\"/tmp/user-data.txt\")`, where `/tmp/user-data.txt` is a cloud-init script.",
 						},
+						"enable_hw_sync": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Periodically sync hardware",
+						},
 					},
 				},
 			},
