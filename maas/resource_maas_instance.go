@@ -103,6 +103,11 @@ func resourceMaasInstance() *schema.Resource {
 							Optional:    true,
 							Description: "Cloud-init user data script that gets run on the machine once it has deployed. A good practice is to set this with `file(\"/tmp/user-data.txt\")`, where `/tmp/user-data.txt` is a cloud-init script.",
 						},
+						"enable_hw_sync": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Periodically sync hardware",
+						},
 					},
 				},
 			},
@@ -291,6 +296,7 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 	deployParams := p.(*schema.Set).List()[0].(map[string]interface{})
 	return &entity.MachineDeployParams{
 		DistroSeries: deployParams["distro_series"].(string),
+		EnableHwSync: deployParams["enable_hw_sync"].(bool),
 		HWEKernel:    deployParams["hwe_kernel"].(string),
 		UserData:     base64Encode([]byte(deployParams["user_data"].(string))),
 	}
