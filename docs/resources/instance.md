@@ -42,6 +42,7 @@ resource "maas_instance" "kvm" {
 - `allocate_params` (Block Set, Max: 1) Nested argument with the constraints used to machine allocation. Defined below. (see [below for nested schema](#nestedblock--allocate_params))
 - `deploy_params` (Block Set, Max: 1) Nested argument with the config used to deploy the allocated machine. Defined below. (see [below for nested schema](#nestedblock--deploy_params))
 - `network_interfaces` (Block Set) Specifies a network interface configuration done before the machine is deployed. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). (see [below for nested schema](#nestedblock--network_interfaces))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
@@ -74,6 +75,7 @@ Optional:
 Optional:
 
 - `distro_series` (String) The distro series used to deploy the allocated MAAS machine. If it's not given, the MAAS server default value is used.
+- `enable_hw_sync` (Boolean) Periodically sync hardware
 - `hwe_kernel` (String) Hardware enablement kernel to use with the image. Only used when deploying Ubuntu.
 - `user_data` (String) Cloud-init user data script that gets run on the machine once it has deployed. A good practice is to set this with `file("/tmp/user-data.txt")`, where `/tmp/user-data.txt` is a cloud-init script.
 
@@ -91,6 +93,14 @@ Optional:
 
 **NOTE:** If both `subnet_cidr` and `ip_address` are not defined, the interface will not be configured on the allocated machine.
 - `subnet_cidr` (String) An existing subnet CIDR used to configure the network interface. Unless `ip_address` is defined, a free IP address is allocated from the subnet.
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `create` (String)
 
 ## Import
 

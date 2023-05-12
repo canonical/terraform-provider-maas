@@ -39,11 +39,19 @@ resource "maas_machine" "virsh_vm1" {
 - `hostname` (String) The machine hostname. This is computed if it's not set.
 - `min_hwe_kernel` (String) The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.
 - `pool` (String) The resource pool of the machine. This is computed if it's not set.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `zone` (String) The zone of the machine. This is computed if it's not set.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `create` (String)
 
 ## Import
 
