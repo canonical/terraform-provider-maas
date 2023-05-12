@@ -1,11 +1,11 @@
-## 1.0.1.1
+## 1.2.0 (May 12, 2023)
 
-IMPROVEMENTS:
+NEW:
 
-* Modify Resource `maas_machine` with timeouts support
-* Modify Resource `maas_instance` with timeouts support
+* Add `enable_hw_sync` to `deploy_params` of `maas_instance` resource 
 
-## 1.0.1 (Unreleased)
+
+## 1.1.0 (Mar 10, 2023)
 
 NEW:
 
@@ -17,6 +17,8 @@ IMPROVEMENTS:
 
 * Update documentation and documentation structure to use terraform-plugin-docs tool
 * Refactor API client references to use the maas repo
+* Modify Resource `maas_machine` with timeouts support
+* Modify Resource `maas_instance` with timeouts support
 * Update dependencies
 * Update Go version to 1.18
 
