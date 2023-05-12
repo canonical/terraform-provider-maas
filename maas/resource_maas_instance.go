@@ -279,12 +279,13 @@ func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocatePa
 	}
 	allocateParams := p.(*schema.Set).List()[0].(map[string]interface{})
 	return &entity.MachineAllocateParams{
-		CPUCount: allocateParams["min_cpu_count"].(int),
-		Mem:      allocateParams["min_memory"].(int),
-		Name:     allocateParams["hostname"].(string),
-		Zone:     allocateParams["zone"].(string),
-		Pool:     allocateParams["pool"].(string),
-		Tags:     convertToStringSlice(allocateParams["tags"].(*schema.Set).List()),
+		CPUCount:     allocateParams["min_cpu_count"].(int),
+		EnableHwSync: allocateParams["enable_hw_sync"].(bool),
+		Mem:          allocateParams["min_memory"].(int),
+		Name:         allocateParams["hostname"].(string),
+		Zone:         allocateParams["zone"].(string),
+		Pool:         allocateParams["pool"].(string),
+		Tags:         convertToStringSlice(allocateParams["tags"].(*schema.Set).List()),
 	}
 }
 
@@ -296,6 +297,7 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 	deployParams := p.(*schema.Set).List()[0].(map[string]interface{})
 	return &entity.MachineDeployParams{
 		DistroSeries: deployParams["distro_series"].(string),
+		EnableHwSync: deployParams["enable_hw_sync"].(bool),
 		HWEKernel:    deployParams["hwe_kernel"].(string),
 		UserData:     base64Encode([]byte(deployParams["user_data"].(string))),
 	}
