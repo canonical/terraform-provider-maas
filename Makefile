@@ -2,6 +2,7 @@ TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=registry.terraform.io
 NAMESPACE=maas
 NAME=maas
+PROVIDER_NAME=terraform-provider-${NAME}
 BINARY=terraform-provider-${NAME}
 VERSION=1.0.1
 
@@ -43,7 +44,7 @@ testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m -parallel=$(TEST_PARALLELISM)
 
 generate_docs: $(BIN)/tfplugindocs
-	$(BIN)/tfplugindocs generate --provider-name $(NAME)
+	$(BIN)/tfplugindocs generate --provider-name $(PROVIDER_NAME)
 
 validate_docs: $(BIN)/tfplugindocs
 	$(BIN)/tfplugindocs validate
