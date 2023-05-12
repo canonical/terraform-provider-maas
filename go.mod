@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.21.0
-	github.com/maas/gomaasclient v0.0.0-20230221172003-f5121e22cda9
+	github.com/maas/gomaasclient v0.0.0-20230512141257-d73401ee0dc8
 	github.com/stretchr/testify v1.8.0
 )
 
