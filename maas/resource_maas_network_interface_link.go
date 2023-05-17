@@ -81,14 +81,22 @@ func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
+        //find netlink
+	for _, link := range networkInterface.Links {
+		if link.Subnet.ID == subnet.ID {
+			// Save the resource id
+			d.SetId(fmt.Sprintf("%v", link.ID))
+			return resourceNetworkInterfaceLinkUpdate(ctx, d, m)
+		}
+	}
+
+	//create if not found
 	link, err := createNetworkInterfaceLink(client, machine.SystemID, networkInterface.ID, getNetworkInterfaceLinkParams(d, subnet.ID))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	// Save the resource id
 	d.SetId(fmt.Sprintf("%v", link.ID))
-
 	return resourceNetworkInterfaceLinkUpdate(ctx, d, m)
 }
 
@@ -189,10 +197,11 @@ func getNetworkInterfaceLinkParams(d *schema.ResourceData, subnetID int) *entity
 
 func createNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterfaceID int, params *entity.NetworkInterfaceLinkParams) (*entity.NetworkInterfaceLink, error) {
 	// Clear existing links
-	_, err := client.NetworkInterface.Disconnect(machineSystemID, networkInterfaceID)
+/*	_, err := client.NetworkInterface.Disconnect(machineSystemID, networkInterfaceID)
 	if err != nil {
 		return nil, err
 	}
+*/
 	// Create new link
 	networkInterface, err := client.NetworkInterface.LinkSubnet(machineSystemID, networkInterfaceID, params)
 	if err != nil {
