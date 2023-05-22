@@ -205,7 +205,7 @@ func findNetworkInterfaceVlan(client *client.Client, machineSystemID string, ide
 		if n.Type != "vlan" {
 			continue
 		}
-		if n.Parents[0] == strings.Split(identifier,".")[0] && fmt.Sprintf("%v", n.VLAN.ID) == strings.Split(identifier,".")[1] || fmt.Sprintf("%v", n.ID) == identifier {
+		if n.Parents[0] == strings.Split(identifier,".")[0] && fmt.Sprintf("%v", n.VLAN.ID) == strings.Split(identifier,".")[1] || fmt.Sprintf("%v", n.ID) == identifier || n.Name == identifier {
 			return &n, nil
 		}
 	}
