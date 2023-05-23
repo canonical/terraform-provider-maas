@@ -39,6 +39,7 @@ func Provider() *schema.Provider {
 			"maas_network_interface_physical": resourceMaasNetworkInterfacePhysical(),
 			"maas_network_interface_bridge":   resourceMaasNetworkInterfaceBridge(),
 			"maas_network_interface_vlan":     resourceMaasNetworkInterfaceVlan(),
+			"maas_network_interface_bond":     resourceMaasNetworkInterfaceBond(),
 			"maas_network_interface_link":     resourceMaasNetworkInterfaceLink(),
 			"maas_fabric":                     resourceMaasFabric(),
 			"maas_vlan":                       resourceMaasVlan(),
