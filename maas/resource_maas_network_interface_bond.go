@@ -53,11 +53,11 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 					"mac_address":            n.MACAddress,
 					"mtu":                    n.EffectiveMTU,
 					"bond_mode":              n.BondMode,
-					"bond_x_mit_hash_policy": n.BondXMitHashPolicy,
-					"bond_mii_mon":           n.BondMIIMon,
-					"bond_down_delay":        n.BondDownDelay,
-					"bond_up_delay":          n.BondUpDelay,
-					"bond_lacp_rate":         n.BondLACPRate,
+					"bond_xmit_hash_policy":  n.BondXMitHashPolicy,
+					"bond_miimon":           n.BondMIIMon,
+					"bond_downdelay":        n.BondDownDelay,
+					"bond_updelay":          n.BondUpDelay,
+					"bond_lacp_rate":         n.Params.(map[string]interface{})["bond_lacp_rate"],
 					"bond_num_grat_arp":      n.Params.(map[string]interface{})["bond_num_grat_arp"],
 				}
 				if err := setTerraformState(d, tfState); err != nil {
