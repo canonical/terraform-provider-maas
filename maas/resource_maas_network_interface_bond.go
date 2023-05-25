@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-//	"encoding/json"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -45,20 +44,21 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				}
 
 				tfState := map[string]interface{}{
-					"id":                     fmt.Sprintf("%v", n.ID),
-					"machine":                machine.SystemID,
-					"parents":                []int{np1.ID,np2.ID},
-					"vlan":                   fmt.Sprintf("%v", n.VLAN.ID),
-					"name":                   n.Name,
-					"mac_address":            n.MACAddress,
-					"mtu":                    n.EffectiveMTU,
-					"bond_mode":              n.BondMode,
-					"bond_xmit_hash_policy":  n.BondXMitHashPolicy,
+					"id":                    fmt.Sprintf("%v", n.ID),
+					"machine":               machine.SystemID,
+					"parents":               []int{np1.ID, np2.ID},
+					"vlan":                  fmt.Sprintf("%v", n.VLAN.ID),
+					"name":                  n.Name,
+					"mac_address":           n.MACAddress,
+					"mtu":                   n.EffectiveMTU,
+					"bond_mode":             n.BondMode,
+					"bond_xmit_hash_policy": n.BondXMitHashPolicy,
 					"bond_miimon":           n.BondMIIMon,
 					"bond_downdelay":        n.BondDownDelay,
 					"bond_updelay":          n.BondUpDelay,
-					"bond_lacp_rate":         n.Params.(map[string]interface{})["bond_lacp_rate"],
-					"bond_num_grat_arp":      n.Params.(map[string]interface{})["bond_num_grat_arp"],
+					"bond_lacp_rate":        n.Params.(map[string]interface{})["bond_lacp_rate"],
+					"bond_num_grat_arp":     n.Params.(map[string]interface{})["bond_num_grat_arp"],
+					"tags":                  n.Tags,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -90,9 +90,9 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				Type:        schema.TypeList,
 				Required:    true,
 				Description: "Parent interface ids that make this bond.",
-                                Elem: &schema.Schema{
-                                        Type: schema.TypeInt,
-			        },
+				Elem: &schema.Schema{
+					Type: schema.TypeInt,
+				},
 			},
 			"mtu": {
 				Type:        schema.TypeInt,
@@ -147,9 +147,19 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 			},
 			"mac_address": {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
+				Optional:    false,
+				Computed:    false,
+				Required:    true,
 				Description: "MAC address of the interface",
+			},
+			"tags": {
+				Type:        schema.TypeList,
+				Required:    false,
+				Optional:    true,
+				Description: "Tags for the interface.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 		},
 	}
@@ -194,18 +204,19 @@ func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	tfState := map[string]interface{}{
-		"name": networkInterface.Name,
-		"mtu":  networkInterface.EffectiveMTU,
-		"parents":  d.Get("parents"),
-		"bond_mode": networkInterface.Params.(map[string]interface{})["bond_mode"],
+		"name":                  networkInterface.Name,
+		"mtu":                   networkInterface.EffectiveMTU,
+		"parents":               d.Get("parents"),
+		"bond_mode":             networkInterface.Params.(map[string]interface{})["bond_mode"],
 		"bond_xmit_hash_policy": networkInterface.Params.(map[string]interface{})["bond_xmit_hash_policy"],
-		"bond_miimon": networkInterface.Params.(map[string]interface{})["bond_miimon"],
-		"bond_updelay": networkInterface.BondUpDelay,
-		"bond_downdelay": networkInterface.BondDownDelay,
-		"bond_lacp_rate": networkInterface.Params.(map[string]interface{})["bond_lacp_rate"],
-		"bond_num_grat_arp": networkInterface.Params.(map[string]interface{})["bond_num_grat_arp"],
-		"mac_address": networkInterface.MACAddress,
-		"vlan": fmt.Sprintf("%v", networkInterface.VLAN.ID),
+		"bond_miimon":           networkInterface.Params.(map[string]interface{})["bond_miimon"],
+		"bond_updelay":          networkInterface.BondUpDelay,
+		"bond_downdelay":        networkInterface.BondDownDelay,
+		"bond_lacp_rate":        networkInterface.Params.(map[string]interface{})["bond_lacp_rate"],
+		"bond_num_grat_arp":     networkInterface.Params.(map[string]interface{})["bond_num_grat_arp"],
+		"mac_address":           networkInterface.MACAddress,
+		"vlan":                  fmt.Sprintf("%v", networkInterface.VLAN.ID),
+		"tags":                  networkInterface.Tags,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -252,24 +263,29 @@ func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceD
 
 func getNetworkInterfaceBondParams(d *schema.ResourceData) *entity.NetworkInterfaceBondParams {
 	parents := make([]int, 0, 2)
-	for _,v := range d.Get("parents").([]interface{}){
-            parents = append(parents, v.(int))
+	for _, v := range d.Get("parents").([]interface{}) {
+		parents = append(parents, v.(int))
+	}
+	tags := make([]string, 0, len(d.Get("tags").([]interface{})))
+	for _, v := range d.Get("tags").([]interface{}) {
+		tags = append(tags, v.(string))
 	}
 	return &entity.NetworkInterfaceBondParams{
 		NetworkInterfacePhysicalParams: entity.NetworkInterfacePhysicalParams{
-			Name:           d.Get("name").(string),
-			VLAN:           d.Get("vlan").(string),
-			MACAddress:	d.Get("mac_address").(string),
-			MTU:		d.Get("mtu").(int),
+			Name:       d.Get("name").(string),
+			VLAN:       d.Get("vlan").(string),
+			MACAddress: d.Get("mac_address").(string),
+			MTU:        d.Get("mtu").(int),
+			Tags:       strings.Join(tags, ","),
 		},
-		Parents:		  parents,
-		BondMode:                 d.Get("bond_mode").(string),
-		BondMiimon:               d.Get("bond_miimon").(int),
-		BondDownDelay:            d.Get("bond_downdelay").(int),
-		BondUpDelay:              d.Get("bond_updelay").(int),
-		BondLACPRate:             d.Get("bond_lacp_rate").(string),
-		BondXMitHashPolicy:       d.Get("bond_xmit_hash_policy").(string),
-		BondNumberGratARP:        d.Get("bond_num_grat_arp").(int),
+		Parents:            parents,
+		BondMode:           d.Get("bond_mode").(string),
+		BondMiimon:         d.Get("bond_miimon").(int),
+		BondDownDelay:      d.Get("bond_downdelay").(int),
+		BondUpDelay:        d.Get("bond_updelay").(int),
+		BondLACPRate:       d.Get("bond_lacp_rate").(string),
+		BondXMitHashPolicy: d.Get("bond_xmit_hash_policy").(string),
+		BondNumberGratARP:  d.Get("bond_num_grat_arp").(int),
 	}
 }
 
