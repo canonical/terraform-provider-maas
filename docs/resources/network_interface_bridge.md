@@ -15,10 +15,10 @@ Provides a resource to manage a bridge network interface from an existing MAAS m
 ```
 resource "maas_network_interface_bridge" "br0" {
   machine = maas_machine.testmachine.id
-  parent = maas_network_interface_vlan.vlan1-if.id
+  parent = maas_network_interface_vlan.testmachine-vlan1-if.id
   name = "br0"
   vlan = maas_vlan.vlan1.id
-  mac_address = maas_network_interface_physical.if_1.mac_address
+  mac_address = maas_network_interface_physical.testmachine-if_1.mac_address
   tags = ["test2","test3"]
 }
 ```
