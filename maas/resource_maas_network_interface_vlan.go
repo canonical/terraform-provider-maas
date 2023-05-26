@@ -40,10 +40,12 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 					return nil, err
 				}
 				tfState := map[string]interface{}{
-					"id":          fmt.Sprintf("%v", n.ID),
-					"machine":     machine.SystemID,
-					"parent":      np.ID,
-					"vlan":        fmt.Sprintf("%v", n.VLAN.ID),
+					"id":      fmt.Sprintf("%v", n.ID),
+					"machine": machine.SystemID,
+					"parent":  np.ID,
+					"vlan":    fmt.Sprintf("%v", n.VLAN.ID),
+					"tags":    n.Tags,
+					"name":    n.Name,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -77,13 +79,13 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 				Description: "Parent interface ID for this vlan interface.",
 			},
 			"tags": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "A set of tag names to be assigned to the vlan network interface. This argument is computed if it's not set.",
+				Description: "A list of tag names to be assigned to the vlan network interface. This argument is computed if it's not set.",
 			},
 			"mtu": {
 				Type:        schema.TypeInt,
@@ -102,11 +104,11 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	np, err := getNetworkInterfacePhysical(client, d.Get("machine").(string), fmt.Sprintf("%v",d.Get("parent").(int)))
+	np, err := getNetworkInterfacePhysical(client, d.Get("machine").(string), fmt.Sprintf("%v", d.Get("parent").(int)))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	networkInterface, err := findNetworkInterfaceVlan(client, machine.SystemID, np.Name + "." + d.Get("vlan").(string))
+	networkInterface, err := findNetworkInterfaceVlan(client, machine.SystemID, np.Name+"."+d.Get("vlan").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -138,11 +140,11 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	tfState := map[string]interface{}{
-		"name": networkInterface.Name,
-		"tags": networkInterface.Tags,
-		"mtu":  networkInterface.EffectiveMTU,
-		"parent":  d.Get("parent"),
-		"vlan":  fmt.Sprintf("%v", networkInterface.VLAN.ID),
+		"name":   networkInterface.Name,
+		"tags":   networkInterface.Tags,
+		"mtu":    networkInterface.EffectiveMTU,
+		"parent": d.Get("parent"),
+		"vlan":   fmt.Sprintf("%v", networkInterface.VLAN.ID),
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -189,10 +191,10 @@ func resourceNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceD
 
 func getNetworkInterfaceVlanParams(d *schema.ResourceData) *entity.NetworkInterfaceVLANParams {
 	return &entity.NetworkInterfaceVLANParams{
-		Parent:     d.Get("parent").(int),
-		VLAN:       d.Get("vlan").(string),
-		MTU:        d.Get("mtu").(int),
-	//	Tags:       d.Get("tags")([]string),
+		Parent: d.Get("parent").(int),
+		VLAN:   d.Get("vlan").(string),
+		MTU:    d.Get("mtu").(int),
+		Tags:   []string{strings.Join(convertToStringSlice(d.Get("tags").([]interface{})), ",")},
 	}
 }
 
@@ -205,7 +207,7 @@ func findNetworkInterfaceVlan(client *client.Client, machineSystemID string, ide
 		if n.Type != "vlan" {
 			continue
 		}
-		if n.Parents[0] == strings.Split(identifier,".")[0] && fmt.Sprintf("%v", n.VLAN.ID) == strings.Split(identifier,".")[1] || fmt.Sprintf("%v", n.ID) == identifier || n.Name == identifier {
+		if fmt.Sprintf("%v", n.ID) == identifier || n.Name == identifier {
 			return &n, nil
 		}
 	}

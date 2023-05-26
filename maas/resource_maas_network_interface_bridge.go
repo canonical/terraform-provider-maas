@@ -39,13 +39,13 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 					return nil, err
 				}
 				if np == nil {
-                                        np, err = findNetworkInterfaceVlan(client, machine.SystemID, n.Parents[0])
-                                        if np == nil {
-					    return nil, fmt.Errorf("Parent interface (%s) not found", n.Parents[0])
-                                        }
-                                        if err != nil {
-                                            return nil, err
-                                }
+					np, err = findNetworkInterfaceVlan(client, machine.SystemID, n.Parents[0])
+					if np == nil {
+						return nil, fmt.Errorf("Parent interface (%s) not found", n.Parents[0])
+					}
+					if err != nil {
+						return nil, err
+					}
 
 				}
 				tfState := map[string]interface{}{
@@ -54,11 +54,12 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 					"parent":      np.ID,
 					"vlan":        fmt.Sprintf("%v", n.VLAN.ID),
 					"name":        n.Name,
-					"mac_address":        n.MACAddress,
-					"mtu"	     : n.EffectiveMTU,
-					"bridge_fd"  : n.BridgeFD,
-					"bridge_stp"  : n.BridgeSTP,
-					"bridge_type" : n.Params.(map[string]interface{})["bridge_type"],
+					"mac_address": n.MACAddress,
+					"mtu":         n.EffectiveMTU,
+					"bridge_fd":   n.BridgeFD,
+					"bridge_stp":  n.BridgeSTP,
+					"bridge_type": n.Params.(map[string]interface{})["bridge_type"],
+					"tags":        n.Tags,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -122,6 +123,15 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 				Computed:    true,
 				Description: "MAC address of the interface",
 			},
+			"tags": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				Description: "Tags for the interface.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 	}
 }
@@ -165,14 +175,15 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 	}
 
 	tfState := map[string]interface{}{
-		"name": networkInterface.Name,
-		"mtu":  networkInterface.EffectiveMTU,
-		"parent":  d.Get("parent"),
+		"name":        networkInterface.Name,
+		"mtu":         networkInterface.EffectiveMTU,
+		"parent":      d.Get("parent"),
 		"bridge_type": d.Get("bridge_type"),
-		"bridge_stp": networkInterface.BridgeSTP,
-		"bridge_fd": networkInterface.BridgeFD,
+		"bridge_stp":  networkInterface.BridgeSTP,
+		"bridge_fd":   networkInterface.BridgeFD,
 		"mac_address": networkInterface.MACAddress,
-		"vlan": fmt.Sprintf("%v", networkInterface.VLAN.ID),
+		"vlan":        fmt.Sprintf("%v", networkInterface.VLAN.ID),
+		"tags":        networkInterface.Tags,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -220,15 +231,16 @@ func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.Resourc
 func getNetworkInterfaceBridgeParams(d *schema.ResourceData) *entity.NetworkInterfaceBridgeParams {
 	return &entity.NetworkInterfaceBridgeParams{
 		NetworkInterfacePhysicalParams: entity.NetworkInterfacePhysicalParams{
-			Name:           d.Get("name").(string),
-			VLAN:           d.Get("vlan").(string),
-			MACAddress:	d.Get("mac_address").(string),
-			MTU:		d.Get("mtu").(int),
+			Name:       d.Get("name").(string),
+			VLAN:       d.Get("vlan").(string),
+			MACAddress: d.Get("mac_address").(string),
+			MTU:        d.Get("mtu").(int),
+			Tags:       strings.Join(convertToStringSlice(d.Get("tags").([]interface{})), ","),
 		},
-		Parent:		  d.Get("parent").(int),
-		Bridgetype:       d.Get("bridge_type").(string),
-		BridgeSTP:       d.Get("bridge_stp").(bool),
-		BridgeFD:       d.Get("bridge_fd").(int),
+		Parent:     d.Get("parent").(int),
+		Bridgetype: d.Get("bridge_type").(string),
+		BridgeSTP:  d.Get("bridge_stp").(bool),
+		BridgeFD:   d.Get("bridge_fd").(int),
 	}
 }
 
