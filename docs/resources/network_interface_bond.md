@@ -15,9 +15,9 @@ Provides a resource to manage a bond network interface from an existing MAAS mac
 ```
 resource "maas_network_interface_bond" "bond0" {
   machine = maas_machine.testmachine.id
-  parents = [maas_network_interface_physical.if_1.id,maas_network_interface_physical.if_2.id]
+  parents = [maas_network_interface_physical.testmachine-if_1.id,maas_network_interface_physical.testmachine-if_2.id]
   vlan = maas_vlan.vlan1.id
-  mac_address = maas_network_interface_physical.if_1.mac_address
+  mac_address = maas_network_interface_physical.testmachine-if_1.mac_address
   name = "bond0"
   tags = ["tag1","tag2","tag3"]
 }
