@@ -89,7 +89,7 @@ func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceD
 	// Save the resource id
 	d.SetId(fmt.Sprintf("%v", link.ID))
 
-	return resourceNetworkInterfaceLinkUpdate(ctx, d, meta)
+	return resourceNetworkInterfaceLinkRead(ctx, d, meta)
 }
 
 func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -188,12 +188,6 @@ func getNetworkInterfaceLinkParams(d *schema.ResourceData, subnetID int) *entity
 }
 
 func createNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterfaceID int, params *entity.NetworkInterfaceLinkParams) (*entity.NetworkInterfaceLink, error) {
-	// Clear existing links
-	_, err := client.NetworkInterface.Disconnect(machineSystemID, networkInterfaceID)
-	if err != nil {
-		return nil, err
-	}
-	// Create new link
 	networkInterface, err := client.NetworkInterface.LinkSubnet(machineSystemID, networkInterfaceID, params)
 	if err != nil {
 		return nil, err
