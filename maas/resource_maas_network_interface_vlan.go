@@ -19,7 +19,9 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 		ReadContext:   resourceMaasNetworkInterfaceVlanRead,
 		UpdateContext: resourceMaasNetworkInterfaceVlanUpdate,
 		DeleteContext: resourceMaasNetworkInterfaceVlanDelete,
-
+		Importer: &schema.ResourceImporter{
+			State: resourceMaasNetworkInterfaceVlanImport,
+		},
 		Schema: map[string]*schema.Schema{
 			"machine": {
 				Type:        schema.TypeString,
@@ -209,4 +211,16 @@ func getNetworkInterfaceVlanUpdateParams(d *schema.ResourceData, parentID int, v
 		MTU:      d.Get("mtu").(int),
 		AcceptRA: d.Get("accept_ra").(bool),
 	}
+}
+
+func resourceMaasNetworkInterfaceVlanImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	idParts := strings.Split(d.Id(), ":")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:VLAN_ID", d.Id())
+	}
+
+	d.Set("machine", idParts[0])
+	d.SetId(idParts[1])
+
+	return []*schema.ResourceData{d}, nil
 }

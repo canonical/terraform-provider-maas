@@ -19,7 +19,9 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 		ReadContext:   resourceMaasNetworkInterfaceBondRead,
 		UpdateContext: resourceMaasNetworkInterfaceBondUpdate,
 		DeleteContext: resourceMaasNetworkInterfaceBondDelete,
-
+		Importer: &schema.ResourceImporter{
+			State: resourceMaasNetworkInterfaceBondImport,
+		},
 		Schema: map[string]*schema.Schema{
 			"machine": {
 				Type:        schema.TypeString,
@@ -302,4 +304,16 @@ func findBondParentsID(client *client.Client, machineSystemID string, parents []
 		result = append(result, networkInterface.ID)
 	}
 	return result, nil
+}
+
+func resourceMaasNetworkInterfaceBondImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	idParts := strings.Split(d.Id(), ":")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BOND_ID", d.Id())
+	}
+
+	d.Set("machine", idParts[0])
+	d.SetId(idParts[1])
+
+	return []*schema.ResourceData{d}, nil
 }

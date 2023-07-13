@@ -19,7 +19,9 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 		ReadContext:   resourceMaasNetworkInterfaceBridgeRead,
 		UpdateContext: resourceMaasNetworkInterfaceBridgeUpdate,
 		DeleteContext: resourceMaasNetworkInterfaceBridgeDelete,
-
+		Importer: &schema.ResourceImporter{
+			State: resourceMaasNetworkInterfaceBridgeImport,
+		},
 		Schema: map[string]*schema.Schema{
 			"machine": {
 				Type:        schema.TypeString,
@@ -245,4 +247,16 @@ func findInterfaceParent(client *client.Client, machineSystemID string, parent s
 	}
 
 	return networkInterface.ID, nil
+}
+
+func resourceMaasNetworkInterfaceBridgeImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	idParts := strings.Split(d.Id(), ":")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BRIDGE_ID", d.Id())
+	}
+
+	d.Set("machine", idParts[0])
+	d.SetId(idParts[1])
+
+	return []*schema.ResourceData{d}, nil
 }
