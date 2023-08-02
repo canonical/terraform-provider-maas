@@ -293,7 +293,7 @@ func getNetworkInterfaceBondUpdateParams(d *schema.ResourceData, parentIDs []int
 func findBondParentsID(client *client.Client, machineSystemID string, parents []interface{}) ([]int, error) {
 	var result []int
 	for _, p := range parents {
-		networkInterface, err := getNetworkInterface(client, machineSystemID, p)
+		networkInterface, err := getNetworkInterface(client, machineSystemID, p.(string))
 		if err != nil {
 			return nil, err
 		}
