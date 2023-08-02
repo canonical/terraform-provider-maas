@@ -98,7 +98,7 @@ func resourceMaasNetworkInterfaceVlanCreate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fmt.Sprintf("%v", networkInterface.ID))
+	d.SetId(strconv.Itoa(networkInterface.ID))
 
 	return resourceMaasNetworkInterfaceVlanRead(ctx, d, m)
 

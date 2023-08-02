@@ -114,7 +114,7 @@ func resourceMaasNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Res
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fmt.Sprintf("%v", networkInterface.ID))
+	d.SetId(strconv.Itoa(networkInterface.ID))
 
 	return resourceMaasNetworkInterfaceBridgeRead(ctx, d, m)
 }
