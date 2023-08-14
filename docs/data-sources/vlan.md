@@ -39,5 +39,3 @@ data "maas_vlan" "vid10" {
 - `mtu` (Number) The MTU used on the VLAN.
 - `name` (String) The VLAN name.
 - `space` (String) The VLAN space.
-
-
