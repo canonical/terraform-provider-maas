@@ -59,5 +59,3 @@ resource "maas_network_interface_link" "virsh_vm1_nic3" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-
