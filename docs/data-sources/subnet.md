@@ -43,5 +43,3 @@ data "maas_subnet" "vid10" {
 	* `1` - Enabled, generate reverse zone.
 	* `2` - RFC2317, extends `1` to create the necessary parent zone with the appropriate CNAME resource records for the network, if the network is small enough to require the support described in RFC2317.
 - `vid` (Number) The subnet VLAN traffic segregation ID.
-
-

@@ -28,5 +28,3 @@ data "maas_fabric" "default" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-
