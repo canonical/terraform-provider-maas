@@ -258,7 +258,7 @@ func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceD
 }
 
 func getNetworkInterfaceBondParams(d *schema.ResourceData) *entity.NetworkInterfaceBondParams {
-	parents := make([]int, 0, 2)
+	parents := make([]int, 0, len(d.Get("parents").([]interface{})))
 	for _, v := range d.Get("parents").([]interface{}) {
 		parents = append(parents, v.(int))
 	}
@@ -312,19 +312,17 @@ func getNetworkInterfaceBond(client *client.Client, machineSystemID string, iden
 	return nil, fmt.Errorf("bond network interface (%s) was not found on machine (%s)", identifier, machineSystemID)
 }
 
-func findBondParentsID(client *client.Client, machineSystemID string, parents []interface{}) ([]int, error) {
+func findBondParentsID(client *client.Client, machineSystemID string, parents []string) ([]int, error) {
 	var result []int
 	for _, p := range parents {
-		if p, ok := p.(string); ok {
-			networkInterface, err := getNetworkInterface(client, machineSystemID, p)
-			if err != nil {
-				return nil, err
-			}
-			if networkInterface.Type != "physical" {
-				continue
-			}
-			result = append(result, networkInterface.ID)
+		networkInterface, err := getNetworkInterface(client, machineSystemID, p)
+		if err != nil {
+			return nil, err
 		}
+		if networkInterface.Type != "physical" {
+			continue
+		}
+		result = append(result, networkInterface.ID)
 	}
 
 	return result, nil
