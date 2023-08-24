@@ -35,22 +35,45 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 					return nil, err
 				}
 				ifParts := strings.Split(idParts[1], ".")
-				np, err := getNetworkInterfacePhysical(client, machine.SystemID, ifParts[0])
-				if err != nil {
-					return nil, err
+				if strings.Contains(ifParts[0], "bond") {
+					np, err := getNetworkInterfaceBond(client, machine.SystemID, ifParts[0])
+					if err != nil {
+						return nil, err
+					}
+
+					tfState := map[string]interface{}{
+						"id":      fmt.Sprintf("%v", n.ID),
+						"machine": machine.SystemID,
+						"parent":  np.ID,
+						"vlan":    fmt.Sprintf("%v", n.VLAN.ID),
+						"tags":    n.Tags,
+						"name":    n.Name,
+					}
+					if err := setTerraformState(d, tfState); err != nil {
+						return nil, err
+					}
+					return []*schema.ResourceData{d}, nil
+				} else {
+					np, err := getNetworkInterfacePhysical(client, machine.SystemID, ifParts[0])
+					if err != nil {
+						return nil, err
+					}
+
+					tfState := map[string]interface{}{
+						"id":      fmt.Sprintf("%v", n.ID),
+						"machine": machine.SystemID,
+						"parent":  np.ID,
+						"vlan":    fmt.Sprintf("%v", n.VLAN.ID),
+						"tags":    n.Tags,
+						"name":    n.Name,
+					}
+					if err := setTerraformState(d, tfState); err != nil {
+						return nil, err
+					}
+					return []*schema.ResourceData{d}, nil
+
 				}
-				tfState := map[string]interface{}{
-					"id":      fmt.Sprintf("%v", n.ID),
-					"machine": machine.SystemID,
-					"parent":  np.ID,
-					"vlan":    fmt.Sprintf("%v", n.VLAN.ID),
-					"tags":    n.Tags,
-					"name":    n.Name,
-				}
-				if err := setTerraformState(d, tfState); err != nil {
-					return nil, err
-				}
-				return []*schema.ResourceData{d}, nil
+
 			},
 		},
 
@@ -104,9 +127,13 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	np, err := getNetworkInterfacePhysical(client, d.Get("machine").(string), fmt.Sprintf("%v", d.Get("parent").(int)))
 	if err != nil {
-		return diag.FromErr(err)
+		np, err = getNetworkInterfaceBond(client, d.Get("machine").(string), fmt.Sprintf("%v", d.Get("parent").(int)))
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 	networkInterface, err := findNetworkInterfaceVlan(client, machine.SystemID, np.Name+"."+d.Get("vlan").(string))
 	if err != nil {
