@@ -34,11 +34,7 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				np1, err := findNetworkInterfacePhysical(client, machine.SystemID, n.Parents[0])
-				if err != nil {
-					return nil, err
-				}
-				np2, err := findNetworkInterfacePhysical(client, machine.SystemID, n.Parents[1])
+				parents, err := findBondParentsID(client, machine.SystemID, n.Parents)
 				if err != nil {
 					return nil, err
 				}
@@ -46,7 +42,7 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				tfState := map[string]interface{}{
 					"id":                    fmt.Sprintf("%v", n.ID),
 					"machine":               machine.SystemID,
-					"parents":               []int{np1.ID, np2.ID},
+					"parents":               parents,
 					"vlan":                  fmt.Sprintf("%v", n.VLAN.ID),
 					"name":                  n.Name,
 					"mac_address":           n.MACAddress,
@@ -314,4 +310,22 @@ func getNetworkInterfaceBond(client *client.Client, machineSystemID string, iden
 		return n, nil
 	}
 	return nil, fmt.Errorf("bond network interface (%s) was not found on machine (%s)", identifier, machineSystemID)
+}
+
+func findBondParentsID(client *client.Client, machineSystemID string, parents []interface{}) ([]int, error) {
+	var result []int
+	for _, p := range parents {
+		if p, ok := p.(string); ok {
+			networkInterface, err := getNetworkInterface(client, machineSystemID, p)
+			if err != nil {
+				return nil, err
+			}
+			if networkInterface.Type != "physical" {
+				continue
+			}
+			result = append(result, networkInterface.ID)
+		}
+	}
+
+	return result, nil
 }
