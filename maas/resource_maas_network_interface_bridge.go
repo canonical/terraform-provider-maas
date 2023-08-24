@@ -153,7 +153,7 @@ func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Resourc
 			return diag.FromErr(err)
 		}
 	}
-	d.SetId(fmt.Sprintf("%v", networkInterface.ID))
+	d.SetId(strconv.Itoa(networkInterface.ID))
 
 	return resourceNetworkInterfaceBridgeUpdate(ctx, d, m)
 }
@@ -253,7 +253,7 @@ func findNetworkInterfaceBridge(client *client.Client, machineSystemID string, i
 		if n.Type != "bridge" {
 			continue
 		}
-		if n.Name == identifier || fmt.Sprintf("%v", n.ID) == identifier {
+		if n.Name == identifier || strconv.Itoa(n.ID) == identifier {
 			return &n, nil
 		}
 	}

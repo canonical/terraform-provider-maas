@@ -85,7 +85,7 @@ func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceD
 	for _, link := range networkInterface.Links {
 		if link.Subnet.ID == subnet.ID {
 			// Save the resource id
-			d.SetId(fmt.Sprintf("%v", link.ID))
+			d.SetId(strconv.Itoa(link.ID))
 			return resourceNetworkInterfaceLinkUpdate(ctx, d, m)
 		}
 	}

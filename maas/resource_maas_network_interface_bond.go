@@ -182,7 +182,7 @@ func resourceNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceD
 			return diag.FromErr(err)
 		}
 	}
-	d.SetId(fmt.Sprintf("%v", networkInterface.ID))
+	d.SetId(strconv.Itoa(networkInterface.ID))
 
 	return resourceNetworkInterfaceBondUpdate(ctx, d, m)
 }
@@ -298,7 +298,7 @@ func findNetworkInterfaceBond(client *client.Client, machineSystemID string, ide
 		if n.Type != "bond" {
 			continue
 		}
-		if n.Name == identifier || fmt.Sprintf("%v", n.ID) == identifier {
+		if n.Name == identifier || strconv.Itoa(n.ID) == identifier {
 			return &n, nil
 		}
 	}
