@@ -283,8 +283,8 @@ github.com/juju/errors v0.0.0-20200330140219-3fe23663418f/go.mod h1:W54LbzXuIE0b
 github.com/juju/errors v0.0.0-20220203013757-bd733f3c86b9 h1:EJHbsNpQyupmMeWTq7inn+5L/WZ7JfzCVPJ+DP9McCQ=
 github.com/juju/errors v0.0.0-20220203013757-bd733f3c86b9/go.mod h1:TRm7EVGA3mQOqSVcBySRY7a9Y1/gyVhh/WTCnc5sD4U=
 github.com/juju/gnuflag v0.0.0-20171113085948-2ce1bb71843d/go.mod h1:2PavIy+JPciBPrBUjwbNvtwB6RQlve+hkpll6QSNmOE=
-github.com/juju/gomaasapi/v2 v2.0.1 h1:rulAepQ48AIdSLlW3Dk6bgdVyppycfap3RlYHCdKfpM=
-github.com/juju/gomaasapi/v2 v2.0.1/go.mod h1:ZsohFbU4xShV1aSQYQ21hR1lKj7naNGY0SPuyelcUmk=
+github.com/juju/gomaasapi/v2 v2.1.0 h1:K9M4OjDVSS7UWjHGvYvdpXJWQE72uyDo4do1czDjlIA=
+github.com/juju/gomaasapi/v2 v2.1.0/go.mod h1:ZsohFbU4xShV1aSQYQ21hR1lKj7naNGY0SPuyelcUmk=
 github.com/juju/httpprof v0.0.0-20141217160036-14bf14c30767/go.mod h1:+MaLYz4PumRkkyHYeXJ2G5g5cIW0sli2bOfpmbaMV/g=
 github.com/juju/loggo v0.0.0-20170605014607-8232ab8918d9/go.mod h1:vgyd7OREkbtVEN/8IXZe5Ooef3LQePvuBm9UWj6ZL8U=
 github.com/juju/loggo v0.0.0-20200526014432-9ce3a2e09b5e/go.mod h1:vgyd7OREkbtVEN/8IXZe5Ooef3LQePvuBm9UWj6ZL8U=
@@ -331,8 +331,8 @@ github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LE
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/lunixbochs/vtclean v0.0.0-20160125035106-4fbf7632a2c6/go.mod h1:pHhQNgMf3btfWnGBVipUOjRYhoOsdGqdm/+2c2E2WMI=
-github.com/maas/gomaasclient v0.0.0-20230512141257-d73401ee0dc8 h1:wf/KOTST4X1GUfxDOFcjz5VfDyexQZFCzhOlsND7a4I=
-github.com/maas/gomaasclient v0.0.0-20230512141257-d73401ee0dc8/go.mod h1:Hk4F7B10Ww4s+TXXqPpHuWD0GjNqGStlkZPANHOO+BA=
+github.com/maas/gomaasclient v0.0.0-20230912053103-eb0ecc7ab134 h1:VNDvAkf+Pak7PHzTEZwC4OrRFyFw3hZdwC929ii3QUo=
+github.com/maas/gomaasclient v0.0.0-20230912053103-eb0ecc7ab134/go.mod h1:5h+4XHQSjnLJodlDLCxiR7m/IlGcQ15bM3Q35uxB4kA=
 github.com/masterzen/azure-sdk-for-go v3.2.0-beta.0.20161014135628-ee4f0065d00c+incompatible/go.mod h1:mf8fjOu33zCqxUjuiU3I8S1lJMyEAlH+0F2+M5xl3hE=
 github.com/masterzen/simplexml v0.0.0-20160608183007-4572e39b1ab9/go.mod h1:kCEbxUJlNDEBNbdQMkPSp6yaKcRXVI6f4ddk8Riv4bc=
 github.com/masterzen/winrm v0.0.0-20161014151040-7a535cd943fc/go.mod h1:CfZSN7zwz5gJiFhZJz49Uzk7mEBHIceWmbFmYx7Hf7E=
