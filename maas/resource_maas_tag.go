@@ -51,6 +51,21 @@ func resourceMaasTag() *schema.Resource {
 				ForceNew:    true,
 				Description: "The new tag name. Because the name will be used in urls, it should be short.",
 			},
+			"definition": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "An XPATH query that is evaluated against the hardware_details stored for all nodes. (i.e. the output of ``lshw -xml``)",
+			},
+			"comment": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "A description of what the the tag will be used for in natural language.",
+			},
+			"kernel_opts": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Nodes associated with this tag will add this string to their kernel options when booting. The value overrides the global ``kernel_opts`` setting. If more than one tag is associated with a node, command line will be concatenated from all associated tags, in alphabetic tag name order.",
+			},
 			"machines": {
 				Type:        schema.TypeSet,
 				Optional:    true,
@@ -85,15 +100,29 @@ func resourceTagCreate(ctx context.Context, d *schema.ResourceData, m interface{
 func resourceTagRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
 
-	if _, err := client.Tag.Get(d.Id()); err != nil {
+	tag, err := findTag(client, d.Id())
+	if err != nil {
 		return diag.FromErr(err)
+	} else if tag == nil {
+		d.SetId("")
+		return nil
 	}
+
+	d.Set("definition", tag.Definition)
+	d.Set("comment", tag.Comment)
+	d.Set("kernel_opts", tag.KernelOpts)
 
 	return nil
 }
 
 func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*client.Client)
+
+	if d.HasChanges("definition", "comment", "kernel_opts") {
+		if _, err := client.Tag.Update(d.Id(), getTagCreateParams(d)); err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	tagMachinesIDs, err := getTagTFMachinesSystemIDs(client, d)
 	if err != nil {
@@ -127,7 +156,10 @@ func resourceTagDelete(ctx context.Context, d *schema.ResourceData, m interface{
 
 func getTagCreateParams(d *schema.ResourceData) *entity.TagParams {
 	return &entity.TagParams{
-		Name: d.Get("name").(string),
+		Name:       d.Get("name").(string),
+		Definition: d.Get("definition").(string),
+		Comment:    d.Get("comment").(string),
+		KernelOpts: d.Get("kernel_opts").(string),
 	}
 }
 
