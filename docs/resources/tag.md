@@ -33,6 +33,9 @@ resource "maas_tag" "kvm" {
 
 ### Optional
 
+- `comment` (String) A description of what the the tag will be used for in natural language.
+- `definition` (String) An XPATH query that is evaluated against the hardware_details stored for all nodes. (i.e. the output of ``lshw -xml``)
+- `kernel_opts` (String) Nodes associated with this tag will add this string to their kernel options when booting. The value overrides the global ``kernel_opts`` setting. If more than one tag is associated with a node, command line will be concatenated from all associated tags, in alphabetic tag name order.
 - `machines` (Set of String) List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.
 
 ### Read-Only
