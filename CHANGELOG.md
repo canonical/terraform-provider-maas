@@ -1,15 +1,28 @@
+## 1.3.0 (Sep 28, 2023)
+
+NEW:
+
+* Add `comment`, `definition`, `kernel_opts` fields to `tag` resource
+
+IMPROVEMENTS:
+
+* Update `gomaasclient` to include:
+  * changes related to proper parsing of machine fields
+  * changes related to retry improvements
+* Update dependencies
+* Update Go version to 1.20
+
 ## 1.2.0 (May 12, 2023)
 
 NEW:
 
-* Add `enable_hw_sync` to `deploy_params` of `maas_instance` resource 
-
+* Add `enable_hw_sync` to `deploy_params` of `maas_instance` resource
 
 ## 1.1.0 (Mar 10, 2023)
 
 NEW:
 
-* Add release process guide 
+* Add release process guide
 * Add GitHub Actions workflow for releasing
 * Add Dependabot configuration
 
@@ -21,7 +34,6 @@ IMPROVEMENTS:
 * Modify Resource `maas_instance` with timeouts support
 * Update dependencies
 * Update Go version to 1.18
-
 
 ## 1.0.0 (Jul 21, 2021)
 
