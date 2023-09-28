@@ -1,13 +1,13 @@
 module terraform-provider-maas
 
-go 1.19
+go 1.20
 
 require (
 	github.com/bflad/tfproviderlint v0.28.1
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.27.0
-	github.com/maas/gomaasclient v0.0.0-20230912053103-eb0ecc7ab134
+	github.com/maas/gomaasclient v0.0.0-20230927145110-b2775d1ca870
 	github.com/stretchr/testify v1.8.4
 )
 
