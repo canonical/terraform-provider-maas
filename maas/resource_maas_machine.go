@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/maas/gomaasclient/client"
 	"github.com/maas/gomaasclient/entity"
@@ -21,6 +23,14 @@ func resourceMaasMachine() *schema.Resource {
 		ReadContext:   resourceMachineRead,
 		UpdateContext: resourceMachineUpdate,
 		DeleteContext: resourceMachineDelete,
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceMaasMachineResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceMaasMachineStateUpgradeV0,
+				Version: 0,
+			},
+		},
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 				client := m.(*client.Client)
@@ -32,10 +42,14 @@ func resourceMaasMachine() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+				powerParamsString, err := structure.FlattenJsonToString(powerParams)
+				if err != nil {
+					return nil, err
+				}
 				tfState := map[string]interface{}{
 					"id":               machine.SystemID,
 					"power_type":       machine.PowerType,
-					"power_parameters": powerParams,
+					"power_parameters": powerParamsString,
 					"pxe_mac_address":  machine.BootInterface.MACAddress,
 					"architecture":     machine.Architecture,
 				}
@@ -60,13 +74,26 @@ func resourceMaasMachine() *schema.Resource {
 					false)),
 			},
 			"power_parameters": {
-				Type:        schema.TypeMap,
-				Required:    true,
-				Sensitive:   true,
-				Description: "A map with the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.",
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Type:         schema.TypeString,
+				Required:     true,
+				Sensitive:    true,
+				ValidateFunc: validation.StringIsJSON,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldMap, err := structure.ExpandJsonFromString(oldValue)
+					if err != nil {
+						return false
+					}
+					newMap, err := structure.ExpandJsonFromString(newValue)
+					if err != nil {
+						return false
+					}
+					return reflect.DeepEqual(oldMap, newMap)
 				},
+				StateFunc: func(v interface{}) string {
+					json, _ := structure.NormalizeJsonString(v)
+					return json
+				},
+				Description: "Serialized JSON string containing the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.",
 			},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
@@ -120,7 +147,11 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interf
 	client := m.(*client.Client)
 
 	// Create MAAS machine
-	machine, err := client.Machines.Create(getMachineParams(d), getMachinePowerParams(d))
+	powerParams, err := getMachinePowerParams(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	machine, err := client.Machines.Create(getMachineParams(d), powerParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -171,7 +202,11 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if _, err := client.Machine.Update(machine.SystemID, getMachineParams(d), getMachinePowerParams(d)); err != nil {
+	powerParams, err := getMachinePowerParams(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if _, err := client.Machine.Update(machine.SystemID, getMachineParams(d), powerParams); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -189,13 +224,17 @@ func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return nil
 }
 
-func getMachinePowerParams(d *schema.ResourceData) map[string]string {
-	powerParams := d.Get("power_parameters").(map[string]interface{})
-	params := make(map[string]string, len(powerParams))
-	for k, v := range powerParams {
-		params[fmt.Sprintf("power_parameters_%s", k)] = v.(string)
+func getMachinePowerParams(d *schema.ResourceData) (powerParams map[string]interface{}, err error) {
+	powerParams = make(map[string]interface{})
+	powerParamsString := d.Get("power_parameters").(string)
+	params, err := structure.ExpandJsonFromString(powerParamsString)
+	if err != nil {
+		return powerParams, err
 	}
-	return params
+	for k, v := range params {
+		powerParams[fmt.Sprintf("power_parameters_%s", k)] = v
+	}
+	return powerParams, nil
 }
 
 func getMachineParams(d *schema.ResourceData) *entity.MachineParams {
