@@ -86,3 +86,7 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/maas/gomaasclient => github.com/skatsaounis/gomaasclient v0.0.0-20231003092835-c72cbc002a1a
+
+replace github.com/juju/gomaasapi/v2 v2.1.0 => github.com/skatsaounis/gomaasapi/v2 v2.2.0

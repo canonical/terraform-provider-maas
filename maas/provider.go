@@ -30,6 +30,12 @@ func Provider() *schema.Provider {
 				Default:     "2.0",
 				Description: "The MAAS API version (default 2.0)",
 			},
+			"insecure": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether to disable TLS validation for MAAS API URL",
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"maas_instance":                   resourceMaasInstance(),
@@ -68,9 +74,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diag.FromErr(fmt.Errorf("MAAS API URL cannot be empty"))
 	}
 	config := Config{
-		APIKey:     apiKey,
-		APIURL:     apiURL,
-		ApiVersion: d.Get("api_version").(string),
+		APIKey:             apiKey,
+		APIURL:             apiURL,
+		ApiVersion:         d.Get("api_version").(string),
+		InsecureSkipVerify: d.Get("insecure").(bool),
 	}
 
 	// Warning or errors can be collected in a slice type
