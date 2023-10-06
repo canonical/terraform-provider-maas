@@ -15,10 +15,10 @@ Provides a resource to manage MAAS machines.
 ```terraform
 resource "maas_machine" "virsh_vm1" {
   power_type = "virsh"
-  power_parameters = {
+  power_parameters = jsonencode({
     power_address = "qemu+ssh://ubuntu@10.113.1.26/system"
     power_id = "test-vm1"
-  }
+  })
   pxe_mac_address = "52:54:00:89:f5:3e"
 }
 ```
@@ -28,7 +28,7 @@ resource "maas_machine" "virsh_vm1" {
 
 ### Required
 
-- `power_parameters` (Map of String, Sensitive) A map with the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.
+- `power_parameters` (String, Sensitive) Serialized JSON string containing the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.
 - `power_type` (String) A power management type (e.g. `ipmi`).
 - `pxe_mac_address` (String) The MAC address of the machine's PXE boot NIC.
 

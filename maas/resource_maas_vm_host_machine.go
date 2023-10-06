@@ -208,7 +208,7 @@ func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*client.Client)
 
 	// Update VM host machine
-	if _, err := client.Machine.Update(d.Id(), getVMHostMachineUpdateParams(d), map[string]string{}); err != nil {
+	if _, err := client.Machine.Update(d.Id(), getVMHostMachineUpdateParams(d), map[string]interface{}{}); err != nil {
 		return diag.FromErr(err)
 	}
 

@@ -3,10 +3,10 @@
 #
 resource "maas_machine" "virsh_vm1" {
   power_type = "virsh"
-  power_parameters = {
+  power_parameters = jsonencode({
     power_address = "qemu+ssh://ubuntu@10.113.1.26/system"
     power_id = "test-vm1"
-  }
+  })
   pxe_mac_address = "52:54:00:89:f5:3e"
 }
 
@@ -74,10 +74,10 @@ resource "maas_network_interface_link" "virsh_vm1_nic3" {
 #
 resource "maas_machine" "virsh_vm2" {
   power_type = "virsh"
-  power_parameters = {
+  power_parameters = jsonencode({
     power_address = "qemu+ssh://ubuntu@10.113.1.26/system"
     power_id = "test-vm2"
-  }
+  })
   pxe_mac_address = "52:54:00:7c:f7:77"
 }
 
@@ -186,10 +186,10 @@ resource "maas_block_device" "vdc" {
 #
 resource "maas_machine" "virsh_vm3" {
   power_type = "virsh"
-  power_parameters = {
+  power_parameters = jsonencode({
     power_address = "qemu+ssh://ubuntu@10.113.1.21/system"
     power_id = "machine-01"
-  }
+  })
   pxe_mac_address = "52:54:00:16:78:ec"
 }
 
@@ -198,9 +198,9 @@ resource "maas_machine" "virsh_vm3" {
 #
 resource "maas_machine" "virsh_vm4" {
   power_type = "virsh"
-  power_parameters = {
+  power_parameters = jsonencode({
     power_address = "qemu+ssh://ubuntu@10.113.1.22/system"
     power_id = "machine-05"
-  }
+  })
   pxe_mac_address = "52:54:00:c4:74:96"
 }
