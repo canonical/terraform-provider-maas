@@ -23,7 +23,7 @@ $(BIN)/%:
 build:
 	mkdir -p $(BIN)
 	go build -o $(BIN)/${BINARY}
-	
+
 create_dev_overrides: build
 	@sh -c "'$(CURDIR)/scripts/generate-dev-overrides.sh'"
 
@@ -37,6 +37,13 @@ clean:
 clean_install: clean
 	rm -rf ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}
 
+.PHONY: lint
+lint: lint-go
+
+.PHONY: lint-go
+lint-go:
+	@test -z "$$(gofmt -l -d *.go | tee /dev/stderr)"
+
 test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=$(TEST_PARALLELISM)
 
@@ -48,7 +55,6 @@ generate_docs: $(BIN)/tfplugindocs
 
 validate_docs: $(BIN)/tfplugindocs
 	$(BIN)/tfplugindocs validate
-
 
 tfproviderlintx: $(BIN)/tfproviderlint
 	$(BIN)/tfproviderlintx $(TFPROVIDERLINT_ARGS) ./...
