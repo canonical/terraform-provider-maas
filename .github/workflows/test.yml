@@ -22,6 +22,18 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - run: make lint
+
   # Ensure project builds before running testing matrix
   build:
     name: Build
@@ -82,4 +94,4 @@ jobs:
       - env:
           TF_ACC: "1"
         run: go test -v -cover ./maas/
-        timeout-minutes: 10     
+        timeout-minutes: 10
