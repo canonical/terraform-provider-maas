@@ -56,8 +56,8 @@ generate_docs: $(BIN)/tfplugindocs
 validate_docs: $(BIN)/tfplugindocs
 	$(BIN)/tfplugindocs validate
 
-tfproviderlintx: $(BIN)/tfproviderlint
+tfproviderlintx: $(BIN)/tfproviderlintx
 	$(BIN)/tfproviderlintx $(TFPROVIDERLINT_ARGS) ./...
 
-tfproviderlint: $(BIN)/tfproviderlintx
+tfproviderlint: $(BIN)/tfproviderlint
 	$(BIN)/tfproviderlint $(TFPROVIDERLINT_ARGS) ./...
