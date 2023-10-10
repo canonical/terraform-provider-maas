@@ -109,6 +109,7 @@ func setTerraformState(d *schema.ResourceData, tfState map[string]interface{}) e
 		delete(tfState, "id")
 	}
 	for k, v := range tfState {
+		//lintignore:R001
 		if err := d.Set(k, v); err != nil {
 			return err
 		}
