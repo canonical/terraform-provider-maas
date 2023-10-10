@@ -42,7 +42,7 @@ lint: lint-go
 
 .PHONY: lint-go
 lint-go:
-	@test -z "$$(gofmt -l -d *.go | tee /dev/stderr)"
+	@test -z "$$(gofmt -l -s -d . | tee /dev/stderr)"
 
 test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=$(TEST_PARALLELISM)
