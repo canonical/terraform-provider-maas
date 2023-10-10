@@ -65,8 +65,8 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 	}
 }
 
-func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Create network interface link
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -89,11 +89,11 @@ func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceD
 	// Save the resource id
 	d.SetId(fmt.Sprintf("%v", link.ID))
 
-	return resourceNetworkInterfaceLinkUpdate(ctx, d, m)
+	return resourceNetworkInterfaceLinkUpdate(ctx, d,meta)
 }
 
-func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Get params for the read operation
 	linkID, err := strconv.Atoi(d.Id())
@@ -123,8 +123,8 @@ func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Get params for the update operation
 	linkID, err := strconv.Atoi(d.Id())
@@ -150,11 +150,11 @@ func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceD
 		}
 	}
 
-	return resourceNetworkInterfaceLinkRead(ctx, d, m)
+	return resourceNetworkInterfaceLinkRead(ctx, d,meta)
 }
 
-func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Get params for the delete operation
 	linkID, err := strconv.Atoi(d.Id())

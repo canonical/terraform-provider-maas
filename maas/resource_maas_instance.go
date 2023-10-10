@@ -19,8 +19,8 @@ func resourceMaasInstance() *schema.Resource {
 		ReadContext:   resourceInstanceRead,
 		DeleteContext: resourceInstanceDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
+				client :=meta.(*client.Client)
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -190,8 +190,8 @@ func resourceMaasInstance() *schema.Resource {
 	}
 }
 
-func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Allocate MAAS machine
 	machine, err := client.Machines.Allocate(getMachinesAllocateParams(d))
@@ -221,11 +221,11 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Read MAAS machine info
-	return resourceInstanceRead(ctx, d, m)
+	return resourceInstanceRead(ctx, d,meta)
 }
 
-func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceInstanceRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Get MAAS machine
 	machine, err := client.Machine.Get(d.Id())
@@ -254,8 +254,8 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Release MAAS machine
 	err := client.Machines.Release([]string{d.Id()}, "Released by Terraform")

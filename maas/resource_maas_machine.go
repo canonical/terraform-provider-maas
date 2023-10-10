@@ -32,8 +32,8 @@ func resourceMaasMachine() *schema.Resource {
 			},
 		},
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
+				client :=meta.(*client.Client)
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -143,8 +143,8 @@ func resourceMaasMachine() *schema.Resource {
 	}
 }
 
-func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMachineCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Create MAAS machine
 	powerParams, err := getMachinePowerParams(d)
@@ -166,11 +166,11 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	// Return updated machine
-	return resourceMachineUpdate(ctx, d, m)
+	return resourceMachineUpdate(ctx, d,meta)
 }
 
-func resourceMachineRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMachineRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Get machine
 	machine, err := client.Machine.Get(d.Id())
@@ -194,8 +194,8 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, m interfac
 	return nil
 }
 
-func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Update machine
 	machine, err := client.Machine.Get(d.Id())
@@ -210,11 +210,11 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	return resourceMachineRead(ctx, d, m)
+	return resourceMachineRead(ctx, d,meta)
 }
 
-func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMachineDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Delete machine
 	if err := client.Machine.Delete(d.Id()); err != nil {

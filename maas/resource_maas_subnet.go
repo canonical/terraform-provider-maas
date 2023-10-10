@@ -20,8 +20,8 @@ func resourceMaasSubnet() *schema.Resource {
 		UpdateContext: resourceSubnetUpdate,
 		DeleteContext: resourceSubnetDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
+				client :=meta.(*client.Client)
 				subnet, err := getSubnet(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -137,8 +137,8 @@ func resourceMaasSubnet() *schema.Resource {
 	}
 }
 
-func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	params, err := getSubnetParams(client, d)
 	if err != nil {
@@ -150,11 +150,11 @@ func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 	d.SetId(fmt.Sprintf("%v", subnet.ID))
 
-	return resourceSubnetUpdate(ctx, d, m)
+	return resourceSubnetUpdate(ctx, d,meta)
 }
 
-func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -183,8 +183,8 @@ func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -201,11 +201,11 @@ func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	return resourceSubnetRead(ctx, d, m)
+	return resourceSubnetRead(ctx, d,meta)
 }
 
-func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

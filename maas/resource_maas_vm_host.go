@@ -28,8 +28,8 @@ func resourceMaasVMHost() *schema.Resource {
 		UpdateContext: resourceVMHostUpdate,
 		DeleteContext: resourceVMHostDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
+				client :=meta.(*client.Client)
 				vmHost, err := getVMHost(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -158,8 +158,8 @@ func resourceMaasVMHost() *schema.Resource {
 	}
 }
 
-func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Create VM host
 	var vmHost *entity.VMHost
@@ -181,11 +181,11 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	d.SetId(fmt.Sprintf("%v", vmHost.ID))
 
 	// Return updated VM host
-	return resourceVMHostUpdate(ctx, d, m)
+	return resourceVMHostUpdate(ctx, d,meta)
 }
 
-func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Get VM host details
 	id, err := strconv.Atoi(d.Id())
@@ -217,8 +217,8 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Get the VM host
 	id, err := strconv.Atoi(d.Id())
@@ -236,11 +236,11 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	return resourceVMHostRead(ctx, d, m)
+	return resourceVMHostRead(ctx, d,meta)
 }
 
-func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Delete VM host
 	id, err := strconv.Atoi(d.Id())

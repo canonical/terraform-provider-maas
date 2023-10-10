@@ -49,8 +49,8 @@ func dataSourceMaasVlan() *schema.Resource {
 	}
 }
 
-func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {

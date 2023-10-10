@@ -24,8 +24,8 @@ func dataSourceMaasFabric() *schema.Resource {
 	}
 }
 
-func dataSourceFabricRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func dataSourceFabricRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	fabric, err := getFabric(client, d.Get("name").(string))
 	if err != nil {

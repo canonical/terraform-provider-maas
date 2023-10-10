@@ -19,8 +19,8 @@ func resourceMaasVMHostMachine() *schema.Resource {
 		UpdateContext: resourceVMHostMachineUpdate,
 		DeleteContext: resourceVMHostMachineDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
+				client :=meta.(*client.Client)
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -149,8 +149,8 @@ func resourceMaasVMHostMachine() *schema.Resource {
 	}
 }
 
-func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Find VM host
 	vmHost, err := getVMHost(client, d.Get("vm_host").(string))
@@ -178,11 +178,11 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	// Return updated VM host machine
-	return resourceVMHostMachineUpdate(ctx, d, m)
+	return resourceVMHostMachineUpdate(ctx, d,meta)
 }
 
-func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Get VM host machine
 	machine, err := client.Machine.Get(d.Id())
@@ -204,19 +204,19 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, m in
 	return nil
 }
 
-func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Update VM host machine
 	if _, err := client.Machine.Update(d.Id(), getVMHostMachineUpdateParams(d), map[string]interface{}{}); err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourceVMHostMachineRead(ctx, d, m)
+	return resourceVMHostMachineRead(ctx, d,meta)
 }
 
-func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	// Delete VM host machine
 	err := client.Machine.Delete(d.Id())

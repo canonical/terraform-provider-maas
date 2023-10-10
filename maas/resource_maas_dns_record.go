@@ -25,7 +25,7 @@ func resourceMaasDnsRecord() *schema.Resource {
 		UpdateContext: resourceDnsRecordUpdate,
 		DeleteContext: resourceDnsRecordDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), ":")
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected TYPE:IDENTIFIER", d.Id())
@@ -34,7 +34,7 @@ func resourceMaasDnsRecord() *schema.Resource {
 				if _, errors := validation.StringInSlice(validDnsRecordTypes, false)(resourceType, "type"); len(errors) > 0 {
 					return nil, errors[0]
 				}
-				client := m.(*client.Client)
+				client :=meta.(*client.Client)
 				resourceIdentifier := idParts[1]
 				var tfState map[string]interface{}
 				if resourceType == "A/AAAA" {
@@ -114,8 +114,8 @@ func resourceMaasDnsRecord() *schema.Resource {
 	}
 }
 
-func resourceDnsRecordCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceDnsRecordCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	var resourceID int
 	if d.Get("type").(string) == "A/AAAA" {
@@ -133,11 +133,11 @@ func resourceDnsRecordCreate(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	d.SetId(fmt.Sprintf("%v", resourceID))
 
-	return resourceDnsRecordUpdate(ctx, d, m)
+	return resourceDnsRecordUpdate(ctx, d,meta)
 }
 
-func resourceDnsRecordRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceDnsRecordRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -156,8 +156,8 @@ func resourceDnsRecordRead(ctx context.Context, d *schema.ResourceData, m interf
 	return nil
 }
 
-func resourceDnsRecordUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceDnsRecordUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -173,11 +173,11 @@ func resourceDnsRecordUpdate(ctx context.Context, d *schema.ResourceData, m inte
 		}
 	}
 
-	return resourceDnsRecordRead(ctx, d, m)
+	return resourceDnsRecordRead(ctx, d,meta)
 }
 
-func resourceDnsRecordDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceDnsRecordDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
+	client :=meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
