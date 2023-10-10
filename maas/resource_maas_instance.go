@@ -35,7 +35,7 @@ func resourceMaasInstance() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"allocate_params": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Optional:    true,
 				ForceNew:    true,
 				MaxItems:    1,
@@ -86,7 +86,7 @@ func resourceMaasInstance() *schema.Resource {
 				Description: "The number of CPU cores of the deployed MAAS machine.",
 			},
 			"deploy_params": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Optional:    true,
 				ForceNew:    true,
 				MaxItems:    1,
