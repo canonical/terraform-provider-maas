@@ -109,6 +109,10 @@ func setTerraformState(d *schema.ResourceData, tfState map[string]interface{}) e
 		delete(tfState, "id")
 	}
 	for k, v := range tfState {
+		// NOTE: Ignore R001. We have this method being invoked in multiple places,
+		// however key values are actually string literals. Consider this a false positive.
+		// https://github.com/bflad/tfproviderlint/tree/main/passes/R001
+		//
 		//lintignore:R001
 		if err := d.Set(k, v); err != nil {
 			return err
