@@ -32,8 +32,8 @@ func resourceMaasMachine() *schema.Resource {
 			},
 		},
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
-				client :=meta.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -61,17 +61,35 @@ func resourceMaasMachine() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"power_type": {
+			"architecture": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "A power management type (e.g. `ipmi`).",
-				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(
-					[]string{
-						"amt", "apc", "dli", "eaton", "hmc", "ipmi", "manual", "moonshot",
-						"mscm", "msftocs", "nova", "openbmc", "proxmox", "recs_box", "redfish",
-						"sm15k", "ucsm", "vmware", "webhook", "wedge", "lxd", "virsh",
-					},
-					false)),
+				Optional:    true,
+				Default:     "amd64/generic",
+				Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
+			},
+			"domain": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The domain of the machine. This is computed if it's not set.",
+			},
+			"hostname": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The machine hostname. This is computed if it's not set.",
+			},
+			"min_hwe_kernel": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.",
+			},
+			"pool": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The resource pool of the machine. This is computed if it's not set.",
 			},
 			"power_parameters": {
 				Type:         schema.TypeString,
@@ -95,46 +113,28 @@ func resourceMaasMachine() *schema.Resource {
 				},
 				Description: "Serialized JSON string containing the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.",
 			},
+			"power_type": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "A power management type (e.g. `ipmi`).",
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(
+					[]string{
+						"amt", "apc", "dli", "eaton", "hmc", "ipmi", "manual", "moonshot",
+						"mscm", "msftocs", "nova", "openbmc", "proxmox", "recs_box", "redfish",
+						"sm15k", "ucsm", "vmware", "webhook", "wedge", "lxd", "virsh",
+					},
+					false)),
+			},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The MAC address of the machine's PXE boot NIC.",
-			},
-			"architecture": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "amd64/generic",
-				Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
-			},
-			"min_hwe_kernel": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.",
-			},
-			"hostname": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The machine hostname. This is computed if it's not set.",
-			},
-			"domain": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The domain of the machine. This is computed if it's not set.",
 			},
 			"zone": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 				Description: "The zone of the machine. This is computed if it's not set.",
-			},
-			"pool": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The resource pool of the machine. This is computed if it's not set.",
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
@@ -143,8 +143,8 @@ func resourceMaasMachine() *schema.Resource {
 	}
 }
 
-func resourceMachineCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Create MAAS machine
 	powerParams, err := getMachinePowerParams(d)
@@ -166,11 +166,11 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData,meta inte
 	}
 
 	// Return updated machine
-	return resourceMachineUpdate(ctx, d,meta)
+	return resourceMachineUpdate(ctx, d, meta)
 }
 
-func resourceMachineRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Get machine
 	machine, err := client.Machine.Get(d.Id())
@@ -194,8 +194,8 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData,meta interf
 	return nil
 }
 
-func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Update machine
 	machine, err := client.Machine.Get(d.Id())
@@ -210,11 +210,11 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData,meta inte
 		return diag.FromErr(err)
 	}
 
-	return resourceMachineRead(ctx, d,meta)
+	return resourceMachineRead(ctx, d, meta)
 }
 
-func resourceMachineDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Delete machine
 	if err := client.Machine.Delete(d.Id()); err != nil {

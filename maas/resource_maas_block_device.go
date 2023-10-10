@@ -49,32 +49,44 @@ func resourceMaasBlockDevice() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"machine": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The machine identifier (system ID, hostname, or FQDN) that owns the block device.",
-			},
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The block device name.",
-			},
-			"size_gigabytes": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "The size of the block device (given in GB).",
-			},
 			"block_size": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     512,
 				Description: "The block size of the block device. Defaults to `512`.",
 			},
+			"id_path": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"model", "serial"},
+				AtLeastOneOf:  []string{"model", "id_path"},
+				Description:   "Only used if `model` and `serial` cannot be provided. This should be a path that is fixed and doesn't change depending on the boot order or kernel version. This argument is computed if it's not given.",
+			},
 			"is_boot_device": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Boolean value indicating if the block device is set as the boot device.",
+			},
+			"machine": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The machine identifier (system ID, hostname, or FQDN) that owns the block device.",
+			},
+			"model": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				RequiredWith:  []string{"serial"},
+				ConflictsWith: []string{"id_path"},
+				AtLeastOneOf:  []string{"model", "id_path"},
+				Description:   "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The block device name.",
 			},
 			"partitions": {
 				Type:        schema.TypeList,
@@ -83,23 +95,10 @@ func resourceMaasBlockDevice() *schema.Resource {
 				Description: "List of partition resources created for the new block device. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). And, it is computed if it's not given.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"size_gigabytes": {
-							Type:        schema.TypeInt,
-							Required:    true,
-							Description: "The partition size (given in GB).",
-						},
 						"bootable": {
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Description: "Boolean value indicating if the partition is set as bootable.",
-						},
-						"tags": {
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-							Description: "The tags assigned to the new block device partition.",
 						},
 						"fs_type": {
 							Type:        schema.TypeString,
@@ -111,32 +110,41 @@ func resourceMaasBlockDevice() *schema.Resource {
 							Optional:    true,
 							Description: "The label assigned if the partition is formatted.",
 						},
-						"mount_point": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The mount point used. If this is not set, the partition is not mounted. This is used only the partition is formatted.",
-						},
 						"mount_options": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "The options used for the partition mount.",
+						},
+						"mount_point": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The mount point used. If this is not set, the partition is not mounted. This is used only the partition is formatted.",
 						},
 						"path": {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The path of the partition.",
 						},
+						"size_gigabytes": {
+							Type:        schema.TypeInt,
+							Required:    true,
+							Description: "The partition size (given in GB).",
+						},
+						"tags": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Description: "The tags assigned to the new block device partition.",
+						},
 					},
 				},
 			},
-			"model": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				RequiredWith:  []string{"serial"},
-				ConflictsWith: []string{"id_path"},
-				AtLeastOneOf:  []string{"model", "id_path"},
-				Description:   "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+			"path": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Block device path.",
 			},
 			"serial": {
 				Type:          schema.TypeString,
@@ -146,13 +154,10 @@ func resourceMaasBlockDevice() *schema.Resource {
 				ConflictsWith: []string{"id_path"},
 				Description:   "Serial number of the block device. Used in conjunction with `model` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
 			},
-			"id_path": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"model", "serial"},
-				AtLeastOneOf:  []string{"model", "id_path"},
-				Description:   "Only used if `model` and `serial` cannot be provided. This should be a path that is fixed and doesn't change depending on the boot order or kernel version. This argument is computed if it's not given.",
+			"size_gigabytes": {
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: "The size of the block device (given in GB).",
 			},
 			"tags": {
 				Type:     schema.TypeSet,
@@ -167,11 +172,6 @@ func resourceMaasBlockDevice() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "Block device UUID.",
-			},
-			"path": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Block device path.",
 			},
 		},
 	}

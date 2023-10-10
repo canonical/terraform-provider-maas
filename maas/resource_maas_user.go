@@ -17,8 +17,8 @@ func resourceMaasUser() *schema.Resource {
 		ReadContext:   resourceUserRead,
 		DeleteContext: resourceUserDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
-				client :=meta.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				user, err := getUser(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -37,19 +37,6 @@ func resourceMaasUser() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The user name.",
-			},
-			"password": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Sensitive:   true,
-				ForceNew:    true,
-				Description: "The user password.",
-			},
 			"email": {
 				Type:             schema.TypeString,
 				Required:         true,
@@ -64,12 +51,25 @@ func resourceMaasUser() *schema.Resource {
 				ForceNew:    true,
 				Description: "Boolean value indicating if the user is a MAAS administrator. Defaults to `false`.",
 			},
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The user name.",
+			},
+			"password": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Sensitive:   true,
+				ForceNew:    true,
+				Description: "The user password.",
+			},
 		},
 	}
 }
 
-func resourceUserCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	user, err := client.Users.Create(getUserParams(d))
 	if err != nil {
@@ -80,8 +80,8 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData,meta interfa
 	return nil
 }
 
-func resourceUserRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	if _, err := client.User.Get(d.Id()); err != nil {
 		return diag.FromErr(err)
@@ -90,8 +90,8 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData,meta interface
 	return nil
 }
 
-func resourceUserDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	if err := client.User.Delete(d.Id()); err != nil {
 		return diag.FromErr(err)

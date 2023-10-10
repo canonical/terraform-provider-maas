@@ -19,8 +19,8 @@ func resourceMaasInstance() *schema.Resource {
 		ReadContext:   resourceInstanceRead,
 		DeleteContext: resourceInstanceDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
-				client :=meta.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -42,6 +42,11 @@ func resourceMaasInstance() *schema.Resource {
 				Description: "Nested argument with the constraints used to machine allocation. Defined below.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"hostname": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The hostname of the MAAS machine to be allocated.",
+						},
 						"min_cpu_count": {
 							Type:        schema.TypeInt,
 							Optional:    true,
@@ -53,16 +58,6 @@ func resourceMaasInstance() *schema.Resource {
 							Optional:    true,
 							Default:     0,
 							Description: "The minimum RAM memory size (in MB) used to allocate the MAAS machine.",
-						},
-						"hostname": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The hostname of the MAAS machine to be allocated.",
-						},
-						"zone": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The zone name of the MAAS machine to be allocated.",
 						},
 						"pool": {
 							Type:        schema.TypeString,
@@ -77,8 +72,18 @@ func resourceMaasInstance() *schema.Resource {
 								Type: schema.TypeString,
 							},
 						},
+						"zone": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The zone name of the MAAS machine to be allocated.",
+						},
 					},
 				},
+			},
+			"cpu_count": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The number of CPU cores of the deployed MAAS machine.",
 			},
 			"deploy_params": {
 				Type:        schema.TypeSet,
@@ -93,6 +98,11 @@ func resourceMaasInstance() *schema.Resource {
 							Optional:    true,
 							Description: "The distro series used to deploy the allocated MAAS machine. If it's not given, the MAAS server default value is used.",
 						},
+						"enable_hw_sync": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Periodically sync hardware",
+						},
 						"hwe_kernel": {
 							Type:        schema.TypeString,
 							Optional:    true,
@@ -102,37 +112,6 @@ func resourceMaasInstance() *schema.Resource {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "Cloud-init user data script that gets run on the machine once it has deployed. A good practice is to set this with `file(\"/tmp/user-data.txt\")`, where `/tmp/user-data.txt` is a cloud-init script.",
-						},
-						"enable_hw_sync": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Description: "Periodically sync hardware",
-						},
-					},
-				},
-			},
-			"network_interfaces": {
-				Type:        schema.TypeSet,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "Specifies a network interface configuration done before the machine is deployed. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "The name of the network interface to be configured on the allocated machine.",
-						},
-						"subnet_cidr": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "An existing subnet CIDR used to configure the network interface. Unless `ip_address` is defined, a free IP address is allocated from the subnet.",
-						},
-						"ip_address": {
-							Type:             schema.TypeString,
-							Optional:         true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
-							Description:      "Static IP address to be configured on the network interface. If this is set, the `subnet_cidr` is required.\n\n**NOTE:** If both `subnet_cidr` and `ip_address` are not defined, the interface will not be configured on the allocated machine.",
 						},
 					},
 				},
@@ -147,10 +126,44 @@ func resourceMaasInstance() *schema.Resource {
 				Computed:    true,
 				Description: "The deployed MAAS machine hostname.",
 			},
-			"zone": {
-				Type:        schema.TypeString,
+			"ip_addresses": {
+				Type:        schema.TypeSet,
 				Computed:    true,
-				Description: "The deployed MAAS machine zone name.",
+				Description: "A set of IP addressed assigned to the deployed MAAS machine.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			"memory": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The RAM memory size (in GiB) of the deployed MAAS machine.",
+			},
+			"network_interfaces": {
+				Type:        schema.TypeSet,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "Specifies a network interface configuration done before the machine is deployed. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ip_address": {
+							Type:             schema.TypeString,
+							Optional:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+							Description:      "Static IP address to be configured on the network interface. If this is set, the `subnet_cidr` is required.\n\n**NOTE:** If both `subnet_cidr` and `ip_address` are not defined, the interface will not be configured on the allocated machine.",
+						},
+						"name": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The name of the network interface to be configured on the allocated machine.",
+						},
+						"subnet_cidr": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "An existing subnet CIDR used to configure the network interface. Unless `ip_address` is defined, a free IP address is allocated from the subnet.",
+						},
+					},
+				},
 			},
 			"pool": {
 				Type:        schema.TypeString,
@@ -165,23 +178,10 @@ func resourceMaasInstance() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-			"cpu_count": {
-				Type:        schema.TypeInt,
+			"zone": {
+				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The number of CPU cores of the deployed MAAS machine.",
-			},
-			"memory": {
-				Type:        schema.TypeInt,
-				Computed:    true,
-				Description: "The RAM memory size (in GiB) of the deployed MAAS machine.",
-			},
-			"ip_addresses": {
-				Type:        schema.TypeSet,
-				Computed:    true,
-				Description: "A set of IP addressed assigned to the deployed MAAS machine.",
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
+				Description: "The deployed MAAS machine zone name.",
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
@@ -190,8 +190,8 @@ func resourceMaasInstance() *schema.Resource {
 	}
 }
 
-func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Allocate MAAS machine
 	machine, err := client.Machines.Allocate(getMachinesAllocateParams(d))
@@ -221,11 +221,11 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData,meta int
 	}
 
 	// Read MAAS machine info
-	return resourceInstanceRead(ctx, d,meta)
+	return resourceInstanceRead(ctx, d, meta)
 }
 
-func resourceInstanceRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Get MAAS machine
 	machine, err := client.Machine.Get(d.Id())
@@ -254,8 +254,8 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData,meta inter
 	return nil
 }
 
-func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Release MAAS machine
 	err := client.Machines.Release([]string{d.Id()}, "Released by Terraform")

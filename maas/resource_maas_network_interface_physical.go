@@ -20,12 +20,12 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 		UpdateContext: resourceNetworkInterfacePhysicalUpdate,
 		DeleteContext: resourceNetworkInterfacePhysicalDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), ":")
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:NETWORK_INTERFACE", d.Id())
 				}
-				client :=meta.(*client.Client)
+				client := meta.(*client.Client)
 				machine, err := getMachine(client, idParts[0])
 				if err != nil {
 					return nil, err
@@ -48,22 +48,23 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"machine": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the physical network interface.",
-			},
 			"mac_address": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 				Description: "The physical network interface MAC address.",
 			},
-			"vlan": {
+			"machine": {
 				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the physical network interface.",
+			},
+			"mtu": {
+				Type:        schema.TypeInt,
 				Optional:    true,
-				Description: "VLAN the physical network interface is connected to. Defaults to `untagged`.",
+				Computed:    true,
+				Description: "The MTU of the physical network interface. This argument is computed if it's not set.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -80,18 +81,17 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 				},
 				Description: "A set of tag names to be assigned to the physical network interface. This argument is computed if it's not set.",
 			},
-			"mtu": {
-				Type:        schema.TypeInt,
+			"vlan": {
+				Type:        schema.TypeString,
 				Optional:    true,
-				Computed:    true,
-				Description: "The MTU of the physical network interface. This argument is computed if it's not set.",
+				Description: "VLAN the physical network interface is connected to. Defaults to `untagged`.",
 			},
 		},
 	}
 }
 
-func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -109,11 +109,11 @@ func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.Resou
 	}
 	d.SetId(fmt.Sprintf("%v", networkInterface.ID))
 
-	return resourceNetworkInterfacePhysicalUpdate(ctx, d,meta)
+	return resourceNetworkInterfacePhysicalUpdate(ctx, d, meta)
 }
 
-func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -140,8 +140,8 @@ func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -155,11 +155,11 @@ func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	return resourceNetworkInterfacePhysicalRead(ctx, d,meta)
+	return resourceNetworkInterfacePhysicalRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {

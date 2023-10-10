@@ -21,32 +21,6 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 		DeleteContext: resourceNetworkInterfaceLinkDelete,
 
 		Schema: map[string]*schema.Schema{
-			"machine": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the network interface.",
-			},
-			"network_interface": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The identifier (MAC address, name, or ID) of the network interface.",
-			},
-			"subnet": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The identifier (CIDR or ID) of the subnet to be connected.",
-			},
-			"mode": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				Default:          "AUTO",
-				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"AUTO", "DHCP", "STATIC", "LINK_UP"}, false)),
-				Description:      "Connection mode to subnet. It defaults to `AUTO`. Valid options are:\n\t* `AUTO` - Random static IP address from the subnet.\n\t* `DHCP` - IP address from the DHCP on the given subnet.\n\t* `STATIC` - Use `ip_address` as static IP address.\n\t* `LINK_UP` - Bring the interface up only on the given subnet. No IP address will be assigned.",
-			},
 			"default_gateway": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -61,12 +35,38 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
 				Description:      "Valid IP address (from the given subnet) to be configured on the network interface. Only used when `mode` is set to `STATIC`.",
 			},
+			"machine": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the network interface.",
+			},
+			"mode": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				Default:          "AUTO",
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"AUTO", "DHCP", "STATIC", "LINK_UP"}, false)),
+				Description:      "Connection mode to subnet. It defaults to `AUTO`. Valid options are:\n\t* `AUTO` - Random static IP address from the subnet.\n\t* `DHCP` - IP address from the DHCP on the given subnet.\n\t* `STATIC` - Use `ip_address` as static IP address.\n\t* `LINK_UP` - Bring the interface up only on the given subnet. No IP address will be assigned.",
+			},
+			"network_interface": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (MAC address, name, or ID) of the network interface.",
+			},
+			"subnet": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (CIDR or ID) of the subnet to be connected.",
+			},
 		},
 	}
 }
 
-func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Create network interface link
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -89,11 +89,11 @@ func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceD
 	// Save the resource id
 	d.SetId(fmt.Sprintf("%v", link.ID))
 
-	return resourceNetworkInterfaceLinkUpdate(ctx, d,meta)
+	return resourceNetworkInterfaceLinkUpdate(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Get params for the read operation
 	linkID, err := strconv.Atoi(d.Id())
@@ -123,8 +123,8 @@ func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Get params for the update operation
 	linkID, err := strconv.Atoi(d.Id())
@@ -150,11 +150,11 @@ func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceD
 		}
 	}
 
-	return resourceNetworkInterfaceLinkRead(ctx, d,meta)
+	return resourceNetworkInterfaceLinkRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Get params for the delete operation
 	linkID, err := strconv.Atoi(d.Id())

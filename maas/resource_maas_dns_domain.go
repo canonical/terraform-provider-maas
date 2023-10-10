@@ -19,8 +19,8 @@ func resourceMaasDnsDomain() *schema.Resource {
 		UpdateContext: resourceDnsDomainUpdate,
 		DeleteContext: resourceDnsDomainDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
-				client :=meta.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				domain, err := getDomain(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -40,16 +40,6 @@ func resourceMaasDnsDomain() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the new DNS domain.",
-			},
-			"ttl": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Description: "The default TTL for the new DNS domain.",
-			},
 			"authoritative": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -62,12 +52,22 @@ func resourceMaasDnsDomain() *schema.Resource {
 				Default:     false,
 				Description: "Boolean value indicating if the new DNS domain will be set as the default in the MAAS environment. Defaults to `false`.",
 			},
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the new DNS domain.",
+			},
+			"ttl": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The default TTL for the new DNS domain.",
+			},
 		},
 	}
 }
 
-func resourceDnsDomainCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceDnsDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	domain, err := client.Domains.Create(getDomainParams(d))
 	if err != nil {
@@ -75,11 +75,11 @@ func resourceDnsDomainCreate(ctx context.Context, d *schema.ResourceData,meta in
 	}
 	d.SetId(fmt.Sprintf("%v", domain.ID))
 
-	return resourceDnsDomainUpdate(ctx, d,meta)
+	return resourceDnsDomainUpdate(ctx, d, meta)
 }
 
-func resourceDnsDomainRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceDnsDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -92,8 +92,8 @@ func resourceDnsDomainRead(ctx context.Context, d *schema.ResourceData,meta inte
 	return nil
 }
 
-func resourceDnsDomainUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceDnsDomainUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -109,11 +109,11 @@ func resourceDnsDomainUpdate(ctx context.Context, d *schema.ResourceData,meta in
 		}
 	}
 
-	return resourceDnsDomainRead(ctx, d,meta)
+	return resourceDnsDomainRead(ctx, d, meta)
 }
 
-func resourceDnsDomainDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceDnsDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

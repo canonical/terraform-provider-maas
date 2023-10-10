@@ -19,8 +19,8 @@ func resourceMaasVMHostMachine() *schema.Resource {
 		UpdateContext: resourceVMHostMachineUpdate,
 		DeleteContext: resourceVMHostMachineDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData,meta interface{}) ([]*schema.ResourceData, error) {
-				client :=meta.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -42,23 +42,23 @@ func resourceMaasVMHostMachine() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"vm_host": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "ID or name of the VM host used to compose the new machine.",
-			},
 			"cores": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				ForceNew:    true,
 				Description: "The number of CPU cores (defaults to 1).",
 			},
-			"pinned_cores": {
-				Type:        schema.TypeInt,
+			"domain": {
+				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
-				Description: "List of host CPU cores to pin the VM host machine to. If this is passed, the `cores` parameter is ignored.",
+				Computed:    true,
+				Description: "The VM host machine domain. This is computed if it's not set.",
+			},
+			"hostname": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The VM host machine hostname. This is computed if it's not set.",
 			},
 			"memory": {
 				Type:        schema.TypeInt,
@@ -73,33 +73,45 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				Description: "A list of network interfaces for new the VM host. This argument only works when the VM host is deployed from a registered MAAS machine. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "The network interface name.",
-						},
 						"fabric": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "The fabric for the network interface.",
-						},
-						"vlan": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The VLAN for the network interface.",
-						},
-						"subnet_cidr": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The subnet CIDR for the network interface.",
 						},
 						"ip_address": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "Static IP configured on the new network interface.",
 						},
+						"name": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The network interface name.",
+						},
+						"subnet_cidr": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The subnet CIDR for the network interface.",
+						},
+						"vlan": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The VLAN for the network interface.",
+						},
 					},
 				},
+			},
+			"pinned_cores": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "List of host CPU cores to pin the VM host machine to. If this is passed, the `cores` parameter is ignored.",
+			},
+			"pool": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The VM host machine pool. This is computed if it's not set.",
 			},
 			"storage_disks": {
 				Type:        schema.TypeList,
@@ -108,30 +120,24 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				Description: "A list of storage disks for the new VM host. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"size_gigabytes": {
-							Type:        schema.TypeInt,
-							Required:    true,
-							Description: "The storage disk size, specified in GB.",
-						},
 						"pool": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "The VM host storage pool name.",
 						},
+						"size_gigabytes": {
+							Type:        schema.TypeInt,
+							Required:    true,
+							Description: "The storage disk size, specified in GB.",
+						},
 					},
 				},
 			},
-			"hostname": {
+			"vm_host": {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The VM host machine hostname. This is computed if it's not set.",
-			},
-			"domain": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The VM host machine domain. This is computed if it's not set.",
+				Required:    true,
+				ForceNew:    true,
+				Description: "ID or name of the VM host used to compose the new machine.",
 			},
 			"zone": {
 				Type:        schema.TypeString,
@@ -139,18 +145,12 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				Computed:    true,
 				Description: "The VM host machine zone. This is computed if it's not set.",
 			},
-			"pool": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The VM host machine pool. This is computed if it's not set.",
-			},
 		},
 	}
 }
 
-func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Find VM host
 	vmHost, err := getVMHost(client, d.Get("vm_host").(string))
@@ -178,11 +178,11 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData,met
 	}
 
 	// Return updated VM host machine
-	return resourceVMHostMachineUpdate(ctx, d,meta)
+	return resourceVMHostMachineUpdate(ctx, d, meta)
 }
 
-func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Get VM host machine
 	machine, err := client.Machine.Get(d.Id())
@@ -204,19 +204,19 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData,meta 
 	return nil
 }
 
-func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Update VM host machine
 	if _, err := client.Machine.Update(d.Id(), getVMHostMachineUpdateParams(d), map[string]interface{}{}); err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourceVMHostMachineRead(ctx, d,meta)
+	return resourceVMHostMachineRead(ctx, d, meta)
 }
 
-func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Delete VM host machine
 	err := client.Machine.Delete(d.Id())

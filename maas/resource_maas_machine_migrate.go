@@ -10,10 +10,35 @@ import (
 func resourceMaasMachineResourceV0() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"power_type": {
+			"architecture": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "A power management type (e.g. `ipmi`).",
+				Optional:    true,
+				Default:     "amd64/generic",
+				Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
+			},
+			"domain": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The domain of the machine. This is computed if it's not set.",
+			},
+			"hostname": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The machine hostname. This is computed if it's not set.",
+			},
+			"min_hwe_kernel": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.",
+			},
+			"pool": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The resource pool of the machine. This is computed if it's not set.",
 			},
 			"power_parameters": {
 				Type:      schema.TypeMap,
@@ -24,46 +49,21 @@ func resourceMaasMachineResourceV0() *schema.Resource {
 				},
 				Description: "Serialized JSON string containing the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.",
 			},
+			"power_type": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "A power management type (e.g. `ipmi`).",
+			},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The MAC address of the machine's PXE boot NIC.",
-			},
-			"architecture": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "amd64/generic",
-				Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
-			},
-			"min_hwe_kernel": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.",
-			},
-			"hostname": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The machine hostname. This is computed if it's not set.",
-			},
-			"domain": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The domain of the machine. This is computed if it's not set.",
 			},
 			"zone": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 				Description: "The zone of the machine. This is computed if it's not set.",
-			},
-			"pool": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The resource pool of the machine. This is computed if it's not set.",
 			},
 		},
 	}

@@ -15,25 +15,20 @@ func dataSourceMaasVlan() *schema.Resource {
 		ReadContext: dataSourceVlanRead,
 
 		Schema: map[string]*schema.Schema{
+			"dhcp_on": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Boolean value indicating if DHCP is enabled on the VLAN.",
+			},
 			"fabric": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The fabric identifier (ID or name) for the VLAN.",
 			},
-			"vlan": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The VLAN identifier (ID or traffic segregation ID).",
-			},
 			"mtu": {
 				Type:        schema.TypeInt,
 				Computed:    true,
 				Description: "The MTU used on the VLAN.",
-			},
-			"dhcp_on": {
-				Type:        schema.TypeBool,
-				Computed:    true,
-				Description: "Boolean value indicating if DHCP is enabled on the VLAN.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -45,12 +40,17 @@ func dataSourceMaasVlan() *schema.Resource {
 				Computed:    true,
 				Description: "The VLAN space.",
 			},
+			"vlan": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The VLAN identifier (ID or traffic segregation ID).",
+			},
 		},
 	}
 }
 
-func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData,meta interface{}) diag.Diagnostics {
-	client :=meta.(*client.Client)
+func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
