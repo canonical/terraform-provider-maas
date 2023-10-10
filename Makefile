@@ -38,11 +38,14 @@ clean_install: clean
 	rm -rf ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}
 
 .PHONY: lint
-lint: lint-go
+lint: lint-go lint-tf
 
 .PHONY: lint-go
 lint-go:
 	@test -z "$$(gofmt -l -s -d . | tee /dev/stderr)"
+
+.PHONY: lint-tf
+lint-tf: tfproviderlint tfproviderlintx
 
 test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=$(TEST_PARALLELISM)
