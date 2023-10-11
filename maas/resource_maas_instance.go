@@ -273,33 +273,37 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocateParams {
-	p, ok := d.GetOk("allocate_params")
-	if !ok {
-		return &entity.MachineAllocateParams{}
+	if p, ok := d.GetOk("allocate_params"); ok {
+		allocateParamsData := p.([]interface{})
+		if allocateParamsData[0] != nil {
+			allocateParams := allocateParamsData[0].(map[string]interface{})
+			return &entity.MachineAllocateParams{
+				CPUCount: allocateParams["min_cpu_count"].(int),
+				Mem:      allocateParams["min_memory"].(int),
+				Name:     allocateParams["hostname"].(string),
+				Zone:     allocateParams["zone"].(string),
+				Pool:     allocateParams["pool"].(string),
+				Tags:     convertToStringSlice(allocateParams["tags"].(*schema.Set).List()),
+			}
+		}
 	}
-	allocateParams := p.(*schema.Set).List()[0].(map[string]interface{})
-	return &entity.MachineAllocateParams{
-		CPUCount: allocateParams["min_cpu_count"].(int),
-		Mem:      allocateParams["min_memory"].(int),
-		Name:     allocateParams["hostname"].(string),
-		Zone:     allocateParams["zone"].(string),
-		Pool:     allocateParams["pool"].(string),
-		Tags:     convertToStringSlice(allocateParams["tags"].(*schema.Set).List()),
-	}
+	return &entity.MachineAllocateParams{}
 }
 
 func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams {
-	p, ok := d.GetOk("deploy_params")
-	if !ok {
-		return &entity.MachineDeployParams{}
+	if p, ok := d.GetOk("deploy_params"); ok {
+		deployParamsData := p.([]interface{})
+		if deployParamsData[0] != nil {
+			deployParams := deployParamsData[0].(map[string]interface{})
+			return &entity.MachineDeployParams{
+				DistroSeries: deployParams["distro_series"].(string),
+				EnableHwSync: deployParams["enable_hw_sync"].(bool),
+				HWEKernel:    deployParams["hwe_kernel"].(string),
+				UserData:     base64Encode([]byte(deployParams["user_data"].(string))),
+			}
+		}
 	}
-	deployParams := p.(*schema.Set).List()[0].(map[string]interface{})
-	return &entity.MachineDeployParams{
-		DistroSeries: deployParams["distro_series"].(string),
-		EnableHwSync: deployParams["enable_hw_sync"].(bool),
-		HWEKernel:    deployParams["hwe_kernel"].(string),
-		UserData:     base64Encode([]byte(deployParams["user_data"].(string))),
-	}
+	return &entity.MachineDeployParams{}
 }
 
 func configureInstanceNetworkInterfaces(client *client.Client, d *schema.ResourceData, machine *entity.Machine) error {
