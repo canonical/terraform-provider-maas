@@ -1,3 +1,10 @@
+## 1.3.1 (Oct 12, 2023)
+
+IMPROVEMENTS:
+
+* Update `gomaasclient` to include:
+  * bugfix related to retry logic
+
 ## 1.3.0 (Sep 28, 2023)
 
 NEW:
