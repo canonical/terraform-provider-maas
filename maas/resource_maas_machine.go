@@ -28,10 +28,15 @@ func resourceMaasMachine() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				powerParams, err := client.Machine.GetPowerParameters(machine.SystemID)
+				powerParamsData, err := client.Machine.GetPowerParameters(machine.SystemID)
 				if err != nil {
 					return nil, err
 				}
+				powerParams := make(map[string]string, len(powerParamsData))
+				for k, v := range powerParamsData {
+					powerParams[k] = v.(string)
+				}
+
 				tfState := map[string]interface{}{
 					"id":               machine.SystemID,
 					"power_type":       machine.PowerType,
@@ -189,11 +194,11 @@ func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return nil
 }
 
-func getMachinePowerParams(d *schema.ResourceData) map[string]string {
+func getMachinePowerParams(d *schema.ResourceData) map[string]interface{} {
 	powerParams := d.Get("power_parameters").(map[string]interface{})
-	params := make(map[string]string, len(powerParams))
+	params := make(map[string]interface{}, len(powerParams))
 	for k, v := range powerParams {
-		params[fmt.Sprintf("power_parameters_%s", k)] = v.(string)
+		params[fmt.Sprintf("power_parameters_%s", k)] = v
 	}
 	return params
 }
