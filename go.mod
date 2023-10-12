@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
-	github.com/maas/gomaasclient v0.0.0-20230927145110-b2775d1ca870
+	github.com/maas/gomaasclient v0.0.0-20231012075017-2060711b3c81
 	github.com/stretchr/testify v1.8.4
 )
 
@@ -48,12 +48,12 @@ require (
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
-	github.com/juju/collections v0.0.0-20220203020748-febd7cad8a7a // indirect
-	github.com/juju/errors v0.0.0-20220203013757-bd733f3c86b9 // indirect
-	github.com/juju/gomaasapi/v2 v2.1.0 // indirect
-	github.com/juju/loggo v0.0.0-20210728185423-eebad3a902c4 // indirect
-	github.com/juju/mgo/v2 v2.0.0-20220111072304-f200228f1090 // indirect
-	github.com/juju/schema v1.0.1-0.20190814234152-1f8aaeef0989 // indirect
+	github.com/juju/collections v1.0.4 // indirect
+	github.com/juju/errors v1.0.0 // indirect
+	github.com/juju/gomaasapi/v2 v2.2.0 // indirect
+	github.com/juju/loggo v1.0.0 // indirect
+	github.com/juju/mgo/v2 v2.0.2 // indirect
+	github.com/juju/schema v1.0.1 // indirect
 	github.com/juju/version v0.0.0-20210303051006-2015802527a8 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
