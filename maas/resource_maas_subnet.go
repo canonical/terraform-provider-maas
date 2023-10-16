@@ -20,8 +20,8 @@ func resourceMaasSubnet() *schema.Resource {
 		UpdateContext: resourceSubnetUpdate,
 		DeleteContext: resourceSubnetDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				subnet, err := getSubnet(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -44,66 +44,6 @@ func resourceMaasSubnet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"cidr": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The subnet CIDR.",
-			},
-			"name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The subnet name.",
-			},
-			"fabric": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The fabric identifier (ID or name) for the new subnet.",
-			},
-			"vlan": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				RequiredWith: []string{"fabric"},
-				Description:  "The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required.",
-			},
-			"ip_ranges": {
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Description: "A set of IP ranges configured on the new subnet. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"type": {
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"dynamic", "reserved"}, false)),
-							Description:      "The IP range type. Valid options are: `dynamic`, `reserved`.",
-						},
-						"start_ip": {
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
-							Description:      "The start IP for the new IP range (inclusive).",
-						},
-						"end_ip": {
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
-							Description:      "The end IP for the new IP range (inclusive).",
-						},
-						"comment": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "A description of this range.",
-						},
-					},
-				},
-			},
-			"rdns_mode": {
-				Type:             schema.TypeInt,
-				Optional:         true,
-				Default:          2,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2)),
-				Description:      "How reverse DNS is handled for this subnet. Defaults to `2`. Valid options are:\n\t* `0` - Disabled, no reverse zone is created.\n\t* `1` - Enabled, generate reverse zone.\n\t* `2` - RFC2317, extends `1` to create the necessary parent zone with the appropriate CNAME resource records for the network, if the network is small enough to require the support described in RFC2317.",
-			},
 			"allow_dns": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -116,12 +56,10 @@ func resourceMaasSubnet() *schema.Resource {
 				Default:     true,
 				Description: "Boolean value that indicates if `maas-proxy` allows requests from this subnet. Defaults to `true`.",
 			},
-			"gateway_ip": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				Computed:         true,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
-				Description:      "Gateway IP address for the new subnet. This argument is computed if it's not set.",
+			"cidr": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The subnet CIDR.",
 			},
 			"dns_servers": {
 				Type:        schema.TypeList,
@@ -133,12 +71,74 @@ func resourceMaasSubnet() *schema.Resource {
 					Type:             schema.TypeString,
 				},
 			},
+			"fabric": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The fabric identifier (ID or name) for the new subnet.",
+			},
+			"gateway_ip": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "Gateway IP address for the new subnet. This argument is computed if it's not set.",
+			},
+			"ip_ranges": {
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Description: "A set of IP ranges configured on the new subnet. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"comment": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "A description of this range.",
+						},
+						"end_ip": {
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+							Description:      "The end IP for the new IP range (inclusive).",
+						},
+						"start_ip": {
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+							Description:      "The start IP for the new IP range (inclusive).",
+						},
+						"type": {
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"dynamic", "reserved"}, false)),
+							Description:      "The IP range type. Valid options are: `dynamic`, `reserved`.",
+						},
+					},
+				},
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The subnet name.",
+			},
+			"rdns_mode": {
+				Type:             schema.TypeInt,
+				Optional:         true,
+				Default:          2,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2)),
+				Description:      "How reverse DNS is handled for this subnet. Defaults to `2`. Valid options are:\n\t* `0` - Disabled, no reverse zone is created.\n\t* `1` - Enabled, generate reverse zone.\n\t* `2` - RFC2317, extends `1` to create the necessary parent zone with the appropriate CNAME resource records for the network, if the network is small enough to require the support described in RFC2317.",
+			},
+			"vlan": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				RequiredWith: []string{"fabric"},
+				Description:  "The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required.",
+			},
 		},
 	}
 }
 
-func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	params, err := getSubnetParams(client, d)
 	if err != nil {
@@ -150,11 +150,11 @@ func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 	d.SetId(fmt.Sprintf("%v", subnet.ID))
 
-	return resourceSubnetUpdate(ctx, d, m)
+	return resourceSubnetUpdate(ctx, d, meta)
 }
 
-func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -183,8 +183,8 @@ func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -201,11 +201,11 @@ func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	return resourceSubnetRead(ctx, d, m)
+	return resourceSubnetRead(ctx, d, meta)
 }
 
-func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

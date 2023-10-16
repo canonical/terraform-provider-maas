@@ -20,12 +20,12 @@ func resourceMaasBlockDevice() *schema.Resource {
 		UpdateContext: resourceBlockDeviceUpdate,
 		DeleteContext: resourceBlockDeviceDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), ":")
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BLOCK_DEVICE", d.Id())
 				}
-				client := m.(*client.Client)
+				client := meta.(*client.Client)
 				machine, err := getMachine(client, idParts[0])
 				if err != nil {
 					return nil, err
@@ -49,32 +49,44 @@ func resourceMaasBlockDevice() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"machine": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The machine identifier (system ID, hostname, or FQDN) that owns the block device.",
-			},
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The block device name.",
-			},
-			"size_gigabytes": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "The size of the block device (given in GB).",
-			},
 			"block_size": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     512,
 				Description: "The block size of the block device. Defaults to `512`.",
 			},
+			"id_path": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"model", "serial"},
+				AtLeastOneOf:  []string{"model", "id_path"},
+				Description:   "Only used if `model` and `serial` cannot be provided. This should be a path that is fixed and doesn't change depending on the boot order or kernel version. This argument is computed if it's not given.",
+			},
 			"is_boot_device": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Boolean value indicating if the block device is set as the boot device.",
+			},
+			"machine": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The machine identifier (system ID, hostname, or FQDN) that owns the block device.",
+			},
+			"model": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				RequiredWith:  []string{"serial"},
+				ConflictsWith: []string{"id_path"},
+				AtLeastOneOf:  []string{"model", "id_path"},
+				Description:   "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The block device name.",
 			},
 			"partitions": {
 				Type:        schema.TypeList,
@@ -83,23 +95,10 @@ func resourceMaasBlockDevice() *schema.Resource {
 				Description: "List of partition resources created for the new block device. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). And, it is computed if it's not given.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"size_gigabytes": {
-							Type:        schema.TypeInt,
-							Required:    true,
-							Description: "The partition size (given in GB).",
-						},
 						"bootable": {
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Description: "Boolean value indicating if the partition is set as bootable.",
-						},
-						"tags": {
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-							Description: "The tags assigned to the new block device partition.",
 						},
 						"fs_type": {
 							Type:        schema.TypeString,
@@ -111,32 +110,41 @@ func resourceMaasBlockDevice() *schema.Resource {
 							Optional:    true,
 							Description: "The label assigned if the partition is formatted.",
 						},
-						"mount_point": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The mount point used. If this is not set, the partition is not mounted. This is used only the partition is formatted.",
-						},
 						"mount_options": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "The options used for the partition mount.",
+						},
+						"mount_point": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The mount point used. If this is not set, the partition is not mounted. This is used only the partition is formatted.",
 						},
 						"path": {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The path of the partition.",
 						},
+						"size_gigabytes": {
+							Type:        schema.TypeInt,
+							Required:    true,
+							Description: "The partition size (given in GB).",
+						},
+						"tags": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Description: "The tags assigned to the new block device partition.",
+						},
 					},
 				},
 			},
-			"model": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				RequiredWith:  []string{"serial"},
-				ConflictsWith: []string{"id_path"},
-				AtLeastOneOf:  []string{"model", "id_path"},
-				Description:   "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+			"path": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Block device path.",
 			},
 			"serial": {
 				Type:          schema.TypeString,
@@ -146,39 +154,31 @@ func resourceMaasBlockDevice() *schema.Resource {
 				ConflictsWith: []string{"id_path"},
 				Description:   "Serial number of the block device. Used in conjunction with `model` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
 			},
-			"id_path": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"model", "serial"},
-				AtLeastOneOf:  []string{"model", "id_path"},
-				Description:   "Only used if `model` and `serial` cannot be provided. This should be a path that is fixed and doesn't change depending on the boot order or kernel version. This argument is computed if it's not given.",
+			"size_gigabytes": {
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: "The size of the block device (given in GB).",
 			},
 			"tags": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				Computed: true,
 				Elem: &schema.Schema{
-					Type:        schema.TypeString,
-					Description: "A set of tag names assigned to the new block device. This argument is computed if it's not given.",
+					Type: schema.TypeString,
 				},
+				Description: "A set of tag names assigned to the new block device. This argument is computed if it's not given.",
 			},
 			"uuid": {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "Block device UUID.",
 			},
-			"path": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Block device path.",
-			},
 		},
 	}
 }
 
-func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -196,11 +196,11 @@ func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, m in
 	}
 	d.SetId(fmt.Sprintf("%v", blockDevice.ID))
 
-	return resourceBlockDeviceUpdate(ctx, d, m)
+	return resourceBlockDeviceUpdate(ctx, d, meta)
 }
 
-func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -230,8 +230,8 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, m inte
 	return nil
 }
 
-func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -257,11 +257,11 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 
-	return resourceBlockDeviceRead(ctx, d, m)
+	return resourceBlockDeviceRead(ctx, d, meta)
 }
 
-func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
