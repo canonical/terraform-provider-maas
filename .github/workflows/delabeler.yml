@@ -1,0 +1,35 @@
+name: "Pull Request Delabeler"
+
+on:
+  pull_request_target:
+    # type 'opened' is not included, so maintainers can create PRs with labels
+    # specified during creation.
+    types: [edited, closed, reopened, synchronize, converted_to_draft]
+
+jobs:
+  triage:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          script: |
+            const special = 'Review: Core +1'
+            const labels = await github.rest.issues.listLabelsOnIssue({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+
+            if (!labels.data.map((x) => x.name).includes(special)) {
+              return
+            }
+
+            github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: [special]
+            })
