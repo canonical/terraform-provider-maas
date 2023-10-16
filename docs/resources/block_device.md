@@ -54,7 +54,7 @@ resource "maas_block_device" "vdb" {
 - `model` (String) Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.
 - `partitions` (Block List) List of partition resources created for the new block device. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). And, it is computed if it's not given. (see [below for nested schema](#nestedblock--partitions))
 - `serial` (String) Serial number of the block device. Used in conjunction with `model` argument. Conflicts with `id_path`. This argument is computed if it's not given.
-- `tags` (Set of String)
+- `tags` (Set of String) A set of tag names assigned to the new block device. This argument is computed if it's not given.
 
 ### Read-Only
 

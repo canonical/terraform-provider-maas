@@ -28,8 +28,8 @@ func resourceMaasVMHost() *schema.Resource {
 		UpdateContext: resourceVMHostUpdate,
 		DeleteContext: resourceVMHostDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				vmHost, err := getVMHost(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -59,12 +59,17 @@ func resourceMaasVMHost() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"type": {
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"lxd", "virsh"}, false)),
-				Description:      "The VM host type. Supported values are: `lxd`, `virsh`.",
+			"cpu_over_commit_ratio": {
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				Computed:    true,
+				Description: "The new VM host CPU overcommit ratio. This is computed if it's not set.",
+			},
+			"default_macvlan_mode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The new VM host default macvlan mode. Supported values are: `bridge`, `passthru`, `private`, `vepa`. This is computed if it's not set.",
 			},
 			"machine": {
 				Type:          schema.TypeString,
@@ -74,18 +79,30 @@ func resourceMaasVMHost() *schema.Resource {
 				ConflictsWith: []string{"power_address", "power_user", "power_pass"},
 				Description:   "The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`.",
 			},
+			"memory_over_commit_ratio": {
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				Computed:    true,
+				Description: "The new VM host RAM memory overcommit ratio. This is computed if it's not set.",
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The new VM host name. This is computed if it's not set.",
+			},
+			"pool": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The new VM host pool name. This is computed if it's not set.",
+			},
 			"power_address": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ExactlyOneOf:  vmHostSources,
 				ConflictsWith: []string{"machine"},
 				Description:   "Address that gives MAAS access to the VM host power control. For example: `qemu+ssh://172.16.99.2/system`. The address given here must reachable by the MAAS server. It can't be set if `machine` argument is used.",
-			},
-			"power_user": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"machine"},
-				Description:   "User name to use for power control of the VM host. Cannot be set if `machine` parameter is used.",
 			},
 			"power_pass": {
 				Type:          schema.TypeString,
@@ -94,23 +111,26 @@ func resourceMaasVMHost() *schema.Resource {
 				ConflictsWith: []string{"machine"},
 				Description:   "User password to use for power control of the VM host. Cannot be set if `machine` parameter is used.",
 			},
-			"name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The new VM host name. This is computed if it's not set.",
+			"power_user": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"machine"},
+				Description:   "User name to use for power control of the VM host. Cannot be set if `machine` parameter is used.",
 			},
-			"zone": {
-				Type:        schema.TypeString,
-				Optional:    true,
+			"resources_cores_total": {
+				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "The new VM host zone name. This is computed if it's not set.",
+				Description: "The VM host total number of CPU cores.",
 			},
-			"pool": {
-				Type:        schema.TypeString,
-				Optional:    true,
+			"resources_local_storage_total": {
+				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "The new VM host pool name. This is computed if it's not set.",
+				Description: "The VM host total local storage (in bytes).",
+			},
+			"resources_memory_total": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The VM host total RAM memory (in MB).",
 			},
 			"tags": {
 				Type:        schema.TypeSet,
@@ -121,45 +141,25 @@ func resourceMaasVMHost() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-			"cpu_over_commit_ratio": {
-				Type:        schema.TypeFloat,
-				Optional:    true,
-				Computed:    true,
-				Description: "The new VM host CPU overcommit ratio. This is computed if it's not set.",
+			"type": {
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"lxd", "virsh"}, false)),
+				Description:      "The VM host type. Supported values are: `lxd`, `virsh`.",
 			},
-			"memory_over_commit_ratio": {
-				Type:        schema.TypeFloat,
-				Optional:    true,
-				Computed:    true,
-				Description: "The new VM host RAM memory overcommit ratio. This is computed if it's not set.",
-			},
-			"default_macvlan_mode": {
+			"zone": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "The new VM host default macvlan mode. Supported values are: `bridge`, `passthru`, `private`, `vepa`. This is computed if it's not set.",
-			},
-			"resources_cores_total": {
-				Type:        schema.TypeInt,
-				Computed:    true,
-				Description: "The VM host total number of CPU cores.",
-			},
-			"resources_memory_total": {
-				Type:        schema.TypeInt,
-				Computed:    true,
-				Description: "The VM host total RAM memory (in MB).",
-			},
-			"resources_local_storage_total": {
-				Type:        schema.TypeInt,
-				Computed:    true,
-				Description: "The VM host total local storage (in bytes).",
+				Description: "The new VM host zone name. This is computed if it's not set.",
 			},
 		},
 	}
 }
 
-func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Create VM host
 	var vmHost *entity.VMHost
@@ -181,11 +181,11 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	d.SetId(fmt.Sprintf("%v", vmHost.ID))
 
 	// Return updated VM host
-	return resourceVMHostUpdate(ctx, d, m)
+	return resourceVMHostUpdate(ctx, d, meta)
 }
 
-func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Get VM host details
 	id, err := strconv.Atoi(d.Id())
@@ -217,8 +217,8 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Get the VM host
 	id, err := strconv.Atoi(d.Id())
@@ -236,11 +236,11 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	return resourceVMHostRead(ctx, d, m)
+	return resourceVMHostRead(ctx, d, meta)
 }
 
-func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	// Delete VM host
 	id, err := strconv.Atoi(d.Id())

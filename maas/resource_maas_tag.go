@@ -18,8 +18,8 @@ func resourceMaasTag() *schema.Resource {
 		UpdateContext: resourceTagUpdate,
 		DeleteContext: resourceTagDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				tag, err := getTag(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -45,21 +45,15 @@ func resourceMaasTag() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"comment": {
 				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The new tag name. Because the name will be used in urls, it should be short.",
+				Optional:    true,
+				Description: "A description of what the the tag will be used for in natural language.",
 			},
 			"definition": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "An XPATH query that is evaluated against the hardware_details stored for all nodes. (i.e. the output of ``lshw -xml``)",
-			},
-			"comment": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "A description of what the the tag will be used for in natural language.",
 			},
 			"kernel_opts": {
 				Type:        schema.TypeString,
@@ -74,12 +68,18 @@ func resourceMaasTag() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The new tag name. Because the name will be used in urls, it should be short.",
+			},
 		},
 	}
 }
 
-func resourceTagCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	params := getTagCreateParams(d)
 	tag, err := findTag(client, params.Name)
@@ -94,11 +94,11 @@ func resourceTagCreate(ctx context.Context, d *schema.ResourceData, m interface{
 	}
 	d.SetId(tag.Name)
 
-	return resourceTagUpdate(ctx, d, m)
+	return resourceTagUpdate(ctx, d, meta)
 }
 
-func resourceTagRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	tag, err := findTag(client, d.Id())
 	if err != nil {
@@ -115,8 +115,8 @@ func resourceTagRead(ctx context.Context, d *schema.ResourceData, m interface{})
 	return nil
 }
 
-func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	if d.HasChanges("definition", "comment", "kernel_opts") {
 		if _, err := client.Tag.Update(d.Id(), getTagCreateParams(d)); err != nil {
@@ -141,11 +141,11 @@ func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 		}
 	}
 
-	return resourceTagRead(ctx, d, m)
+	return resourceTagRead(ctx, d, meta)
 }
 
-func resourceTagDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceTagDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	if err := client.Tag.Delete(d.Id()); err != nil {
 		return diag.FromErr(err)

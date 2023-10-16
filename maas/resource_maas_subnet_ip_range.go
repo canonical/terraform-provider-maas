@@ -21,8 +21,8 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 		UpdateContext: resourceSubnetIPRangeUpdate,
 		DeleteContext: resourceSubnetIPRangeDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-				client := m.(*client.Client)
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				client := meta.(*client.Client)
 				idParts := strings.Split(d.Id(), ":")
 				var ipRange *entity.IPRange
 				var err error
@@ -59,6 +59,24 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"comment": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "A description of this range. This argument is computed if it's not set.",
+			},
+			"end_ip": {
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "The end IP for the new IP range (inclusive).",
+			},
+			"start_ip": {
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
+				Description:      "The start IP for the new IP range (inclusive).",
+			},
 			"subnet": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -70,30 +88,12 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"dynamic", "reserved"}, false)),
 				Description:      "The IP range type. Valid options are: `dynamic`, `reserved`.",
 			},
-			"start_ip": {
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
-				Description:      "The start IP for the new IP range (inclusive).",
-			},
-			"end_ip": {
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
-				Description:      "The end IP for the new IP range (inclusive).",
-			},
-			"comment": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "A description of this range. This argument is computed if it's not set.",
-			},
 		},
 	}
 }
 
-func resourceSubnetIPRangeCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetIPRangeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	subnet, err := findSubnet(client, d.Get("subnet").(string))
 	if err != nil {
@@ -105,11 +105,11 @@ func resourceSubnetIPRangeCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 	d.SetId(fmt.Sprintf("%v", ipRange.ID))
 
-	return resourceSubnetIPRangeUpdate(ctx, d, m)
+	return resourceSubnetIPRangeUpdate(ctx, d, meta)
 }
 
-func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -129,8 +129,8 @@ func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, m in
 	return nil
 }
 
-func resourceSubnetIPRangeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetIPRangeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -144,11 +144,11 @@ func resourceSubnetIPRangeUpdate(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 
-	return resourceSubnetIPRangeRead(ctx, d, m)
+	return resourceSubnetIPRangeRead(ctx, d, meta)
 }
 
-func resourceSubnetIPRangeDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceSubnetIPRangeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
