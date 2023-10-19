@@ -115,8 +115,8 @@ func resourceMAASVMHost() *schema.Resource {
 				Optional:      true,
 				ForceNew:      true,
 				ExactlyOneOf:  vmHostSources,
-				ConflictsWith: []string{"power_address", "power_user", "power_pass"},
-				Description:   "The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`.",
+				ConflictsWith: []string{"power_address", "power_user", "power_pass", "certificate", "key"},
+				Description:   "The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`, `certificate`, `key`.",
 			},
 			"memory_over_commit_ratio": {
 				Type:        schema.TypeFloat,
@@ -147,14 +147,14 @@ func resourceMAASVMHost() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Sensitive:     true,
-				ConflictsWith: []string{"machine"},
-				Description:   "User password to use for power control of the VM host. Cannot be set if `machine` parameter is used.",
+				ConflictsWith: []string{"machine", "certificate", "key"},
+				Description:   "User password to use for power control of the VM host. Cannot be set if `machine`, `certificate` or `key` parameters are used.",
 			},
 			"power_user": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				ConflictsWith: []string{"machine"},
-				Description:   "User name to use for power control of the VM host. Cannot be set if `machine` parameter is used.",
+				ConflictsWith: []string{"machine", "certificate", "key"},
+				Description:   "User name to use for power control of the VM host. Cannot be set if `machine`, `certificate` or `key` parameters are used.",
 			},
 			"resources_cores_total": {
 				Type:        schema.TypeInt,
@@ -193,6 +193,20 @@ func resourceMAASVMHost() *schema.Resource {
 				Computed:    true,
 				Description: "The new VM host zone name. This is computed if it's not set.",
 			},
+			"certificate": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "Certificate to use for power control of the LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` arguments are used.",
+			},
+			"key": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "Certificate to use for power control of the LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` arguments are used.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
@@ -225,6 +239,10 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta any)
 		}
 	} else {
 		vmHost, err = client.VMHosts.Create(getVMHostParams(d))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		vmHost, err = client.VMHost.Refresh(vmHost.ID)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -344,6 +362,8 @@ func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
 		DefaultMacvlanMode:    d.Get("default_macvlan_mode").(string),
 		Zone:                  d.Get("zone").(string),
 		Pool:                  d.Get("pool").(string),
+		Certificate:           d.Get("certificate").(string),
+		Key:                   d.Get("key").(string),
 		Tags:                  strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
 	}
 }

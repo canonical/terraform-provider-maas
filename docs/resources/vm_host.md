@@ -33,16 +33,17 @@ resource "maas_vm_host" "kvm" {
 
 ### Optional
 
+- `certificate` (String, Sensitive) Certificate to use for power control of the LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` arguments are used.
 - `cpu_over_commit_ratio` (Number) The new VM host CPU overcommit ratio. This is computed if it's not set.
 - `default_macvlan_mode` (String) The new VM host default macvlan mode. Supported values are: `bridge`, `passthru`, `private`, `vepa`. This is computed if it's not set.
-- `deploy_params` (Block List, Max: 1) Nested argument with the config used to deploy the machine specified using `machine`. (see [below for nested schema](#nestedblock--deploy_params))
-- `machine` (String) The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`.
+- `key` (String, Sensitive) Certificate to use for power control of the LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` arguments are used.
+- `machine` (String) The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`, `certificate`, `key`.
 - `memory_over_commit_ratio` (Number) The new VM host RAM memory overcommit ratio. This is computed if it's not set.
 - `name` (String) The new VM host name. This is computed if it's not set.
 - `pool` (String) The new VM host pool name. This is computed if it's not set.
 - `power_address` (String) Address that gives MAAS access to the VM host power control. For example: `qemu+ssh://172.16.99.2/system`. The address given here must reachable by the MAAS server. It can't be set if `machine` argument is used.
-- `power_pass` (String, Sensitive) User password to use for power control of the VM host. Cannot be set if `machine` parameter is used.
-- `power_user` (String) User name to use for power control of the VM host. Cannot be set if `machine` parameter is used.
+- `power_pass` (String, Sensitive) User password to use for power control of the VM host. Cannot be set if `machine`, `certificate` or `key` parameters are used.
+- `power_user` (String) User name to use for power control of the VM host. Cannot be set if `machine`, `certificate` or `key` parameters are used.
 - `tags` (Set of String) A set of tag names to assign to the new VM host. This is computed if it's not set.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `zone` (String) The new VM host zone name. This is computed if it's not set.
