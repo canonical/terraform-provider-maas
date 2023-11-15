@@ -30,6 +30,18 @@ func Provider() *schema.Provider {
 				Default:     "2.0",
 				Description: "The MAAS API version (default 2.0)",
 			},
+			"tls_ca_cert_path": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Certificate CA bundle path to use to verify the MAAS certificate.",
+				Default:     os.Getenv("MAAS_API_CACERT"),
+			},
+			"tls_insecure_skip_verify": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     "false",
+				Description: "Skip TLS certificate verification.",
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"maas_instance":                   resourceMaasInstance(),
@@ -68,9 +80,11 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diag.FromErr(fmt.Errorf("MAAS API URL cannot be empty"))
 	}
 	config := Config{
-		APIKey:     apiKey,
-		APIURL:     apiURL,
-		ApiVersion: d.Get("api_version").(string),
+		APIKey:                apiKey,
+		APIURL:                apiURL,
+		ApiVersion:            d.Get("api_version").(string),
+		TLSCACertPath:         d.Get("tls_ca_cert_path").(string),
+		TLSInsecureSkipVerify: d.Get("tls_insecure_skip_verify").(bool),
 	}
 
 	// Warning or errors can be collected in a slice type

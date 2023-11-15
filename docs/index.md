@@ -45,6 +45,8 @@ The provider API block contains the necessary credentials to allow Terraform to 
 - `api_key` (String) The MAAS API key
 - `api_url` (String) The MAAS API URL (eg: http://127.0.0.1:5240/MAAS)
 - `api_version` (String) The MAAS API version (default 2.0)
+- `tls_ca_cert_path` (String) Certificate CA bundle path to use to verify the MAAS certificate.
+- `tls_insecure_skip_verify` (Boolean) Skip TLS certificate verification.
 
 
 
