@@ -285,7 +285,7 @@ func getMachine(client *client.Client, identifier string) (*entity.Machine, erro
 		return nil, err
 	}
 	for _, m := range machines {
-		if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier {
+		if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier || m.BootInterface.MACAddress == identifier {
 			return &m, nil
 		}
 	}
