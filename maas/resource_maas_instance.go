@@ -45,28 +45,33 @@ func resourceMaasInstance() *schema.Resource {
 						"hostname": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "The hostname of the MAAS machine to be allocated.",
 						},
 						"min_cpu_count": {
 							Type:        schema.TypeInt,
 							Optional:    true,
 							Default:     0,
+							ForceNew:    true,
 							Description: "The minimum number of cores used to allocate the MAAS machine.",
 						},
 						"min_memory": {
 							Type:        schema.TypeInt,
 							Optional:    true,
 							Default:     0,
+							ForceNew:    true,
 							Description: "The minimum RAM memory size (in MB) used to allocate the MAAS machine.",
 						},
 						"pool": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "The pool name of the MAAS machine to be allocated.",
 						},
 						"tags": {
 							Type:        schema.TypeSet,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "A set of tag names that must be assigned on the MAAS machine to be allocated.",
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
@@ -75,6 +80,7 @@ func resourceMaasInstance() *schema.Resource {
 						"zone": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "The zone name of the MAAS machine to be allocated.",
 						},
 					},
@@ -96,21 +102,25 @@ func resourceMaasInstance() *schema.Resource {
 						"distro_series": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "The distro series used to deploy the allocated MAAS machine. If it's not given, the MAAS server default value is used.",
 						},
 						"enable_hw_sync": {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "Periodically sync hardware",
 						},
 						"hwe_kernel": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "Hardware enablement kernel to use with the image. Only used when deploying Ubuntu.",
 						},
 						"user_data": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "Cloud-init user data script that gets run on the machine once it has deployed. A good practice is to set this with `file(\"/tmp/user-data.txt\")`, where `/tmp/user-data.txt` is a cloud-init script.",
 						},
 					},
@@ -149,17 +159,20 @@ func resourceMaasInstance() *schema.Resource {
 						"ip_address": {
 							Type:             schema.TypeString,
 							Optional:         true,
+							ForceNew:         true,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
 							Description:      "Static IP address to be configured on the network interface. If this is set, the `subnet_cidr` is required.\n\n**NOTE:** If both `subnet_cidr` and `ip_address` are not defined, the interface will not be configured on the allocated machine.",
 						},
 						"name": {
 							Type:        schema.TypeString,
 							Required:    true,
+							ForceNew:    true,
 							Description: "The name of the network interface to be configured on the allocated machine.",
 						},
 						"subnet_cidr": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "An existing subnet CIDR used to configure the network interface. Unless `ip_address` is defined, a free IP address is allocated from the subnet.",
 						},
 					},
