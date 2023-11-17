@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -251,7 +251,7 @@ func getMachineParams(d *schema.ResourceData) *entity.MachineParams {
 	}
 }
 
-func getMachineStatusFunc(client *client.Client, systemId string) resource.StateRefreshFunc {
+func getMachineStatusFunc(client *client.Client, systemId string) retry.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		machine, err := client.Machine.Get(systemId)
 		if err != nil {
@@ -264,7 +264,7 @@ func getMachineStatusFunc(client *client.Client, systemId string) resource.State
 
 func waitForMachineStatus(ctx context.Context, client *client.Client, systemID string, pendingStates []string, targetStates []string) (*entity.Machine, error) {
 	log.Printf("[DEBUG] Waiting for machine (%s) status to be one of %s\n", systemID, targetStates)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &retry.StateChangeConf{
 		Pending:    pendingStates,
 		Target:     targetStates,
 		Refresh:    getMachineStatusFunc(client, systemID),
