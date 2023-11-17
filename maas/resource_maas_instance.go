@@ -68,6 +68,12 @@ func resourceMaasInstance() *schema.Resource {
 							ForceNew:    true,
 							Description: "The pool name of the MAAS machine to be allocated.",
 						},
+						"system_id": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "The system_id of the MAAS machine to be allocated.",
+						},
 						"tags": {
 							Type:        schema.TypeSet,
 							Optional:    true,
@@ -296,6 +302,7 @@ func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocatePa
 				Name:     allocateParams["hostname"].(string),
 				Zone:     allocateParams["zone"].(string),
 				Pool:     allocateParams["pool"].(string),
+				SystemID: allocateParams["system_id"].(string),
 				Tags:     convertToStringSlice(allocateParams["tags"].(*schema.Set).List()),
 			}
 		}
