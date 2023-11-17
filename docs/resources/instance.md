@@ -65,6 +65,7 @@ Optional:
 - `min_cpu_count` (Number) The minimum number of cores used to allocate the MAAS machine.
 - `min_memory` (Number) The minimum RAM memory size (in MB) used to allocate the MAAS machine.
 - `pool` (String) The pool name of the MAAS machine to be allocated.
+- `system_id` (String) The system_id of the MAAS machine to be allocated.
 - `tags` (Set of String) A set of tag names that must be assigned on the MAAS machine to be allocated.
 - `zone` (String) The zone name of the MAAS machine to be allocated.
 
