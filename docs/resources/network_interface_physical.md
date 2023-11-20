@@ -63,7 +63,7 @@ resource "maas_network_interface_physical" "virsh_vm1_nic3" {
 - `mtu` (Number) The MTU of the physical network interface. This argument is computed if it's not set.
 - `name` (String) The physical network interface name. This argument is computed if it's not set.
 - `tags` (Set of String) A set of tag names to be assigned to the physical network interface. This argument is computed if it's not set.
-- `vlan` (String) VLAN the physical network interface is connected to. Defaults to `untagged`.
+- `vlan` (Number) Database ID of the VLAN the physical network interface is connected to.
 
 ### Read-Only
 

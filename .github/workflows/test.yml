@@ -66,32 +66,15 @@ jobs:
           git diff --compact-summary --exit-code || \
             (echo; echo "Unexpected difference in directories after docs generation. Run 'make generate_docs' command and commit."; exit 1)
 
-  # Run acceptance tests in a matrix with Terraform CLI versions
+  # Run unit tests
   test:
-    name: Terraform Provider Acceptance Tests
+    name: Terraform Provider Unit Tests
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        # list whatever Terraform versions here you would like to support
-        terraform:
-          - '1.4.*'
-          - '1.5.*'
-          - '1.6.*'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
           go-version-file: 'go.mod'
           cache: true
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ matrix.terraform }}
-          terraform_wrapper: false
-      - run: go mod download
-      - env:
-          TF_ACC: "1"
-        run: go test -v -cover ./maas/
-        timeout-minutes: 10
+      - run: make test

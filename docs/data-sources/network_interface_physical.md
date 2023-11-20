@@ -29,4 +29,4 @@ description: |-
 - `id` (String) The ID of this resource.
 - `mac_address` (String) The physical network interface MAC address.
 - `mtu` (Number) The MTU of the physical network interface.
-- `vlan` (String) VLAN the physical network interface is connected to.
+- `vlan` (Number) Database ID of the VLAN the physical network interface is connected to.

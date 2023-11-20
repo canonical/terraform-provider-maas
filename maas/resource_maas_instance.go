@@ -32,6 +32,7 @@ func resourceMaasInstance() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
+		UseJSONNumber: true,
 
 		Schema: map[string]*schema.Schema{
 			"allocate_params": {
@@ -298,7 +299,7 @@ func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocatePa
 			allocateParams := allocateParamsData[0].(map[string]interface{})
 			return &entity.MachineAllocateParams{
 				CPUCount: allocateParams["min_cpu_count"].(int),
-				Mem:      allocateParams["min_memory"].(int),
+				Mem:      int64(allocateParams["min_memory"].(int)),
 				Name:     allocateParams["hostname"].(string),
 				Zone:     allocateParams["zone"].(string),
 				Pool:     allocateParams["pool"].(string),
