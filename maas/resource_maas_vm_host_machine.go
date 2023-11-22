@@ -40,6 +40,7 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
+		UseJSONNumber: true,
 
 		Schema: map[string]*schema.Schema{
 			"cores": {
@@ -236,7 +237,7 @@ func getVMHostMachineParams(d *schema.ResourceData) (*entity.VMHostMachineParams
 		Hostname:    d.Get("hostname").(string),
 		Cores:       d.Get("cores").(int),
 		PinnedCores: d.Get("pinned_cores").(int),
-		Memory:      d.Get("memory").(int),
+		Memory:      int64(d.Get("memory").(int)),
 		Interfaces:  networkInterfaces,
 		Storage:     getVMHostMachineStorageDisks(d.Get("storage_disks").([]interface{})),
 	}
@@ -284,7 +285,7 @@ func getVMHostMachineStorageDisks(storageDisks []interface{}) string {
 	vmHostStorageDisks := []string{}
 	for i, storageDisk := range storageDisks {
 		d := storageDisk.(map[string]interface{})
-		disk := fmt.Sprintf("disk%d:%d", i, d["size_gigabytes"].(int))
+		disk := fmt.Sprintf("disk%d:%d", i, int64(d["size_gigabytes"].(int)))
 		if pool := d["pool"].(string); pool != "" {
 			disk = fmt.Sprintf("%s(%s)", disk, pool)
 		}

@@ -47,6 +47,7 @@ func resourceMaasBlockDevice() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
+		UseJSONNumber: true,
 
 		Schema: map[string]*schema.Schema{
 			"block_size": {
@@ -281,7 +282,7 @@ func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta
 func getBlockDeviceParams(d *schema.ResourceData) *entity.BlockDeviceParams {
 	return &entity.BlockDeviceParams{
 		Name:      d.Get("name").(string),
-		Size:      d.Get("size_gigabytes").(int) * 1024 * 1024 * 1024,
+		Size:      int64(d.Get("size_gigabytes").(int)) * 1024 * 1024 * 1024,
 		BlockSize: d.Get("block_size").(int),
 		Model:     d.Get("model").(string),
 		Serial:    d.Get("serial").(string),
@@ -373,7 +374,7 @@ func updateBlockDevicePartitions(client *client.Client, d *schema.ResourceData, 
 	for _, part := range partitions {
 		partition := part.(map[string]interface{})
 		partitionParams := entity.BlockDevicePartitionParams{
-			Size:     partition["size_gigabytes"].(int) * 1024 * 1024 * 1024,
+			Size:     int64(partition["size_gigabytes"].(int)) * 1024 * 1024 * 1024,
 			Bootable: partition["bootable"].(bool),
 		}
 		blockDevicePartition, err := client.BlockDevicePartitions.Create(blockDevice.SystemID, blockDevice.ID, &partitionParams)

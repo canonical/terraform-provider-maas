@@ -44,9 +44,9 @@ func dataSourceMaasNetworkInterfacePhysical() *schema.Resource {
 				Description: "A set of tag names assigned to the physical network interface.",
 			},
 			"vlan": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "VLAN the physical network interface is connected to.",
+				Description: "Database ID of the VLAN the physical network interface is connected to.",
 			},
 		},
 	}
@@ -65,7 +65,7 @@ func dataSourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resou
 		"mtu":         n.EffectiveMTU,
 		"name":        n.Name,
 		"tags":        n.Tags,
-		"vlan":        fmt.Sprintf("%v", n.VLAN.ID),
+		"vlan":        n.VLAN.ID,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)

@@ -36,9 +36,12 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 				}
 				tfState := map[string]interface{}{
 					"id":          fmt.Sprintf("%v", n.ID),
-					"machine":     machine.SystemID,
 					"mac_address": n.MACAddress,
-					"vlan":        fmt.Sprintf("%v", n.VLAN.ID),
+					"machine":     machine.SystemID,
+					"mtu":         n.EffectiveMTU,
+					"name":        n.Name,
+					"tags":        n.Tags,
+					"vlan":        n.VLAN.ID,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -82,9 +85,9 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 				Description: "A set of tag names to be assigned to the physical network interface. This argument is computed if it's not set.",
 			},
 			"vlan": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Optional:    true,
-				Description: "VLAN the physical network interface is connected to. Defaults to `untagged`.",
+				Description: "Database ID of the VLAN the physical network interface is connected to.",
 			},
 		},
 	}
@@ -109,7 +112,7 @@ func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.Resou
 	}
 	d.SetId(fmt.Sprintf("%v", networkInterface.ID))
 
-	return resourceNetworkInterfacePhysicalUpdate(ctx, d, meta)
+	return resourceNetworkInterfacePhysicalRead(ctx, d, meta)
 }
 
 func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -129,9 +132,11 @@ func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resourc
 	}
 
 	tfState := map[string]interface{}{
-		"name": networkInterface.Name,
-		"tags": networkInterface.Tags,
-		"mtu":  networkInterface.EffectiveMTU,
+		"mac_address": networkInterface.MACAddress,
+		"mtu":         networkInterface.EffectiveMTU,
+		"name":        networkInterface.Name,
+		"tags":        networkInterface.Tags,
+		"vlan":        networkInterface.VLAN.ID,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -151,7 +156,7 @@ func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.Resou
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if _, err = client.NetworkInterface.Update(machine.SystemID, id, getNetworkInterfacePhysicalParams(d)); err != nil {
+	if _, err = client.NetworkInterface.Update(machine.SystemID, id, getNetworkInterfaceUpdateParams(d)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -179,10 +184,20 @@ func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.Resou
 func getNetworkInterfacePhysicalParams(d *schema.ResourceData) *entity.NetworkInterfacePhysicalParams {
 	return &entity.NetworkInterfacePhysicalParams{
 		MACAddress: d.Get("mac_address").(string),
-		VLAN:       d.Get("vlan").(string),
-		Name:       d.Get("name").(string),
 		MTU:        d.Get("mtu").(int),
+		Name:       d.Get("name").(string),
 		Tags:       strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
+		VLAN:       d.Get("vlan").(int),
+	}
+}
+
+func getNetworkInterfaceUpdateParams(d *schema.ResourceData) *entity.NetworkInterfaceUpdateParams {
+	return &entity.NetworkInterfaceUpdateParams{
+		MACAddress: d.Get("mac_address").(string),
+		MTU:        d.Get("mtu").(int),
+		Name:       d.Get("name").(string),
+		Tags:       strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
+		VLAN:       d.Get("vlan").(int),
 	}
 }
 
