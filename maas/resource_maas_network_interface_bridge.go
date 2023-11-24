@@ -23,23 +23,6 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 			State: resourceMaasNetworkInterfaceBridgeImport,
 		},
 		Schema: map[string]*schema.Schema{
-			"machine": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
-			},
-			"name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "Name of the interface.",
-			},
-			"parent": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Parent interface name for this bridge interface.",
-			},
 			"accept_ra": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -70,11 +53,28 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 				Computed:    true,
 				Description: "MAC address of the interface.",
 			},
+			"machine": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
+			},
 			"mtu": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
 				Description: "Maximum transmission unit.",
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "Name of the interface.",
+			},
+			"parent": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Parent interface name for this bridge interface.",
 			},
 			"tags": {
 				Type:     schema.TypeSet,
@@ -95,8 +95,8 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 	}
 }
 
-func resourceMaasNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -116,11 +116,11 @@ func resourceMaasNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Res
 
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	return resourceMaasNetworkInterfaceBridgeRead(ctx, d, m)
+	return resourceMaasNetworkInterfaceBridgeRead(ctx, d, meta)
 }
 
-func resourceMaasNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -138,6 +138,9 @@ func resourceMaasNetworkInterfaceBridgeRead(ctx context.Context, d *schema.Resou
 	}
 
 	p := networkInterface.Params.(map[string]interface{})
+	if _, ok := p["accept-ra"]; ok {
+		d.Set("accept_ra", p["accept-ra"].(bool))
+	}
 	if _, ok := p["bridge_fd"]; ok {
 		d.Set("bridge_fd", int64(p["bridge_fd"].(float64)))
 	}
@@ -147,14 +150,11 @@ func resourceMaasNetworkInterfaceBridgeRead(ctx context.Context, d *schema.Resou
 	if _, ok := p["bridge_type"]; ok {
 		d.Set("bridge_type", p["bridge_type"].(string))
 	}
-	if _, ok := p["accept-ra"]; ok {
-		d.Set("accept_ra", p["accept-ra"].(bool))
-	}
 
 	tfState := map[string]interface{}{
-		"name":        networkInterface.Name,
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
+		"name":        networkInterface.Name,
 		"tags":        networkInterface.Tags,
 		"vlan":        fmt.Sprintf("%v", networkInterface.VLAN.ID),
 	}
@@ -165,8 +165,8 @@ func resourceMaasNetworkInterfaceBridgeRead(ctx context.Context, d *schema.Resou
 	return nil
 }
 
-func resourceMaasNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -189,11 +189,11 @@ func resourceMaasNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Res
 		return diag.FromErr(err)
 	}
 
-	return resourceMaasNetworkInterfaceBridgeRead(ctx, d, m)
+	return resourceMaasNetworkInterfaceBridgeRead(ctx, d, meta)
 }
 
-func resourceMaasNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -212,31 +212,31 @@ func resourceMaasNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.Res
 
 func getNetworkInterfaceBridgeParams(d *schema.ResourceData, parentID int) *entity.NetworkInterfaceBridgeParams {
 	return &entity.NetworkInterfaceBridgeParams{
-		MACAddress: d.Get("mac_address").(string),
-		Name:       d.Get("name").(string),
-		Tags:       strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
-		VLAN:       d.Get("vlan").(int),
-		MTU:        d.Get("mtu").(int),
 		AcceptRA:   d.Get("accept_ra").(bool),
-		Parents:    []int{parentID},
 		BridgeType: d.Get("bridge_type").(string),
 		BridgeSTP:  d.Get("bridge_stp").(bool),
 		BridgeFD:   d.Get("bridge_fd").(int),
+		MACAddress: d.Get("mac_address").(string),
+		MTU:        d.Get("mtu").(int),
+		Name:       d.Get("name").(string),
+		Parents:    []int{parentID},
+		Tags:       strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
+		VLAN:       d.Get("vlan").(int),
 	}
 }
 
 func getNetworkInterfaceBridgeUpdateParams(d *schema.ResourceData, parentID int) *entity.NetworkInterfaceUpdateParams {
 	return &entity.NetworkInterfaceUpdateParams{
-		MACAddress: d.Get("mac_address").(string),
-		Name:       d.Get("name").(string),
-		Tags:       strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
-		VLAN:       d.Get("vlan").(int),
-		MTU:        d.Get("mtu").(int),
 		AcceptRA:   d.Get("accept_ra").(bool),
-		Parents:    []int{parentID},
 		BridgeType: d.Get("bridge_type").(string),
 		BridgeSTP:  d.Get("bridge_stp").(bool),
 		BridgeFD:   d.Get("bridge_fd").(int),
+		MACAddress: d.Get("mac_address").(string),
+		MTU:        d.Get("mtu").(int),
+		Name:       d.Get("name").(string),
+		Parents:    []int{parentID},
+		Tags:       strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
+		VLAN:       d.Get("vlan").(int),
 	}
 }
 

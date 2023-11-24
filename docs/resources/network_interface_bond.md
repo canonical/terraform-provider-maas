@@ -36,7 +36,6 @@ resource "maas_network_interface_bond" "test" {
 ### Optional
 
 - `accept_ra` (Boolean) Accept router advertisements. (IPv6 only).
-- `autoconf` (Boolean) Perform stateless autoconfiguration. (IPv6 only).
 - `bond_downdelay` (Number) Specifies the time, in milliseconds, to wait before disabling a slave after a link failure has been detected.
 - `bond_lacp_rate` (String) Option specifying the rate at which to ask the link partner to transmit LACPDU packets in 802.3ad mode. Available options are ``fast`` or ``slow``. (Default: ``slow``).
 - `bond_miimon` (Number) The link monitoring freqeuncy in milliseconds. (Default: 100).

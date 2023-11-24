@@ -30,7 +30,6 @@ resource "maas_network_interface_bridge" "example" {
 ### Optional
 
 - `accept_ra` (Boolean) Accept router advertisements. (IPv6 only).
-- `autoconf` (Boolean) Perform stateless autoconfiguration. (IPv6 only).
 - `bridge_fd` (Number) Set bridge forward delay to time seconds. (Default: 15).
 - `bridge_stp` (Boolean) Turn spanning tree protocol on or off. (Default: False).
 - `bridge_type` (String) The type of bridge to create. Possible values are: ``standard``, ``ovs``.

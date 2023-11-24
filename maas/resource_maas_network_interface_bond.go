@@ -23,26 +23,6 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 			State: resourceMaasNetworkInterfaceBondImport,
 		},
 		Schema: map[string]*schema.Schema{
-			"machine": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
-			},
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Name of the interface.",
-			},
-			"parents": {
-				Type:     schema.TypeSet,
-				Required: true,
-				ForceNew: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Description: "Parent interface names for this bridge interface.",
-			},
 			"accept_ra": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -97,11 +77,31 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				Computed:    true,
 				Description: "MAC address of the interface.",
 			},
+			"machine": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
+			},
 			"mtu": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
 				Description: "Maximum transmission unit.",
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Name of the interface.",
+			},
+			"parents": {
+				Type:     schema.TypeSet,
+				Required: true,
+				ForceNew: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Parent interface names for this bridge interface.",
 			},
 			"tags": {
 				Type:     schema.TypeSet,
@@ -122,8 +122,8 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 	}
 }
 
-func resourceMaasNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -143,11 +143,11 @@ func resourceMaasNetworkInterfaceBondCreate(ctx context.Context, d *schema.Resou
 
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	return resourceMaasNetworkInterfaceBondRead(ctx, d, m)
+	return resourceMaasNetworkInterfaceBondRead(ctx, d, meta)
 }
 
-func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -166,6 +166,9 @@ func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.Resourc
 
 	p := networkInterface.Params.(map[string]interface{})
 	// check if key exists within Params.
+	if _, ok := p["accept-ra"]; ok {
+		d.Set("accept_ra", p["accept-ra"].(bool))
+	}
 	if _, ok := p["bond_downdelay"]; ok {
 		d.Set("bond_downdelay", int64(p["bond_downdelay"].(float64)))
 	}
@@ -187,15 +190,12 @@ func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.Resourc
 	if _, ok := p["bond_xmit_hash_policy"]; ok {
 		d.Set("bond_xmit_hash_policy", p["bond_xmit_hash_policy"].(string))
 	}
-	if _, ok := p["accept-ra"]; ok {
-		d.Set("accept_ra", p["accept-ra"].(bool))
-	}
 
 	tfState := map[string]interface{}{
-		"name":        networkInterface.Name,
-		"parents":     networkInterface.Parents,
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
+		"name":        networkInterface.Name,
+		"parents":     networkInterface.Parents,
 		"tags":        networkInterface.Tags,
 		"vlan":        strconv.Itoa(networkInterface.VLAN.ID),
 	}
@@ -206,8 +206,8 @@ func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceMaasNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -230,11 +230,11 @@ func resourceMaasNetworkInterfaceBondUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	return resourceMaasNetworkInterfaceBondRead(ctx, d, m)
+	return resourceMaasNetworkInterfaceBondRead(ctx, d, meta)
 }
 
-func resourceMaasNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -253,40 +253,40 @@ func resourceMaasNetworkInterfaceBondDelete(ctx context.Context, d *schema.Resou
 
 func getNetworkInterfaceBondParams(d *schema.ResourceData, parentIDs []int) *entity.NetworkInterfaceBondParams {
 	return &entity.NetworkInterfaceBondParams{
+		AcceptRA:           d.Get("accept_ra").(bool),
+		BondDownDelay:      d.Get("bond_downdelay").(int),
+		BondLACPRate:       d.Get("bond_lacp_rate").(string),
+		BondMiimon:         d.Get("bond_miimon").(int),
+		BondMode:           d.Get("bond_mode").(string),
+		BondNumberGratARP:  d.Get("bond_num_grat_arp").(int),
+		BondUpDelay:        d.Get("bond_updelay").(int),
+		BondXMitHashPolicy: d.Get("bond_xmit_hash_policy").(string),
 		MACAddress:         d.Get("mac_address").(string),
+		MTU:                d.Get("mtu").(int),
 		Name:               d.Get("name").(string),
+		Parents:            parentIDs,
 		Tags:               strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
 		VLAN:               d.Get("vlan").(int),
-		MTU:                d.Get("mtu").(int),
-		AcceptRA:           d.Get("accept_ra").(bool),
-		Parents:            parentIDs,
-		BondMode:           d.Get("bond_mode").(string),
-		BondMiimon:         d.Get("bond_miimon").(int),
-		BondDownDelay:      d.Get("bond_downdelay").(int),
-		BondUpDelay:        d.Get("bond_updelay").(int),
-		BondLACPRate:       d.Get("bond_lacp_rate").(string),
-		BondXMitHashPolicy: d.Get("bond_xmit_hash_policy").(string),
-		BondNumberGratARP:  d.Get("bond_num_grat_arp").(int),
 	}
 }
 
 func getNetworkInterfaceBondUpdateParams(d *schema.ResourceData, parentIDs []int) *entity.NetworkInterfaceUpdateParams {
 
 	return &entity.NetworkInterfaceUpdateParams{
+		AcceptRA:           d.Get("accept_ra").(bool),
+		BondDownDelay:      d.Get("bond_downdelay").(int),
+		BondLACPRate:       d.Get("bond_lacp_rate").(string),
+		BondMiimon:         d.Get("bond_miimon").(int),
+		BondMode:           d.Get("bond_mode").(string),
+		BondNumberGratARP:  d.Get("bond_num_grat_arp").(int),
+		BondUpDelay:        d.Get("bond_updelay").(int),
+		BondXMitHashPolicy: d.Get("bond_xmit_hash_policy").(string),
 		MACAddress:         d.Get("mac_address").(string),
+		MTU:                d.Get("mtu").(int),
 		Name:               d.Get("name").(string),
+		Parents:            parentIDs,
 		Tags:               strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
 		VLAN:               d.Get("vlan").(int),
-		MTU:                d.Get("mtu").(int),
-		AcceptRA:           d.Get("accept_ra").(bool),
-		Parents:            parentIDs,
-		BondMode:           d.Get("bond_mode").(string),
-		BondMiimon:         d.Get("bond_miimon").(int),
-		BondDownDelay:      d.Get("bond_downdelay").(int),
-		BondUpDelay:        d.Get("bond_updelay").(int),
-		BondLACPRate:       d.Get("bond_lacp_rate").(string),
-		BondXMitHashPolicy: d.Get("bond_xmit_hash_policy").(string),
-		BondNumberGratARP:  d.Get("bond_num_grat_arp").(int),
 	}
 }
 

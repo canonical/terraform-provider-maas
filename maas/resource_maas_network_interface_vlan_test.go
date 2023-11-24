@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const TestACCResourceMaasNetworkInterfaceVlanConfig_basic = `
+const TestAccResourceMaasNetworkInterfaceVlanConfig_basic = `
 resource "maas_network_interface_vlan" "test" {
 	machine = "mq4s3r"
 	parent = "bond0"
@@ -16,9 +16,9 @@ resource "maas_network_interface_vlan" "test" {
 	accept_ra = false
 	mtu = 9000
   }
-  `
+`
 
-const TestACCResourceMaasNetworkInterfaceVlanConfig_update = `
+const TestAccResourceMaasNetworkInterfaceVlanConfig_update = `
 resource "maas_network_interface_vlan" "test" {
 	machine = "mq4s3r"
 	parent = "bond0"
@@ -27,17 +27,19 @@ resource "maas_network_interface_vlan" "test" {
 	accept_ra = true
 	mtu = 9001
   }
-  `
+`
 
-func TestACCResourceMaasNetworkInterfaceVlan(t *testing.T) {
+func TestAccResourceMaasNetworkInterfaceVlan_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		Providers: testutils.TestAccProviders,
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: nil,
+		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: TestACCResourceMaasNetworkInterfaceVlanConfig_basic,
+				Config: TestAccResourceMaasNetworkInterfaceVlanConfig_basic,
 			},
 			{
-				Config: TestACCResourceMaasNetworkInterfaceVlanConfig_update,
+				Config: TestAccResourceMaasNetworkInterfaceVlanConfig_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "mtu", "9001"),
 				),

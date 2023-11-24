@@ -23,28 +23,34 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 			State: resourceMaasNetworkInterfaceVlanImport,
 		},
 		Schema: map[string]*schema.Schema{
-			"machine": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
-			},
-			"parent": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Parent interface name for this bridge interface.",
-			},
 			"accept_ra": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 				Description: "Accept router advertisements. (IPv6 only).",
 			},
+			"fabric": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The identifier (name or ID) of the fabric for the new VLAN.",
+			},
+			"machine": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
+			},
 			"mtu": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
 				Description: "Maximum transmission unit.",
+			},
+			"parent": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Parent interface name for this bridge interface.",
 			},
 			"tags": {
 				Type:     schema.TypeSet,
@@ -61,18 +67,12 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 				Computed:    true,
 				Description: "VLAN the interface is connected to.",
 			},
-			"fabric": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The identifier (name or ID) of the fabric for the new VLAN.",
-			},
 		},
 	}
 }
 
-func resourceMaasNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -100,12 +100,12 @@ func resourceMaasNetworkInterfaceVlanCreate(ctx context.Context, d *schema.Resou
 
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	return resourceMaasNetworkInterfaceVlanRead(ctx, d, m)
+	return resourceMaasNetworkInterfaceVlanRead(ctx, d, meta)
 
 }
 
-func resourceMaasNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -128,8 +128,8 @@ func resourceMaasNetworkInterfaceVlanRead(ctx context.Context, d *schema.Resourc
 	}
 
 	tfState := map[string]interface{}{
-		"parent": networkInterface.Parents[0],
 		"mtu":    networkInterface.EffectiveMTU,
+		"parent": networkInterface.Parents[0],
 		"tags":   networkInterface.Tags,
 		"vlan":   strconv.Itoa(networkInterface.VLAN.VID),
 	}
@@ -139,8 +139,8 @@ func resourceMaasNetworkInterfaceVlanRead(ctx context.Context, d *schema.Resourc
 
 	return nil
 }
-func resourceMaasNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -173,10 +173,10 @@ func resourceMaasNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	return resourceMaasNetworkInterfaceVlanRead(ctx, d, m)
+	return resourceMaasNetworkInterfaceVlanRead(ctx, d, meta)
 }
-func resourceMaasNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*client.Client)
+func resourceMaasNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -195,21 +195,21 @@ func resourceMaasNetworkInterfaceVlanDelete(ctx context.Context, d *schema.Resou
 
 func getNetworkInterfaceVlanParams(d *schema.ResourceData, parentID int, vlanID int) *entity.NetworkInterfaceVLANParams {
 	return &entity.NetworkInterfaceVLANParams{
-		VLAN:     vlanID,
+		AcceptRA: d.Get("accept_ra").(bool),
+		MTU:      d.Get("mtu").(int),
 		Parents:  []int{parentID},
 		Tags:     strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
-		MTU:      d.Get("mtu").(int),
-		AcceptRA: d.Get("accept_ra").(bool),
+		VLAN:     vlanID,
 	}
 }
 
 func getNetworkInterfaceVlanUpdateParams(d *schema.ResourceData, parentID int, vlanID int) *entity.NetworkInterfaceUpdateParams {
 	return &entity.NetworkInterfaceUpdateParams{
-		VLAN:     vlanID,
+		AcceptRA: d.Get("accept_ra").(bool),
+		MTU:      d.Get("mtu").(int),
 		Parents:  []int{parentID},
 		Tags:     strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
-		MTU:      d.Get("mtu").(int),
-		AcceptRA: d.Get("accept_ra").(bool),
+		VLAN:     vlanID,
 	}
 }
 
