@@ -44,6 +44,7 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"maas_device":                     resourceMaasDevice(),
 			"maas_instance":                   resourceMaasInstance(),
 			"maas_vm_host":                    resourceMaasVMHost(),
 			"maas_vm_host_machine":            resourceMaasVMHostMachine(),
@@ -67,6 +68,7 @@ func Provider() *schema.Provider {
 			"maas_subnet":                     dataSourceMaasSubnet(),
 			"maas_machine":                    dataSourceMaasMachine(),
 			"maas_network_interface_physical": dataSourceMaasNetworkInterfacePhysical(),
+			"maas_device":                     dataSourceMaasDevice(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
