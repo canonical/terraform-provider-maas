@@ -1,3 +1,23 @@
+## 2.0.0 (Dec 13, 2023)
+
+NEW:
+
+* Add support for resource and data source maas_device (#119)
+* Deploy a machine based on its system_id (#118)
+* Add data sources for machine and physical nic (#7)
+* Add support for TLS configuration options (#101)
+
+IMPROVEMENTS:
+
+* Consume versioned `maas/gomaasclient` starting with 0.1.0 (#124)
+* Fixes on expecting the VLAN id and parsing big numbers (#121)
+* chore: replace deprecated package (#114)
+* Fix maas_instance updates (#117)
+* ci: special labels to trigger integration tests (#109)
+* Fix parsing of power parameters (#96)
+  * It includes a breaking change to how power parameters have to be declared. Please consult the example: `terraform-provider-maas/examples/1-machines.tf`.
+* Update dependencies
+
 ## 1.3.1 (Oct 12, 2023)
 
 IMPROVEMENTS:
