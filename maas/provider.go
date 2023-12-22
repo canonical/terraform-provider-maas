@@ -61,6 +61,7 @@ func Provider() *schema.Provider {
 			"maas_block_device":               resourceMaasBlockDevice(),
 			"maas_tag":                        resourceMaasTag(),
 			"maas_user":                       resourceMaasUser(),
+			"maas_resource_pool":              resourceMaasResourcePool(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"maas_fabric":                     dataSourceMaasFabric(),
@@ -69,6 +70,7 @@ func Provider() *schema.Provider {
 			"maas_machine":                    dataSourceMaasMachine(),
 			"maas_network_interface_physical": dataSourceMaasNetworkInterfacePhysical(),
 			"maas_device":                     dataSourceMaasDevice(),
+			"maas_resource_pool":              dataSourceMaasResourcePool(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
