@@ -3,12 +3,14 @@ package maas
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/juju/gomaasapi/v2"
 	"github.com/maas/gomaasclient/client"
 	"github.com/maas/gomaasclient/entity"
 )
@@ -225,13 +227,9 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	vmHost, err := client.VMHost.Get(id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	// Update VM host options
-	_, err = client.VMHost.Update(vmHost.ID, getVMHostParams(d))
+	_, err = client.VMHost.Update(id, getVMHostParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -256,18 +254,25 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	// If the VM host was deployed from a machine, release the machine.
-	if vmHost.Host.SystemID != "" {
-		// Release machine
-		err = client.Machines.Release([]string{vmHost.Host.SystemID}, "Released by Terraform")
-		if err != nil {
-			return diag.FromErr(err)
+	// Check if VM host was linked to a dynamic machine and if yes, return
+	// Dynamic machines are deleted by MAAS when their VM hosts are deleted.
+	// This information is not directly available from the API.
+	_, err = client.Machine.Get(vmHost.Host.SystemID)
+	if err, ok := gomaasapi.GetServerError(err); ok {
+		if err.StatusCode == http.StatusNotFound {
+			return nil
 		}
-		// Wait machine to be released
-		_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing"}, []string{"Ready"})
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	}
+
+	// VM host was deployed from a machine, so release the machine.
+	err = client.Machines.Release([]string{vmHost.Host.SystemID}, "Released by Terraform")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	// Wait machine to be released
+	_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing"}, []string{"Ready"})
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
