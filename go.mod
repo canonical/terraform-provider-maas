@@ -7,7 +7,8 @@ require (
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.31.0
-	github.com/maas/gomaasclient v0.1.0
+	github.com/juju/gomaasapi/v2 v2.2.0
+	github.com/maas/gomaasclient v0.2.0
 	github.com/stretchr/testify v1.8.4
 )
 
@@ -50,7 +51,6 @@ require (
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/juju/collections v1.0.4 // indirect
 	github.com/juju/errors v1.0.0 // indirect
-	github.com/juju/gomaasapi/v2 v2.2.0 // indirect
 	github.com/juju/loggo v1.0.0 // indirect
 	github.com/juju/mgo/v2 v2.0.2 // indirect
 	github.com/juju/schema v1.0.1 // indirect
