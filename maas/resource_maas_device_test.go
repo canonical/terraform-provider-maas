@@ -6,6 +6,7 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/maas/gomaasclient/client"
@@ -16,8 +17,8 @@ func TestAccResourceMaasDevice_basic(t *testing.T) {
 
 	var device entity.Device
 	description := "Test description"
-	domain := "test-domain"
-	hostname := "test-device"
+	domain := acctest.RandomWithPrefix("tf-domain-")
+	hostname := acctest.RandomWithPrefix("tf-device-")
 	zone := "default"
 	mac_address := "12:23:45:67:89:de"
 
