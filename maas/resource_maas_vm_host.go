@@ -2,6 +2,7 @@ package maas
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -308,9 +309,29 @@ func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineId
 		return nil, err
 	}
 
+	// Get Default OS and series
+	var defaultOsystem string
+	defaultOsystemBytes, err := client.MAASServer.Get("default_osystem")
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(defaultOsystemBytes, &defaultOsystem)
+	if err != nil {
+		return nil, err
+	}
+	var defaultSeries string
+	defaultSeriesBytes, err := client.MAASServer.Get("default_distro_series")
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(defaultSeriesBytes, &defaultSeries)
+	if err != nil {
+		return nil, err
+	}
+
 	// Deploy machine
 	deployParams := entity.MachineDeployParams{
-		DistroSeries:   "focal",
+		DistroSeries:   fmt.Sprintf("%s/%s", defaultOsystem, defaultSeries),
 		InstallKVM:     (vmHostType == "virsh"),
 		RegisterVMHost: (vmHostType == "lxd"),
 	}
