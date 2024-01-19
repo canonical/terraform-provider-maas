@@ -15,12 +15,12 @@ import (
 func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network Vlans.",
-		CreateContext: resourceMaasNetworkInterfaceVlanCreate,
-		ReadContext:   resourceMaasNetworkInterfaceVlanRead,
-		UpdateContext: resourceMaasNetworkInterfaceVlanUpdate,
-		DeleteContext: resourceMaasNetworkInterfaceVlanDelete,
+		CreateContext: resourceNetworkInterfaceVlanCreate,
+		ReadContext:   resourceNetworkInterfaceVlanRead,
+		UpdateContext: resourceNetworkInterfaceVlanUpdate,
+		DeleteContext: resourceNetworkInterfaceVlanDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceMaasNetworkInterfaceVlanImport,
+			State: resourceNetworkInterfaceVlanImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"accept_ra": {
@@ -33,24 +33,24 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "The identifier (name or ID) of the fabric for the new VLAN.",
+				Description: "The identifier (name or ID) of the fabric for the new VLAN interface.",
 			},
 			"machine": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
+				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the VLAN interface.",
 			},
 			"mtu": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
-				Description: "Maximum transmission unit.",
+				Description: "The MTU of the VLAN interface.",
 			},
 			"parent": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "Parent interface name for this bridge interface.",
+				Description: "Parent interface name for this VLAN interface.",
 			},
 			"tags": {
 				Type:     schema.TypeSet,
@@ -59,19 +59,19 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Tags for the interface.",
+				Description: "A set of tag names to be assigned to the VLAN interface.",
 			},
 			"vlan": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
-				Description: "VLAN the interface is connected to.",
+				Description: "Database ID of the VLAN the VLAN interface is connected to.",
 			},
 		},
 	}
 }
 
-func resourceMaasNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -100,11 +100,11 @@ func resourceMaasNetworkInterfaceVlanCreate(ctx context.Context, d *schema.Resou
 
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	return resourceMaasNetworkInterfaceVlanRead(ctx, d, meta)
+	return resourceNetworkInterfaceVlanRead(ctx, d, meta)
 
 }
 
-func resourceMaasNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -131,7 +131,7 @@ func resourceMaasNetworkInterfaceVlanRead(ctx context.Context, d *schema.Resourc
 		"mtu":    networkInterface.EffectiveMTU,
 		"parent": networkInterface.Parents[0],
 		"tags":   networkInterface.Tags,
-		"vlan":   strconv.Itoa(networkInterface.VLAN.VID),
+		"vlan":   networkInterface.VLAN.ID,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -139,7 +139,7 @@ func resourceMaasNetworkInterfaceVlanRead(ctx context.Context, d *schema.Resourc
 
 	return nil
 }
-func resourceMaasNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -173,9 +173,9 @@ func resourceMaasNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	return resourceMaasNetworkInterfaceVlanRead(ctx, d, meta)
+	return resourceNetworkInterfaceVlanRead(ctx, d, meta)
 }
-func resourceMaasNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -213,7 +213,7 @@ func getNetworkInterfaceVlanUpdateParams(d *schema.ResourceData, parentID int, v
 	}
 }
 
-func resourceMaasNetworkInterfaceVlanImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceNetworkInterfaceVlanImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:VLAN_ID", d.Id())

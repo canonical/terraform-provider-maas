@@ -15,12 +15,12 @@ import (
 func resourceMaasNetworkInterfaceBond() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network Bonds.",
-		CreateContext: resourceMaasNetworkInterfaceBondCreate,
-		ReadContext:   resourceMaasNetworkInterfaceBondRead,
-		UpdateContext: resourceMaasNetworkInterfaceBondUpdate,
-		DeleteContext: resourceMaasNetworkInterfaceBondDelete,
+		CreateContext: resourceNetworkInterfaceBondCreate,
+		ReadContext:   resourceNetworkInterfaceBondRead,
+		UpdateContext: resourceNetworkInterfaceBondUpdate,
+		DeleteContext: resourceNetworkInterfaceBondDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceMaasNetworkInterfaceBondImport,
+			State: resourceNetworkInterfaceBondImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"accept_ra": {
@@ -45,7 +45,7 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
-				Description: "The link monitoring freqeuncy in milliseconds. (Default: 100).",
+				Description: "The link monitoring frequency in milliseconds. (Default: 100).",
 			},
 			"bond_mode": {
 				Type:        schema.TypeString,
@@ -75,24 +75,24 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "MAC address of the interface.",
+				Description: "The bond interface MAC address.",
 			},
 			"machine": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
+				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the bond interface.",
 			},
 			"mtu": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
-				Description: "Maximum transmission unit.",
+				Description: "The MTU of the bond interface.",
 			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "Name of the interface.",
+				Description: "The bond interface name.",
 			},
 			"parents": {
 				Type:     schema.TypeSet,
@@ -101,7 +101,7 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Parent interface names for this bridge interface.",
+				Description: "Parent interface names for this bond interface.",
 			},
 			"tags": {
 				Type:     schema.TypeSet,
@@ -110,19 +110,19 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Tags for the interface.",
+				Description: "A set of tag names to be assigned to the bond interface.",
 			},
 			"vlan": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
-				Description: "VLAN the interface is connected to.",
+				Description: "Database ID of the VLAN the bond interface is connected to.",
 			},
 		},
 	}
 }
 
-func resourceMaasNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -143,10 +143,10 @@ func resourceMaasNetworkInterfaceBondCreate(ctx context.Context, d *schema.Resou
 
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	return resourceMaasNetworkInterfaceBondRead(ctx, d, meta)
+	return resourceNetworkInterfaceBondRead(ctx, d, meta)
 }
 
-func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -165,7 +165,6 @@ func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.Resourc
 	}
 
 	p := networkInterface.Params.(map[string]interface{})
-	// check if key exists within Params.
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
 	}
@@ -197,7 +196,7 @@ func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.Resourc
 		"name":        networkInterface.Name,
 		"parents":     networkInterface.Parents,
 		"tags":        networkInterface.Tags,
-		"vlan":        strconv.Itoa(networkInterface.VLAN.ID),
+		"vlan":        networkInterface.VLAN.ID,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -206,7 +205,7 @@ func resourceMaasNetworkInterfaceBondRead(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceMaasNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -230,10 +229,10 @@ func resourceMaasNetworkInterfaceBondUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	return resourceMaasNetworkInterfaceBondRead(ctx, d, meta)
+	return resourceNetworkInterfaceBondRead(ctx, d, meta)
 }
 
-func resourceMaasNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -308,7 +307,7 @@ func findBondParentsID(client *client.Client, machineSystemID string, parents []
 	return result, nil
 }
 
-func resourceMaasNetworkInterfaceBondImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceNetworkInterfaceBondImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BOND_ID", d.Id())

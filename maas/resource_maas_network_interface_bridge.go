@@ -15,12 +15,12 @@ import (
 func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network Bridges.",
-		CreateContext: resourceMaasNetworkInterfaceBridgeCreate,
-		ReadContext:   resourceMaasNetworkInterfaceBridgeRead,
-		UpdateContext: resourceMaasNetworkInterfaceBridgeUpdate,
-		DeleteContext: resourceMaasNetworkInterfaceBridgeDelete,
+		CreateContext: resourceNetworkInterfaceBridgeCreate,
+		ReadContext:   resourceNetworkInterfaceBridgeRead,
+		UpdateContext: resourceNetworkInterfaceBridgeUpdate,
+		DeleteContext: resourceNetworkInterfaceBridgeDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceMaasNetworkInterfaceBridgeImport,
+			State: resourceNetworkInterfaceBridgeImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"accept_ra": {
@@ -51,25 +51,25 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "MAC address of the interface.",
+				Description: "The bridge interface MAC address.",
 			},
 			"machine": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.",
+				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the bridge interface.",
 			},
 			"mtu": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
-				Description: "Maximum transmission unit.",
+				Description: "The MTU of the bridge interface.",
 			},
 			"name": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				Description: "Name of the interface.",
+				Description: "The bridge interface name.",
 			},
 			"parent": {
 				Type:        schema.TypeString,
@@ -83,19 +83,19 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Tags for the interface.",
+				Description: "A set of tag names to be assigned to the bridge interface.",
 			},
 			"vlan": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
-				Description: "VLAN the interface is connected to.",
+				Description: "Database ID of the VLAN the bridge interface is connected to.",
 			},
 		},
 	}
 }
 
-func resourceMaasNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -116,10 +116,10 @@ func resourceMaasNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Res
 
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	return resourceMaasNetworkInterfaceBridgeRead(ctx, d, meta)
+	return resourceNetworkInterfaceBridgeRead(ctx, d, meta)
 }
 
-func resourceMaasNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -156,7 +156,7 @@ func resourceMaasNetworkInterfaceBridgeRead(ctx context.Context, d *schema.Resou
 		"mtu":         networkInterface.EffectiveMTU,
 		"name":        networkInterface.Name,
 		"tags":        networkInterface.Tags,
-		"vlan":        fmt.Sprintf("%v", networkInterface.VLAN.ID),
+		"vlan":        networkInterface.VLAN.ID,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -165,7 +165,7 @@ func resourceMaasNetworkInterfaceBridgeRead(ctx context.Context, d *schema.Resou
 	return nil
 }
 
-func resourceMaasNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -189,10 +189,10 @@ func resourceMaasNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Res
 		return diag.FromErr(err)
 	}
 
-	return resourceMaasNetworkInterfaceBridgeRead(ctx, d, meta)
+	return resourceNetworkInterfaceBridgeRead(ctx, d, meta)
 }
 
-func resourceMaasNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -249,7 +249,7 @@ func findInterfaceParent(client *client.Client, machineSystemID string, parent s
 	return networkInterface.ID, nil
 }
 
-func resourceMaasNetworkInterfaceBridgeImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceNetworkInterfaceBridgeImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BRIDGE_ID", d.Id())
