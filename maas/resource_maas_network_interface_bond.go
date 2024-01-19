@@ -167,6 +167,8 @@ func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceDat
 	p := networkInterface.Params.(map[string]interface{})
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
+	} else {
+		d.Set("accept_ra", false)
 	}
 	if _, ok := p["bond_downdelay"]; ok {
 		d.Set("bond_downdelay", int64(p["bond_downdelay"].(float64)))
@@ -310,7 +312,7 @@ func findBondParentsID(client *client.Client, machineSystemID string, parents []
 func resourceNetworkInterfaceBondImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BOND_ID", d.Id())
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BOND_INTERFACE_ID", d.Id())
 	}
 
 	d.Set("machine", idParts[0])

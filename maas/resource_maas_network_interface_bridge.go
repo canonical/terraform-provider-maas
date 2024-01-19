@@ -137,9 +137,15 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
+	if len(networkInterface.Parents) != 1 {
+		return diag.Errorf("expected only one parent")
+	}
+
 	p := networkInterface.Params.(map[string]interface{})
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
+	} else {
+		d.Set("accept_ra", false)
 	}
 	if _, ok := p["bridge_fd"]; ok {
 		d.Set("bridge_fd", int64(p["bridge_fd"].(float64)))
@@ -155,6 +161,7 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
 		"name":        networkInterface.Name,
+		"parent":      networkInterface.Parents[0],
 		"tags":        networkInterface.Tags,
 		"vlan":        networkInterface.VLAN.ID,
 	}
@@ -252,7 +259,7 @@ func findInterfaceParent(client *client.Client, machineSystemID string, parent s
 func resourceNetworkInterfaceBridgeImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BRIDGE_ID", d.Id())
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BRIDGE_INTERFACE_ID", d.Id())
 	}
 
 	d.Set("machine", idParts[0])

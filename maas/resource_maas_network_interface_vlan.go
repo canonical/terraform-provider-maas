@@ -87,7 +87,7 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	vlan, err := getVlan(client, fabric.ID, d.Get("vlan").(string))
+	vlan, err := getVlan(client, fabric.ID, fmt.Sprintf("%v", d.Get("vlan").(int)))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -125,6 +125,8 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 	p := networkInterface.Params.(map[string]interface{})
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
+	} else {
+		d.Set("accept_ra", false)
 	}
 
 	tfState := map[string]interface{}{
@@ -132,6 +134,9 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 		"parent": networkInterface.Parents[0],
 		"tags":   networkInterface.Tags,
 		"vlan":   networkInterface.VLAN.ID,
+	}
+	if _, ok := d.GetOk("fabric"); !ok {
+		tfState["fabric"] = fmt.Sprintf("%v", networkInterface.VLAN.FabricID)
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -216,7 +221,7 @@ func getNetworkInterfaceVlanUpdateParams(d *schema.ResourceData, parentID int, v
 func resourceNetworkInterfaceVlanImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:VLAN_ID", d.Id())
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:VLAN_INTERFACE_ID", d.Id())
 	}
 
 	d.Set("machine", idParts[0])

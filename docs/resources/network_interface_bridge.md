@@ -25,7 +25,7 @@ resource "maas_network_interface_bridge" "example" {
 
 ### Required
 
-- `machine` (String) List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.
+- `machine` (String) The identifier (system ID, hostname, or FQDN) of the machine with the bridge interface.
 
 ### Optional
 
@@ -33,12 +33,12 @@ resource "maas_network_interface_bridge" "example" {
 - `bridge_fd` (Number) Set bridge forward delay to time seconds. (Default: 15).
 - `bridge_stp` (Boolean) Turn spanning tree protocol on or off. (Default: False).
 - `bridge_type` (String) The type of bridge to create. Possible values are: ``standard``, ``ovs``.
-- `mac_address` (String) MAC address of the interface.
-- `mtu` (Number) Maximum transmission unit.
-- `name` (String) Name of the interface.
+- `mac_address` (String) The bridge interface MAC address.
+- `mtu` (Number) The MTU of the bridge interface.
+- `name` (String) The bridge interface name.
 - `parent` (String) Parent interface name for this bridge interface.
-- `tags` (Set of String) Tags for the interface.
-- `vlan` (String) VLAN the interface is connected to.
+- `tags` (Set of String) A set of tag names to be assigned to the bridge interface.
+- `vlan` (Number) Database ID of the VLAN the bridge interface is connected to.
 
 ### Read-Only
 

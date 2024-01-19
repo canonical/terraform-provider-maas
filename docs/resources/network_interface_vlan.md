@@ -26,16 +26,16 @@ resource "maas_network_interface_vlan" "example" {
 
 ### Required
 
-- `fabric` (String) The identifier (name or ID) of the fabric for the new VLAN.
-- `machine` (String) List of MAAS machines' identifiers (system ID, hostname, or FQDN) that will be tagged with the new tag.
-- `parent` (String) Parent interface name for this bridge interface.
+- `fabric` (String) The identifier (name or ID) of the fabric for the new VLAN interface.
+- `machine` (String) The identifier (system ID, hostname, or FQDN) of the machine with the VLAN interface.
+- `parent` (String) Parent interface name for this VLAN interface.
 
 ### Optional
 
 - `accept_ra` (Boolean) Accept router advertisements. (IPv6 only).
-- `mtu` (Number) Maximum transmission unit.
-- `tags` (Set of String) Tags for the interface.
-- `vlan` (String) VLAN the interface is connected to.
+- `mtu` (Number) The MTU of the VLAN interface.
+- `tags` (Set of String) A set of tag names to be assigned to the VLAN interface.
+- `vlan` (Number) Database ID of the VLAN the VLAN interface is connected to.
 
 ### Read-Only
 
@@ -46,6 +46,6 @@ resource "maas_network_interface_vlan" "example" {
 Import is supported using the following syntax:
 
 ```shell
-# A vlan network interface can be imported using the machine identifier (system ID, hostname, or FQDN) and ID. e.g.
+# A VLAN network interface can be imported using the machine identifier (system ID, hostname, or FQDN) and ID. e.g.
 $ terraform import maas_network_interface_vlan.example vm1:id
 ```
