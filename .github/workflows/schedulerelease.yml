@@ -59,6 +59,6 @@ jobs:
         with:
           title: Release v${{ needs.fetch-tags.outputs.next-tag }}
           body: ${{ needs.changelog.outputs.changelog }}
-          branch: v${{ needs.fetch-tags.outputs.next-tag }}
+          branch: release/v${{ needs.fetch-tags.outputs.next-tag }}
           commit-message: bump version to v${{ needs.fetch-tags.outputs.next-tag }}
           update-pull-request-title-and-body: true

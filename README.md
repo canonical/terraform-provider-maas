@@ -49,7 +49,19 @@ The [docs](/docs) section contains details about each supported Terraform resour
 
 ### Release process
 
-1. Create a new branch from `master` as `release-vX.X.X`
+#### Automatically
+
+1. Wait for the weekly release scheduler job to create a PR against main
+  The PR has a base branch `release/vX.X.X` and title `Release vX.X.X`
+2. Review and edit the changelog written in the PR body
+3. Review and Merge the PR
+4. Another automated job should pickup the merged PR, creating a draft tagged [release](https://github.com/maas/terraform-provider-maas/releases)
+  The tag will be `vX.X.X`, matching the branch name
+5. Convert the draft release to regular release
+
+#### Manually
+
+1. Create a new branch from `master` as `release/vX.X.X`
    ```bash
    git branch release-vX.X.X master
    git push -u origin release-vX.X.X

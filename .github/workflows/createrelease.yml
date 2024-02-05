@@ -19,7 +19,7 @@ jobs:
       
       - name: Determine release number
         env:
-          RELEASE: ${{ github.event.pull_request.title }}
+          RELEASE: $(basename ${{ github.head_ref }})
         run: echo releasing v$RELEASE
       
       - name: Determine release changelog
