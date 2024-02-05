@@ -8,6 +8,7 @@ on:
       - "main"
     paths-ignore:
       - 'README.md'
+      - 'CHANGELOG.md'
       - 'docs'
       - 'examples'
 
