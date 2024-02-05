@@ -1,0 +1,64 @@
+# Create a release PR every week
+# (we may desire more intelligent logic later)
+name: Schedule Releases
+
+# update on changes to main
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+
+jobs:
+  # fetch the previous tag, and the next according to semver
+  # (We assume patch, developers can bump to minor/major in the PR)
+  fetch-tags:
+    runs-on: ubuntu-latest
+    outputs:
+      previous-tag: ${{ steps.previoustag.outputs.tag }}
+      next-tag: ${{ steps.semvers.outputs.patch }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: git fetch --tags origin
+
+      - name: Get previous tag
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      
+      - name: Get next minor version
+        id: semvers
+        uses: "WyriHaximus/github-action-next-semvers@v1"
+        with:
+          version: ${{ steps.previoustag.outputs.tag }}
+
+  # determine the changelog
+  changelog:
+    runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - name: "Generate release changelog"
+        id: changelog
+        uses: heinrichreimer/action-github-changelog-generator@v2.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          sinceTag: ${{ needs.fetch-tags.outputs.previous-tag }}
+          dueTag: ${{ needs.fetch-tags.outputs.next-tag }}
+          verbose: true
+  
+  # create the release PR
+  create-or-update-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: echo ${{ needs.changelog.outputs.changelog }} | cat - CHANGELOG.md > CHANGELOG.md
+
+      - uses: gr2m/create-or-update-pull-request-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: Release v${{ needs.fetch-tags.outputs.next-tag }}
+          body: ${{ needs.changelog.outputs.changelog }}
+          branch: v${{ needs.fetch-tags.outputs.next-tag }}
+          commit-message: bump version to v${{ needs.fetch-tags.outputs.next-tag }}
+          update-pull-request-title-and-body: true
