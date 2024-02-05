@@ -1,11 +1,15 @@
-# Create a release PR every week
-# (we may desire more intelligent logic later)
+# Create or Update a release PR every push to main
 name: Schedule Releases
 
 # update on changes to main
 on:
-  schedule:
-    - cron: "0 0 * * 0"
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - 'README.md'
+      - 'docs'
+      - 'examples'
 
 jobs:
   # fetch the previous tag, and the next according to semver
