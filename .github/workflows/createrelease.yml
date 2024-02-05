@@ -1,0 +1,40 @@
+# Create a release + tag whenever a release PR is merged
+name: Create Release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - "main"
+
+jobs:
+  release:
+    if: startsWith(github.event.pull_request.title, 'Release v') && github.event.pull_request.merged == true && github.event.pull_request.user.login == 'github-actions[bot]'
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      
+      - name: Determine release number
+        env:
+          RELEASE: ${{ github.event.pull_request.title }}
+        run: echo releasing v$RELEASE
+      
+      - name: Determine release changelog
+        env:
+          CHANGELOG: ${{ github.event.pull_request.body }}
+        run: echo $CHANGELOG
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: $RELEASE
+          release_name: v$RELEASE
+          body: $CHANGELOG
+          draft: true
+          prerelease: false
