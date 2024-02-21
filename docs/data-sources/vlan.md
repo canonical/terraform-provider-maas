@@ -15,12 +15,12 @@ Provides details about an existing MAAS VLAN.
 ```terraform
 data "maas_vlan" "default" {
   fabric = data.maas_fabric.default.id
-  vlan = 0
+  vlan   = 0
 }
 
 data "maas_vlan" "vid10" {
   fabric = data.maas_fabric.default.id
-  vlan = 10
+  vlan   = 10
 }
 ```
 
