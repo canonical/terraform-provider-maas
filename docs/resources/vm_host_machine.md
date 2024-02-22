@@ -14,10 +14,10 @@ Provides a resource to manage MAAS VM host machines.
 
 ```terraform
 resource "maas_vm_host_machine" "kvm" {
-  count = 2
+  count   = 2
   vm_host = maas_vm_host.kvm.id
-  cores = 1
-  memory = 2048
+  cores   = 1
+  memory  = 2048
 
   storage_disks {
     size_gigabytes = 15

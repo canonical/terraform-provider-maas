@@ -11,8 +11,8 @@ resource "maas_dns_record" "test_aaaa" {
 }
 
 resource "maas_dns_record" "test_txt" {
-  type = "TXT"
-  data = "@"
-  name = "test-txt"
+  type   = "TXT"
+  data   = "@"
+  name   = "test-txt"
   domain = maas_dns_domain.cloudbase.name
 }

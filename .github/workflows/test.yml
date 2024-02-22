@@ -6,16 +6,16 @@ name: Tests
 on:
   pull_request:
     paths-ignore:
-      - 'README.md'
-      - 'docs'
-      - 'examples'
+      - "README.md"
+      - "docs"
+      - "examples"
   push:
     branches:
       - "main"
     paths-ignore:
-      - 'README.md'
-      - 'docs'
-      - 'examples'
+      - "README.md"
+      - "docs"
+      - "examples"
 
 # Testing only needs permissions to read the repository contents.
 permissions:
@@ -30,9 +30,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
           cache: true
       - run: make lint
+
+  terraform_fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: terraform fmt
+        run: terraform fmt -recursive -check || (echo "Terraform files aren't formatted. Run 'terraform fmt -recursive && make generate_docs'"; exit 1;)
 
   # Ensure project builds before running testing matrix
   build:
@@ -43,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
           cache: true
       - run: go mod download
       - run: go build -v .
@@ -55,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
           cache: true
       - run: go generate ./...
       - run: |
@@ -75,6 +84,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
           cache: true
       - run: make test
