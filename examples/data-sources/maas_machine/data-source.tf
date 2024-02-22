@@ -6,3 +6,11 @@ resource "maas_machine" "virsh_vm1" {
   })
   pxe_mac_address = "52:54:00:89:f5:3e"
 }
+
+data "maas_machine" "test_by_hostname" {
+  hostname = maas_machine.virsh_vm1.hostname
+}
+
+data "maas_machine" "test_by_pxe_mac_address" {
+  pxe_mac_address = maas_machine.virsh_vm1.pxe_mac_address
+}
