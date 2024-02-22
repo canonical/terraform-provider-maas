@@ -1,3 +1,17 @@
+## 2.1.0 (Feb 22, 2024)
+
+NEW:
+
+* feat: add resource pool resources (#134)
+
+IMPROVEMENTS:
+
+* fix: deleting VM hosts of dynamic machines do not try release (#138)
+* fix: use MAAS defaults for VM host provisioning (#142)
+* ci: autoclose stale issues (#144)
+* docs: improve documentation (#157)
+* Update dependencies
+
 ## 2.0.0 (Dec 13, 2023)
 
 NEW:
