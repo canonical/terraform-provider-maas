@@ -158,6 +158,9 @@ func resourceMaasVMHost() *schema.Resource {
 				Description: "The new VM host zone name. This is computed if it's not set.",
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(20 * time.Minute),
+		},
 	}
 }
 
