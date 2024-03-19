@@ -205,7 +205,7 @@ func resourceMaasInstance() *schema.Resource {
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(40 * time.Minute),
+			Create: schema.DefaultTimeout(20 * time.Minute),
 		},
 	}
 }
