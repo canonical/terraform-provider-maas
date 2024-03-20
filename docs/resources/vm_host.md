@@ -43,6 +43,7 @@ resource "maas_vm_host" "kvm" {
 - `power_pass` (String, Sensitive) User password to use for power control of the VM host. Cannot be set if `machine` parameter is used.
 - `power_user` (String) User name to use for power control of the VM host. Cannot be set if `machine` parameter is used.
 - `tags` (Set of String) A set of tag names to assign to the new VM host. This is computed if it's not set.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `zone` (String) The new VM host zone name. This is computed if it's not set.
 
 ### Read-Only
@@ -51,6 +52,13 @@ resource "maas_vm_host" "kvm" {
 - `resources_cores_total` (Number) The VM host total number of CPU cores.
 - `resources_local_storage_total` (Number) The VM host total local storage (in bytes).
 - `resources_memory_total` (Number) The VM host total RAM memory (in MB).
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `create` (String)
 
 ## Import
 
