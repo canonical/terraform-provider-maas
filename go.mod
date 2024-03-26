@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.18.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.33.0
 	github.com/juju/gomaasapi/v2 v2.2.0
-	github.com/maas/gomaasclient v0.4.0
+	github.com/canonical/gomaasclient v0.4.0
 	github.com/stretchr/testify v1.9.0
 )
 

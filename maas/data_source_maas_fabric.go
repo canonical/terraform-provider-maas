@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/maas/gomaasclient/client"
+	"github.com/canonical/gomaasclient/client"
 )
 
 func dataSourceMaasFabric() *schema.Resource {

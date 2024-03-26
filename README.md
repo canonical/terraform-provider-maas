@@ -58,14 +58,14 @@ The [docs](/docs) section contains details about each supported Terraform resour
 3. Raise a PR on Github, title of the PR should be in the following format
    `Release vX.X.X`
 4. Merge the PR into master, taking a note of the merge commit which is created
-5. Go to [Releases](https://github.com/maas/terraform-provider-maas/releases) on Github
-6. Click [Draft a new release](https://github.com/maas/terraform-provider-maas/releases/new)
+5. Go to [Releases](https://github.com/canonical/terraform-provider-maas/releases) on Github
+6. Click [Draft a new release](https://github.com/canonical/terraform-provider-maas/releases/new)
 7. On `Target` choose the latest merge commit you want to release for
 8. Set the `tag` to create a new tag for the version in the format "vX.X.X"
 9. Set the `release title` to the release version, for example `v1.0.1`
 10. Copy and paste the relevant CHANGELOG.md entries to the release description
 11. Click `Publish release`
-12. The new version should be available on the [Releases](https://github.com/maas/terraform-provider-maas/releases) page
+12. The new version should be available on the [Releases](https://github.com/canonical/terraform-provider-maas/releases) page
 
 ## Additional Info
 

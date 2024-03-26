@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/juju/gomaasapi/v2"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 )
 
 var (
