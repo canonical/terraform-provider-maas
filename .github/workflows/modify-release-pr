@@ -1,0 +1,84 @@
+# Update release PR contents when the version in the header is changed
+name: Update version information
+
+# update on changes to main
+on:
+  pull_request:
+    types:
+      - "edited"
+
+permissions: 
+  contents: write
+  pull-requests: write
+  repository-projects: write
+
+jobs:
+  update_changelog:
+    if: startsWith(github.event.pull_request.title, 'Release v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # determine the next version name from a pre-existing PR
+      - name: "Get existing update"
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${{ github.event.pull_request.title }}" >> vers
+          echo "${{ steps.version-lookup.outputs.VERSION }}" >> vers
+          version=$(cat vers | grep -oP '\d+\.\d+\.\d+' | head -1)
+          rm -f vers
+          echo $version
+          echo "VERSION=${version}" >> $GITHUB_OUTPUT
+
+      # determine the changelog
+      - name: "Generate release changelog"
+        id: release-changelog
+        uses: heinrichreimer/action-github-changelog-generator@v2.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          output: tmp_changes.md
+          sinceTag: ${{ steps.version-lookup.outputs.CURRENT_VERSION }}
+          futureRelease: ${{ steps.version.outputs.VERSION }}
+          excludeTagsRegex: ".*"
+          stripGeneratorNotice: true
+
+      # read changes
+      - name: "Read Changelog"
+        id: changes
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: tmp_changes.md
+      - run: rm -f tmp_changes.md
+
+      # check if the changelog matches automation
+      - run: rm -f CHANGELOG.md || true
+      - run: git checkout ${{ github.event.pull_request.base.ref }} -- CHANGELOG.md || true
+
+      # autogenerate
+      - name: "Generate full changelog"
+        uses: heinrichreimer/action-github-changelog-generator@v2.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          base: CHANGELOG.md
+          sinceTag: ${{ steps.version-lookup.outputs.CURRENT_VERSION }}
+          futureRelease: ${{ steps.version.outputs.VERSION }}
+          excludeTagsRegex: ".*"
+
+      # create or update the release changelog
+      - uses: gr2m/create-or-update-pull-request-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: Release v${{ steps.version.outputs.VERSION }}
+          body: ${{ steps.changes.outputs.content }}
+          branch: release/latest
+          commit-message: Update changelog for v${{ steps.version.outputs.VERSION }}
+          update-pull-request-title-and-body: true
+
+      - run: rm -f $GITHUB_OUTPUT
