@@ -1,4 +1,4 @@
-# Create or Update a release PR on every push to main
+# Create or Update a release PR every push to main
 name: Schedule Releases
 
 # update on changes to main
