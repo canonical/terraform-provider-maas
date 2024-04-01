@@ -81,7 +81,7 @@ func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	link, err := createNetworkInterfaceLink(client, machine.SystemID, networkInterface.ID, getNetworkInterfaceLinkParams(d, subnet.ID))
+	link, err := createNetworkInterfaceLink(client, machine.SystemID, networkInterface, getNetworkInterfaceLinkParams(d, subnet.ID))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -187,14 +187,17 @@ func getNetworkInterfaceLinkParams(d *schema.ResourceData, subnetID int) *entity
 	}
 }
 
-func createNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterfaceID int, params *entity.NetworkInterfaceLinkParams) (*entity.NetworkInterfaceLink, error) {
+func createNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterface *entity.NetworkInterface, params *entity.NetworkInterfaceLinkParams) (*entity.NetworkInterfaceLink, error) {
 	// Clear existing links
-	_, err := client.NetworkInterface.Disconnect(machineSystemID, networkInterfaceID)
-	if err != nil {
-		return nil, err
+	if networkInterface.Type != "vlan" {
+		_, err := client.NetworkInterface.Disconnect(machineSystemID, networkInterface.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	// Create new link
-	networkInterface, err := client.NetworkInterface.LinkSubnet(machineSystemID, networkInterfaceID, params)
+	networkInterface, err := client.NetworkInterface.LinkSubnet(machineSystemID, networkInterface.ID, params)
 	if err != nil {
 		return nil, err
 	}
