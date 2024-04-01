@@ -21,27 +21,31 @@ data "maas_fabric" "default" {
 	name = "%s"
 }
 
+data "maas_machine" "machine" {
+	hostname = "%s"
+}
+
 data "maas_vlan" "default" {
 	fabric = data.maas_fabric.default.id
 	vlan   = 0
 }
 
 resource "maas_network_interface_physical" "nic1" {
-	machine     = "%s"
+	machine     = data.maas_machine.machine.id
 	mac_address = "52:54:00:89:f5:3e"
 	name        = "enp109s0f0"
 	vlan        = data.maas_vlan.default.id
 }
 
 resource "maas_network_interface_physical" "nic2" {
-	machine     = "%s"
+	machine     = data.maas_machine.machine.id
 	mac_address = "52:54:00:f5:89:ae"
 	name        = "enp109s0f1"
 	vlan        = data.maas_vlan.default.id
 }
 
 resource "maas_network_interface_bond" "test" {
-	machine               = "%s"
+	machine               = data.maas_machine.machine.id
 	name                  = "%s"
 	accept_ra             = false
 	bond_downdelay        = 1
@@ -57,7 +61,7 @@ resource "maas_network_interface_bond" "test" {
 	tags                  = ["tag1", "tag2"]
 	vlan                  = data.maas_vlan.default.id
 }
-`, fabric, machine, machine, machine, name)
+`, fabric, machine, name)
 }
 
 func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
@@ -79,7 +83,6 @@ func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "bond_updelay", "1"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "bond_xmit_hash_policy", "layer2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mac_address", "01:12:34:56:78:9A"),
-		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "machine", machine),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "9000"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.0", "enp109s0f0"),

@@ -21,20 +21,24 @@ data "maas_fabric" "default" {
 	name = "%s"
 }
 
+data "maas_machine" "machine" {
+	hostname = "%s"
+}
+
 data "maas_vlan" "default" {
 	fabric = data.maas_fabric.default.id
 	vlan   = 0
 }
 
 resource "maas_network_interface_physical" "nic1" {
-	machine     = "%s"
+	machine     = data.maas_machine.machine.id
 	mac_address = "52:54:00:15:f5:3e"
 	name        = "bridge0.3342"
 	vlan        = data.maas_vlan.default.id
 }
 
 resource "maas_network_interface_bridge" "test" {
-	machine    = "%s"
+	machine    = data.maas_machine.machine.id
 	name       = "%s"
 	accept_ra   = false
 	bridge_fd   = 42
@@ -46,7 +50,7 @@ resource "maas_network_interface_bridge" "test" {
 	tags        = ["tag1", "tag2"]
 	vlan        = data.maas_vlan.default.id
   }
-`, fabric, machine, machine, name)
+`, fabric, machine, name)
 }
 
 func TestAccResourceMaasNetworkInterfaceBridge_basic(t *testing.T) {
@@ -64,7 +68,6 @@ func TestAccResourceMaasNetworkInterfaceBridge_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_stp", "true"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_type", "standard"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mac_address", "01:12:34:56:78:9A"),
-		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "machine", machine),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mtu", "9000"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "parent", "bridge0.3342"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "tags.#", "2"),
