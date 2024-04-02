@@ -23,7 +23,7 @@ func TestAccDataSourceMaasResourcePool_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t) },
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheckMaasResourcePoolDestroy,
 		ErrorCheck:   func(err error) error { return err },

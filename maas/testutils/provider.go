@@ -20,11 +20,17 @@ func init() {
 	}
 }
 
-func PreCheck(t *testing.T) {
-	if v := os.Getenv("MAAS_API_URL"); v == "" {
-		t.Fatal("MAAS_API_URL must be set for acceptance tests")
+func PreCheck(t *testing.T, extra []string) {
+	var requiredVariables = []string{"MAAS_API_URL", "MAAS_API_KEY"}
+	missingVariables := new([]string)
+
+	for _, rv := range append(requiredVariables, extra...) {
+		if v := os.Getenv(rv); v == "" {
+			*missingVariables = append(*missingVariables, rv)
+		}
 	}
-	if v := os.Getenv("MAAS_API_KEY"); v == "" {
-		t.Fatal("MAAS_API_KEY must be set for acceptance tests")
+
+	if len(*missingVariables) > 0 {
+		t.Fatalf("%s must be set for acceptance tests", *missingVariables)
 	}
 }
