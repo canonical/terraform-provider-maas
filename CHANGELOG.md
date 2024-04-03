@@ -1,3 +1,14 @@
+## 2.2.0 (Apr 3, 2024)
+
+NEW:
+
+* feat: add interface resources for bonds, bridges, and VLANs (#77)
+* feat: add configurable create timeout for VM hosts (#164)
+
+IMPROVEMENTS:
+
+* Update dependencies
+
 ## 2.1.0 (Feb 22, 2024)
 
 NEW:
