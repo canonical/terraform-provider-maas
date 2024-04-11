@@ -21,9 +21,9 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 		DeleteContext: resourceNetworkInterfacePhysicalDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				idParts := strings.Split(d.Id(), ":")
+				idParts := strings.Split(d.Id(), "/")
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:NETWORK_INTERFACE", d.Id())
+					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE/NETWORK_INTERFACE", d.Id())
 				}
 				client := meta.(*client.Client)
 				machine, err := getMachine(client, idParts[0])
@@ -34,18 +34,8 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
-					"id":          fmt.Sprintf("%v", n.ID),
-					"mac_address": n.MACAddress,
-					"machine":     machine.SystemID,
-					"mtu":         n.EffectiveMTU,
-					"name":        n.Name,
-					"tags":        n.Tags,
-					"vlan":        n.VLAN.ID,
-				}
-				if err := setTerraformState(d, tfState); err != nil {
-					return nil, err
-				}
+				d.Set("machine", idParts[0])
+				d.SetId(fmt.Sprintf("%v", n.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
