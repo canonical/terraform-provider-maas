@@ -35,7 +35,7 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 					return nil, err
 				}
 				d.Set("machine", idParts[0])
-				d.SetId(fmt.Sprintf("%v", n.ID))
+				d.SetId(strconv.Itoa(n.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -100,7 +100,7 @@ func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.Resou
 			return diag.FromErr(err)
 		}
 	}
-	d.SetId(fmt.Sprintf("%v", networkInterface.ID))
+	d.SetId(strconv.Itoa(networkInterface.ID))
 
 	return resourceNetworkInterfacePhysicalRead(ctx, d, meta)
 }
@@ -200,7 +200,7 @@ func findNetworkInterfacePhysical(client *client.Client, machineSystemID string,
 		if n.Type != "physical" {
 			continue
 		}
-		if n.MACAddress == identifier || n.Name == identifier || fmt.Sprintf("%v", n.ID) == identifier {
+		if n.MACAddress == identifier || n.Name == identifier || strconv.Itoa(n.ID) == identifier {
 			return &n, nil
 		}
 	}
