@@ -137,17 +137,11 @@ func dataSourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta inte
 	if powerAddress, ok := vmHostParameters["power_address"]; ok {
 		tfState["power_address"] = powerAddress
 	}
-	if powerAddress, ok := vmHostParameters["password"]; ok {
-		tfState["power_pass"] = powerAddress
+	if powerPasswd, ok := vmHostParameters["power_pass"]; ok {
+		tfState["power_pass"] = powerPasswd
 	}
-	if powerAddress, ok := vmHostParameters["power_user"]; ok {
-		tfState["power_user"] = powerAddress
-	}
-	if powerAddress, ok := vmHostParameters["certificate"]; ok {
-		tfState["certificate"] = powerAddress
-	}
-	if powerAddress, ok := vmHostParameters["key"]; ok {
-		tfState["key"] = powerAddress
+	if powerUser, ok := vmHostParameters["power_user"]; ok {
+		tfState["power_user"] = powerUser
 	}
 
 	if err := setTerraformState(d, tfState); err != nil {
