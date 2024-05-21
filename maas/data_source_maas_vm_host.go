@@ -33,6 +33,7 @@ func dataSourceMaasVMHost() *schema.Resource {
 			"key": {
 				Type:        schema.TypeString,
 				Computed:    true,
+				Sensitive:   true,
 				Description: "Key to use for power control of the LXD VM host.",
 			},
 			"memory_over_commit_ratio": {
@@ -142,6 +143,12 @@ func dataSourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 	if powerUser, ok := vmHostParameters["power_user"]; ok {
 		tfState["power_user"] = powerUser
+	}
+	if certificate, ok := vmHostParameters["certificate"]; ok {
+		tfState["certificate"] = certificate
+	}
+	if key, ok := vmHostParameters["key"]; ok {
+		tfState["key"] = key
 	}
 
 	if err := setTerraformState(d, tfState); err != nil {
