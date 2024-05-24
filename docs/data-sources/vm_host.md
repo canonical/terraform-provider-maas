@@ -31,7 +31,7 @@ data "maas_vm_host" "vm_host" {
 - `cpu_over_commit_ratio` (Number) The VM host CPU overcommit ratio.
 - `default_macvlan_mode` (String) The VM host default macvlan mode. Supported values are: `bridge`, `passthru`, `private`, `vepa`.
 - `id` (String) The ID of this resource.
-- `key` (String) Key to use for power control of the LXD VM host.
+- `key` (String, Sensitive) Key to use for power control of the LXD VM host.
 - `memory_over_commit_ratio` (Number) The VM host RAM memory overcommit ratio.
 - `pool` (String) The VM host pool name.
 - `power_address` (String) Address that gives MAAS access to the VM host power control.
