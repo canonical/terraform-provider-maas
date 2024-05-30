@@ -85,6 +85,14 @@ func resourceMaasMachine() *schema.Resource {
 				Computed:    true,
 				Description: "The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.",
 			},
+			"network_interfaces": {
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Description: "A set of MAC addresses of network interfaces attached to the machine.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 			"pool": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -188,6 +196,14 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta inter
 		"pool":           machine.Pool.Name,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
+		return diag.FromErr(err)
+	}
+
+	networkInterfaces := make([]string, len(machine.InterfaceSet))
+	for i, networkInterface := range machine.InterfaceSet {
+		networkInterfaces[i] = networkInterface.MACAddress
+	}
+	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
 		return diag.FromErr(err)
 	}
 
