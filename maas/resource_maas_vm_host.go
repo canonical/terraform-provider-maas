@@ -160,7 +160,8 @@ func resourceMaasVMHost() *schema.Resource {
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(20 * time.Minute),
+			Create: schema.DefaultTimeout(30 * time.Minute),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 	}
 }
@@ -173,7 +174,7 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	var err error
 	if p, ok := d.GetOk("machine"); ok {
 		// Deploy machine, and register it as VM host
-		vmHost, err = deployMachineAsVMHost(ctx, client, p.(string), d.Get("type").(string))
+		vmHost, err = deployMachineAsVMHost(ctx, client, p.(string), d.Get("type").(string), d.Timeout(schema.TimeoutCreate))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -275,7 +276,7 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 	// Wait machine to be released
-	_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing"}, []string{"Ready"})
+	_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -299,7 +300,7 @@ func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
 	}
 }
 
-func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineIdentifier string, vmHostType string) (*entity.VMHost, error) {
+func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineIdentifier string, vmHostType string, maxTimeout time.Duration) (*entity.VMHost, error) {
 	// Find machine
 	machine, err := getMachine(client, machineIdentifier)
 	if err != nil {
@@ -345,7 +346,7 @@ func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineId
 	}
 
 	// Wait for MAAS machine to be deployed
-	machine, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Deploying"}, []string{"Deployed"})
+	machine, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Deploying"}, []string{"Deployed"}, maxTimeout)
 	if err != nil {
 		return nil, err
 	}
