@@ -146,7 +146,7 @@ func resourceMaasMachine() *schema.Resource {
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(20 * time.Minute),
+			Create: schema.DefaultTimeout(30 * time.Minute),
 		},
 	}
 }
@@ -168,7 +168,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta int
 	d.SetId(machine.SystemID)
 
 	// Wait for machine to be ready
-	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"})
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -278,13 +278,13 @@ func getMachineStatusFunc(client *client.Client, systemId string) retry.StateRef
 	}
 }
 
-func waitForMachineStatus(ctx context.Context, client *client.Client, systemID string, pendingStates []string, targetStates []string) (*entity.Machine, error) {
+func waitForMachineStatus(ctx context.Context, client *client.Client, systemID string, pendingStates []string, targetStates []string, maxTimeout time.Duration) (*entity.Machine, error) {
 	log.Printf("[DEBUG] Waiting for machine (%s) status to be one of %s\n", systemID, targetStates)
 	stateConf := &retry.StateChangeConf{
 		Pending:    pendingStates,
 		Target:     targetStates,
 		Refresh:    getMachineStatusFunc(client, systemID),
-		Timeout:    30 * time.Minute,
+		Timeout:    maxTimeout,
 		Delay:      10 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}

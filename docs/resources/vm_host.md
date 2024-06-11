@@ -59,6 +59,7 @@ resource "maas_vm_host" "kvm" {
 Optional:
 
 - `create` (String)
+- `delete` (String)
 
 ## Import
 
