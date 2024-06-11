@@ -42,6 +42,7 @@ resource "maas_vm_host_machine" "kvm" {
 - `pinned_cores` (Number) List of host CPU cores to pin the VM host machine to. If this is passed, the `cores` parameter is ignored.
 - `pool` (String) The VM host machine pool. This is computed if it's not set.
 - `storage_disks` (Block List) A list of storage disks for the new VM host. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). (see [below for nested schema](#nestedblock--storage_disks))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `zone` (String) The VM host machine zone. This is computed if it's not set.
 
 ### Read-Only
@@ -73,6 +74,14 @@ Required:
 Optional:
 
 - `pool` (String) The VM host storage pool name.
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `create` (String)
 
 ## Import
 

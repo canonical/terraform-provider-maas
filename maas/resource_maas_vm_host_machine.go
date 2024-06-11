@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -147,6 +148,9 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				Description: "The VM host machine zone. This is computed if it's not set.",
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Minute),
+		},
 	}
 }
 
@@ -173,7 +177,7 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, me
 	d.SetId(machine.SystemID)
 
 	// Wait for VM host machine to be ready
-	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"})
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return diag.FromErr(err)
 	}
