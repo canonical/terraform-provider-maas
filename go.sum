@@ -151,8 +151,8 @@ github.com/juju/errors v0.0.0-20220203013757-bd733f3c86b9/go.mod h1:TRm7EVGA3mQO
 github.com/juju/errors v1.0.0 h1:yiq7kjCLll1BiaRuNY53MGI0+EQ3rF6GB+wvboZDefM=
 github.com/juju/errors v1.0.0/go.mod h1:B5x9thDqx0wIMH3+aLIMP9HjItInYWObRovoCFM5Qe8=
 github.com/juju/gnuflag v0.0.0-20171113085948-2ce1bb71843d/go.mod h1:2PavIy+JPciBPrBUjwbNvtwB6RQlve+hkpll6QSNmOE=
-github.com/juju/gomaasapi/v2 v2.2.0 h1:vaYeEKr0mQXsM38/zfWqCrYDG8cYhHRkfTQMgkJGHdU=
-github.com/juju/gomaasapi/v2 v2.2.0/go.mod h1:ZsohFbU4xShV1aSQYQ21hR1lKj7naNGY0SPuyelcUmk=
+github.com/juju/gomaasapi/v2 v2.3.0 h1:97yPBrp/U+JwX/UVrBpkWsZKVREmIlykl8n/a58PYlE=
+github.com/juju/gomaasapi/v2 v2.3.0/go.mod h1:ZsohFbU4xShV1aSQYQ21hR1lKj7naNGY0SPuyelcUmk=
 github.com/juju/httpprof v0.0.0-20141217160036-14bf14c30767/go.mod h1:+MaLYz4PumRkkyHYeXJ2G5g5cIW0sli2bOfpmbaMV/g=
 github.com/juju/loggo v0.0.0-20170605014607-8232ab8918d9/go.mod h1:vgyd7OREkbtVEN/8IXZe5Ooef3LQePvuBm9UWj6ZL8U=
 github.com/juju/loggo v0.0.0-20200526014432-9ce3a2e09b5e/go.mod h1:vgyd7OREkbtVEN/8IXZe5Ooef3LQePvuBm9UWj6ZL8U=
