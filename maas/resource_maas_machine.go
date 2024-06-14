@@ -296,7 +296,7 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 }
 
 func getMachine(client *client.Client, identifier string) (*entity.Machine, error) {
-	machines, err := client.Machines.Get()
+	machines, err := client.Machines.Get(&entity.MachinesParams{})
 	if err != nil {
 		return nil, err
 	}
