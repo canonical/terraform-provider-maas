@@ -74,6 +74,7 @@ func Provider() *schema.Provider {
 			"maas_network_interface_physical": dataSourceMaasNetworkInterfacePhysical(),
 			"maas_device":                     dataSourceMaasDevice(),
 			"maas_resource_pool":              dataSourceMaasResourcePool(),
+			"maas_block_device":               dataSourceMaasBlockDevice(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
