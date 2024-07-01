@@ -8,11 +8,11 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
 )
 
 func testAccMaasNetworkInterfaceBridge(name string, machine string, fabric string) string {
