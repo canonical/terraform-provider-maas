@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"os"
 
-	"github.com/maas/gomaasclient/client"
+	"github.com/canonical/gomaasclient/client"
 )
 
 type Config struct {
