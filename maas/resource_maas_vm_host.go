@@ -156,6 +156,13 @@ func resourceMAASVMHost() *schema.Resource {
 				ConflictsWith: []string{"machine", "certificate", "key"},
 				Description:   "User name to use for power control of the VM host. Cannot be set if `machine`, `certificate` or `key` parameters are used.",
 			},
+			"project": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `certificate` or `key` parameters are used.",
+			},
 			"resources_cores_total": {
 				Type:        schema.TypeInt,
 				Computed:    true,
@@ -357,6 +364,7 @@ func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
 		PowerAddress:          d.Get("power_address").(string),
 		PowerUser:             d.Get("power_user").(string),
 		PowerPass:             d.Get("power_pass").(string),
+		Project:               d.Get("project").(string),
 		CPUOverCommitRatio:    d.Get("cpu_over_commit_ratio").(float64),
 		MemoryOverCommitRatio: d.Get("memory_over_commit_ratio").(float64),
 		DefaultMacvlanMode:    d.Get("default_macvlan_mode").(string),
