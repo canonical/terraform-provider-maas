@@ -2,7 +2,7 @@
 page_title: "MAAS Provider"
 description: |-
     The Terraform Provider for MAAS.
-  
+
 ---
 <!-- "MAAS Terraform provider reference" -->
 <a href="#heading--what-is-this"><h1 id="heading--what-is-this">The MAAS Terraform provider</h1></a>
@@ -21,8 +21,8 @@ We will deal with each of these categories in turn.  For each data source and re
 
 The schema that provides an API linkage to MAAS from Terraform consists of a standard HCL provider block and a provider API block.  As with all Terraform providers, the provider block contains at least two items:
 
-- a source element, which in this case is "maas/maas".
-- a version element, which can be sufficiently specified by "~>1.0".
+- a source element, which in this case is "canonical/maas".
+- a version element, which can be sufficiently specified by "~>2.0".
 
 The provider block would look something like this:
 
@@ -30,8 +30,8 @@ The provider block would look something like this:
 terraform {
   required_providers {
     maas = {
-      source  = "maas/maas"
-      version = "~>1.0"
+      source  = "canonical/maas"
+      version = "~>2.0"
     }
   }
 }
@@ -66,7 +66,7 @@ A completed definition would also include some data sources and resources, like 
 terraform {
   required_providers {
     maas = {
-      source  = "maas/maas"
+      source  = "canonical/maas"
       version = "~>2.0"
     }
   }
@@ -203,7 +203,7 @@ The MAAS Terraform provider makes a large number of resources available, current
 - A [maas_machine](https://github.com/maas/terraform-provider-maas/blob/master/docs/resources/machine.md) provides a resource to manage MAAS machines; note that these are typically physical machines (rather than VMs), so they tend to respond differently at times.
 - A [maas_network_interface_physical](https://github.com/maas/terraform-provider-maas/blob/master/docs/resources/network_interface_physical.md) provides a resource to manage a physical network interface from an existing MAAS machine.  Network interfaces can be created and deleted at will via the MAAS CLI/UI, so there may be more than one of these associate with any given machine.
 - A [maas_network_interface_link](https://github.com/maas/terraform-provider-maas/blob/master/docs/resources/network_interface_link.md) provides a resource to manage network configuration on a network interface.  Note that this does not represent the interface itself, but the parameter set that configure that interface.
-- A [maas_fabric](https://github.com/maas/terraform-provider-maas/blob/master/docs/resources/fabric.md) provides a resource to manage MAAS network fabrics, which are [described above](#heading--fabric). 
+- A [maas_fabric](https://github.com/maas/terraform-provider-maas/blob/master/docs/resources/fabric.md) provides a resource to manage MAAS network fabrics, which are [described above](#heading--fabric).
 - A [maas_vlan](https://github.com/maas/terraform-provider-maas/blob/master/docs/resources/vlan.md) provides a resource to manage MAAS network VLANs, also [described above](#heading--vlan).
 - A [maas_subnet](https://github.com/maas/terraform-provider-maas/blob/master/docs/resources/subnet.md) provides a resource to manage MAAS network subnets, also [described above](#heading--subnet)
 - A [maas_subnet_ip_range](https://github.com/maas/terraform-provider-maas/blob/master/docs/resources/subnet_ip_range.md) provides a resource to manage MAAS network subnets IP ranges.  IP ranges carry particular importance when managing DHCP with multiple DHCP servers, for example.

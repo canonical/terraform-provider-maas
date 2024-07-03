@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     maas = {
-      source  = "maas/maas"
+      source  = "canonical/maas"
       version = "~>2.0"
     }
   }

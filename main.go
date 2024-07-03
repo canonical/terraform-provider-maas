@@ -18,7 +18,7 @@ func main() {
 	opts := &plugin.ServeOpts{ProviderFunc: maas.Provider}
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/maas/maas", opts)
+		err := plugin.Debug(context.Background(), "registry.terraform.io/canonical/maas", opts)
 
 		if err != nil {
 			log.Fatal(err.Error())
