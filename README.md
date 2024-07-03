@@ -2,6 +2,52 @@
 
 This repository contains the source code for the Terraform MAAS provider.
 
+## :warning: Repository ownership and provider name change
+
+The Terraform Provider for MAAS repository now lives under the [Canonical GitHub organisation](https://github.com/canonical) with a new name `github.com/canonical/terraform-provider-maas`.
+
+Ensure you are pointing at the new provider name inside your Terraform module(s), which is `canonical/maas`:
+
+1. Manually update the list of required providers in your Terraform module(s):
+
+    ```diff
+    terraform {
+      required_providers {
+        maas = {
+    -     source  = "maas/maas"
+    +     source  = "canonical/maas"
+          version = "~>2.0"
+        }
+      }
+    }
+    ```
+
+1. Upgrade your provider dependencies to add the `canonical/maas` provider info:
+
+    ```bash
+    terraform init -upgrade
+    ```
+
+1. Replace the provider reference in your state:
+
+    ```bash
+    terraform state replace-provider maas/maas canonical/maas
+    ```
+
+1. Upgrade your provider dependencies to remove the `maas/maas` provider info:
+
+    ```bash
+    terraform init -upgrade
+    ```
+
+References:
+
+- <https://developer.hashicorp.com/terraform/language/files/dependency-lock#dependency-on-a-new-provider>
+- <https://developer.hashicorp.com/terraform/language/files/dependency-lock#providers-that-are-no-longer-required>
+- <https://developer.hashicorp.com/terraform/cli/commands/state/replace-provider>
+
+---
+
 ## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.4.x
@@ -59,7 +105,7 @@ The [docs](/docs) section contains details about each supported Terraform resour
 2. Update the `CHANGELOG.md` with your release version, date and change details and push the changes to the new branch. New changes between previous release vY.Y.Y and current one vX.X.X can be found with the following command:
 
    ```bash
-   git log --oneline vY.Y.Y..
+   git log --oneline vY.Y.Y..vX.X.X
    ```
 
 3. Raise a PR on Github, title of the PR should be in the following format

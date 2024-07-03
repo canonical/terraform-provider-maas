@@ -1,5 +1,9 @@
 ## 2.3.0 (Jul 3, 2024)
 
+:warning: Repository ownership and provider name change
+
+The Terraform Provider for MAAS repository now lives under the [Canonical GitHub organisation](https://github.com/canonical) with a new name `github.com/canonical/terraform-provider-maas`. Check [README.md](./README.md) for more information.
+
 NEW:
 
 * ci: add Canonical CLA check (#182)
