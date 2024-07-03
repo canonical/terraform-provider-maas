@@ -1,3 +1,16 @@
+## 2.3.0 (Jul 3, 2024)
+
+NEW:
+
+* ci: add Canonical CLA check (#182)
+
+IMPROVEMENTS:
+
+* bug: respect given timeouts for create/delete operations (#185)
+* fix: manage existing physical interfaces from commissioning (#178)
+* fix: properly import physical interfaces (#169)
+* Update dependencies
+
 ## 2.2.0 (Apr 3, 2024)
 
 NEW:

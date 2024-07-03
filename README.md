@@ -50,11 +50,18 @@ The [docs](/docs) section contains details about each supported Terraform resour
 ### Release process
 
 1. Create a new branch from `master` as `release-vX.X.X`
+
    ```bash
    git branch release-vX.X.X master
    git push -u origin release-vX.X.X
    ```
-2. Update the `CHANGELOG.md` with your release version, date and change details and push the changes to the new branch. 
+
+2. Update the `CHANGELOG.md` with your release version, date and change details and push the changes to the new branch. New changes between previous release vY.Y.Y and current one vX.X.X can be found with the following command:
+
+   ```bash
+   git log --oneline vY.Y.Y..
+   ```
+
 3. Raise a PR on Github, title of the PR should be in the following format
    `Release vX.X.X`
 4. Merge the PR into master, taking a note of the merge commit which is created
@@ -71,4 +78,4 @@ The [docs](/docs) section contains details about each supported Terraform resour
 
 ### Testing
 
-Unit tests run with every pull request and merge to master. The end to end tests run on a nightly basis against a hosted MAAS deployment, results can be found [here](https://raw.githubusercontent.com/maas/maas-terraform-e2e-tests/main/results.json?token=GHSAT0AAAAAAB3FX6R5C67Q4LH7ADOO5O3IY4ODCNA) and are checked on each PR, with a warning if failed.   
+Unit tests run with every pull request and merge to master. The end to end tests run on a nightly basis against a hosted MAAS deployment, results can be found [here](https://raw.githubusercontent.com/canonical/maas-terraform-e2e-tests/main/results.json?token=GHSAT0AAAAAAB3FX6R5C67Q4LH7ADOO5O3IY4ODCNA) and are checked on each PR, with a warning if failed.
