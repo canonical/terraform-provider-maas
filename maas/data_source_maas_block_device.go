@@ -16,12 +16,12 @@ func dataSourceMaasBlockDevice() *schema.Resource {
 			"block_size": {
 				Type:        schema.TypeInt,
 				Computed:      true,
-				Description: "The block size of the block device. Defaults to `512`.",
+				Description: "The block size of the block device.",
 			},
 			"id_path": {
 				Type:          schema.TypeString,
 				Computed:      true,
-				Description:   "Only used if `model` and `serial` cannot be provided. This should be a path that is fixed and doesn't change depending on the boot order or kernel version. This argument is computed if it's not given.",
+				Description:   "This is a path that is fixed and doesn't change depending on the boot order or kernel version.",
 			},
 			"is_boot_device": {
 				Type:        schema.TypeBool,
@@ -36,7 +36,7 @@ func dataSourceMaasBlockDevice() *schema.Resource {
 			"model": {
 				Type:          schema.TypeString,
 				Computed:      true,
-				Description:   "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+				Description:   "Model of the block device.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -46,7 +46,7 @@ func dataSourceMaasBlockDevice() *schema.Resource {
 			"partitions": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "List of partition resources created for the new block device. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). And, it is computed if it's not given.",
+				Description: "List of partition resources of the block device.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"bootable": {
@@ -72,7 +72,7 @@ func dataSourceMaasBlockDevice() *schema.Resource {
 						"mount_point": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The mount point used. If this is not set, the partition is not mounted. This is used only the partition is formatted.",
+							Description: "The mount point used. If this is not set, the partition is not mounted. This is used only when the partition is formatted.",
 						},
 						"path": {
 							Type:        schema.TypeString,
@@ -103,7 +103,7 @@ func dataSourceMaasBlockDevice() *schema.Resource {
 			"serial": {
 				Type:          schema.TypeString,
 				Computed:      true,
-				Description:   "Serial number of the block device. Used in conjunction with `model` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+				Description:   "Serial number of the block device.",
 			},
 			"size_gigabytes": {
 				Type:        schema.TypeInt,
@@ -116,7 +116,7 @@ func dataSourceMaasBlockDevice() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "A set of tag names assigned to the new block device. This argument is computed if it's not given.",
+				Description: "A set of tag names assigned to the new block device.",
 			},
 			"uuid": {
 				Type:        schema.TypeString,
