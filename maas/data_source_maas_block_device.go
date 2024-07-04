@@ -11,21 +11,21 @@ import (
 
 func dataSourceMaasBlockDevice() *schema.Resource {
 	return &schema.Resource{
-		ReadContext:   dataSourceBlockDeviceRead,
+		ReadContext: dataSourceBlockDeviceRead,
 		Schema: map[string]*schema.Schema{
 			"block_size": {
 				Type:        schema.TypeInt,
-				Computed:      true,
+				Computed:    true,
 				Description: "The block size of the block device.",
 			},
 			"id_path": {
-				Type:          schema.TypeString,
-				Computed:      true,
-				Description:   "This is a path that is fixed and doesn't change depending on the boot order or kernel version.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "This is a path that is fixed and doesn't change depending on the boot order or kernel version.",
 			},
 			"is_boot_device": {
 				Type:        schema.TypeBool,
-				Computed:      true,
+				Computed:    true,
 				Description: "Boolean value indicating if the block device is set as the boot device.",
 			},
 			"machine": {
@@ -34,9 +34,9 @@ func dataSourceMaasBlockDevice() *schema.Resource {
 				Description: "The machine identifier (system ID, hostname, or FQDN) that owns the block device.",
 			},
 			"model": {
-				Type:          schema.TypeString,
-				Computed:      true,
-				Description:   "Model of the block device.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Model of the block device.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -101,9 +101,9 @@ func dataSourceMaasBlockDevice() *schema.Resource {
 				Description: "Block device path.",
 			},
 			"serial": {
-				Type:          schema.TypeString,
-				Computed:      true,
-				Description:   "Serial number of the block device.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Serial number of the block device.",
 			},
 			"size_gigabytes": {
 				Type:        schema.TypeInt,
