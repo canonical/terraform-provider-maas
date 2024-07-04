@@ -1,0 +1,12 @@
+Request: GitHub repository https://github.com/maas/terraform-provider-maas that
+contained source code for Terraform Provider `maas/maas` was transferred under
+Canonical Organization and now lives under https://github.com/canonical/terraform-provider-maas
+
+Because of the ownership change, Terraform Provider now has a new name `canonical/maas`.
+We would like to have a redirect from `maas/maas` to `canonical/maas`
+
+Registry Link:
+- https://registry.terraform.io/providers/maas/maas/latest
+- https://registry.terraform.io/providers/canonical/maas/latest
+
+Request by: anton.troyanov@canonical.com
