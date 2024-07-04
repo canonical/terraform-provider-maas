@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/mail"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-cty/cty/gocty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
 )
 
 func base64Encode(data []byte) string {
