@@ -18,7 +18,7 @@ func resourceMaasBlockDevice() *schema.Resource {
 		CreateContext: resourceBlockDeviceCreate,
 		ReadContext:   resourceBlockDeviceRead,
 		UpdateContext: resourceBlockDeviceUpdate,
-		DeleteContext: resourceBlockDeviceDelete,
+		DeleteContext: resourceBlockDeviceClear,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), ":")
@@ -261,20 +261,30 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta
 	return resourceBlockDeviceRead(ctx, d, meta)
 }
 
-func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceClear(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
-	id, err := strconv.Atoi(d.Id())
+	blockDevice, err := getBlockDevice(client, d.Get("machine").(string), d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machine, err := getMachine(client, d.Get("machine").(string))
+	// Remove planned partitions clearning state.
+	// TODO: ensure not a part of LVM/RAID/ZFS/etc
+	for _, part := range blockDevice.Partitions {
+		if err := client.BlockDevicePartition.Delete(blockDevice.SystemID, blockDevice.ID, part.ID); err != nil {
+			return diag.FromErr(err)
+		}
+
+	}
+	// Leave physical block device alone: removal from state does not remove physical media from a host
+	// TODO: handle forced removal of physical devices by guarding the commented section below
+	/*machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	if err := client.BlockDevice.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
-	}
+	}*/
 
 	return nil
 }

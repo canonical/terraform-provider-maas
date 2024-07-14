@@ -18,7 +18,7 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 		CreateContext: resourceNetworkInterfacePhysicalCreate,
 		ReadContext:   resourceNetworkInterfacePhysicalRead,
 		UpdateContext: resourceNetworkInterfacePhysicalUpdate,
-		DeleteContext: resourceNetworkInterfacePhysicalDelete,
+		DeleteContext: resourceNetworkInterfacePhysicalDisconnect,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), "/")
@@ -179,7 +179,7 @@ func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.Resou
 	return nil
 }
 
-func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfacePhysicalDisconnect(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -190,7 +190,7 @@ func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.Resou
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
+	if _, err := client.NetworkInterface.Disconnect(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}
 
