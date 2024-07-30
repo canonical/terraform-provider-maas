@@ -192,14 +192,30 @@ func getTagTFMachinesSystemIDs(client *client.Client, d *schema.ResourceData) ([
 	if !ok {
 		return nil, nil
 	}
-	machinesSystemIDs := []string{}
-	for _, machineIdentifier := range convertToStringSlice(p.(*schema.Set).List()) {
-		machine, err := getMachine(client, machineIdentifier)
-		if err != nil {
-			return nil, err
-		}
-		machinesSystemIDs = append(machinesSystemIDs, machine.SystemID)
+	machines, err := client.Machines.Get(&entity.MachinesParams{})
+	if err != nil {
+		return nil, err
 	}
+	machinesSystemIDs := []string{}
+	for _, identifier := range convertToStringSlice(p.(*schema.Set).List()) {
+		found := false
+		for _, m := range machines {
+			if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier {
+				for i := range machinesSystemIDs {
+					if m.SystemID == machinesSystemIDs[i] {
+						return nil, fmt.Errorf("machine (%s) is referenced more than once", m.SystemID)
+					}
+				}
+				machinesSystemIDs = append(machinesSystemIDs, m.SystemID)
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("machine (%s) not found", identifier)
+		}
+	}
+
 	return machinesSystemIDs, nil
 }
 
