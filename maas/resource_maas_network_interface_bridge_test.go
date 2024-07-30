@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfaceBridge(name string, machine string, fabric string) string {
+func testAccMaasNetworkInterfaceBridge(name string, machine string, fabric string, mtu int) string {
 	return fmt.Sprintf(`
 data "maas_fabric" "default" {
 	name = "%s"
@@ -45,12 +45,12 @@ resource "maas_network_interface_bridge" "test" {
 	bridge_stp  = true
 	bridge_type = "standard"
 	mac_address = "01:12:34:56:78:9A"
-	mtu         = 9000
+	mtu         = %d
 	parent      = maas_network_interface_physical.nic1.name
 	tags        = ["tag1", "tag2"]
 	vlan        = data.maas_vlan.default.id
   }
-`, fabric, machine, name)
+`, fabric, machine, name, mtu)
 }
 
 func TestAccResourceMaasNetworkInterfaceBridge_basic(t *testing.T) {
@@ -68,7 +68,6 @@ func TestAccResourceMaasNetworkInterfaceBridge_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_stp", "true"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_type", "standard"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mac_address", "01:12:34:56:78:9A"),
-		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mtu", "9000"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "parent", "bridge0.3342"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "tags.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "tags.0", "tag1"),
@@ -83,8 +82,15 @@ func TestAccResourceMaasNetworkInterfaceBridge_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceBridge(name, machine, fabric),
-				Check:  resource.ComposeTestCheckFunc(checks...),
+				Config: testAccMaasNetworkInterfaceBridge(name, machine, fabric, 1500),
+				Check: resource.ComposeTestCheckFunc(
+					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mtu", "1500"))...),
+			},
+			// Test update
+			{
+				Config: testAccMaasNetworkInterfaceBridge(name, machine, fabric, 9000),
+				Check: resource.ComposeTestCheckFunc(
+					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mtu", "9000"))...),
 			},
 			// Test import
 			{

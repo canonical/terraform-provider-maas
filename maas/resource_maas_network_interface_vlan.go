@@ -87,7 +87,7 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	vlan, err := getVlan(client, fabric.ID, fmt.Sprintf("%v", d.Get("vlan").(int)))
+	vlan, err := getVlan(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -136,7 +136,7 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 		"vlan":   networkInterface.VLAN.ID,
 	}
 	if _, ok := d.GetOk("fabric"); !ok {
-		tfState["fabric"] = fmt.Sprintf("%v", networkInterface.VLAN.FabricID)
+		tfState["fabric"] = strconv.Itoa(networkInterface.VLAN.FabricID)
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -144,6 +144,7 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 
 	return nil
 }
+
 func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
@@ -167,7 +168,7 @@ func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVlan(client, fabric.ID, d.Get("vlan").(string))
+	vlan, err := getVlan(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
 		return diag.FromErr(err)
 	}

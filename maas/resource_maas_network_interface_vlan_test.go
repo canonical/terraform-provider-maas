@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfaceVLAN(machine string, fabric string) string {
+func testAccMaasNetworkInterfaceVLAN(machine string, fabric string, mtu int) string {
 	return fmt.Sprintf(`
 data "maas_fabric" "default" {
 	name = "%s"
@@ -46,12 +46,12 @@ resource "maas_network_interface_vlan" "test" {
 	machine   = data.maas_machine.machine.id
 	accept_ra = false
 	fabric    = data.maas_fabric.default.id
-	mtu       = 9000
+	mtu       = %d
 	parent    = maas_network_interface_physical.nic1.name
 	tags      = ["tag1", "tag2"]
 	vlan      = maas_vlan.tf_vlan.id
   }
-  `, fabric, machine)
+  `, fabric, machine, mtu)
 }
 
 func TestAccResourceMaasNetworkInterfaceVLAN_basic(t *testing.T) {
@@ -63,7 +63,6 @@ func TestAccResourceMaasNetworkInterfaceVLAN_basic(t *testing.T) {
 	checks := []resource.TestCheckFunc{
 		testAccMaasNetworkInterfaceVLANCheckExists("maas_network_interface_vlan.test", &networkInterfaceVLAN),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "accept_ra", "false"),
-		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "mtu", "9000"),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "parent", "bond0"),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "tags.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "tags.0", "tag1"),
@@ -78,8 +77,15 @@ func TestAccResourceMaasNetworkInterfaceVLAN_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceVLAN(machine, fabric),
-				Check:  resource.ComposeTestCheckFunc(checks...),
+				Config: testAccMaasNetworkInterfaceVLAN(machine, fabric, 1500),
+				Check: resource.ComposeTestCheckFunc(
+					append(checks, resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "mtu", "1500"))...),
+			},
+			// Test update
+			{
+				Config: testAccMaasNetworkInterfaceVLAN(machine, fabric, 9000),
+				Check: resource.ComposeTestCheckFunc(
+					append(checks, resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "mtu", "9000"))...),
 			},
 			// Test import
 			{
