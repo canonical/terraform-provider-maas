@@ -118,6 +118,12 @@ func resourceMaasInstance() *schema.Resource {
 							ForceNew:    true,
 							Description: "Periodically sync hardware",
 						},
+						"ephemeral": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "Deploy machine in memory",
+						},
 						"hwe_kernel": {
 							Type:        schema.TypeString,
 							Optional:    true,
@@ -318,10 +324,11 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 		if deployParamsData[0] != nil {
 			deployParams := deployParamsData[0].(map[string]interface{})
 			return &entity.MachineDeployParams{
-				DistroSeries: deployParams["distro_series"].(string),
-				EnableHwSync: deployParams["enable_hw_sync"].(bool),
-				HWEKernel:    deployParams["hwe_kernel"].(string),
-				UserData:     base64Encode([]byte(deployParams["user_data"].(string))),
+				DistroSeries:    deployParams["distro_series"].(string),
+				EnableHwSync:    deployParams["enable_hw_sync"].(bool),
+				EphemeralDeploy: deployParams["ephemeral"].(bool),
+				HWEKernel:       deployParams["hwe_kernel"].(string),
+				UserData:        base64Encode([]byte(deployParams["user_data"].(string))),
 			}
 		}
 	}
