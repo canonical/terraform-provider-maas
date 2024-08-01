@@ -120,3 +120,28 @@ func setTerraformState(d *schema.ResourceData, tfState map[string]interface{}) e
 	}
 	return nil
 }
+
+func getMachineOrDevice(client *client.Client, identifier string) (interface{}, error) {
+	machine, err := getMachine(client, identifier)
+	if err == nil {
+		return machine, nil
+	}
+
+	device, err := getDevice(client, identifier)
+	if err == nil {
+		return device, nil
+	}
+
+	return nil, err
+}
+
+func getSystemID(machineOrDevice interface{}) (string, error) {
+	switch v := machineOrDevice.(type) {
+	case *entity.Machine:
+		return v.SystemID, nil
+	case *entity.Device:
+		return v.SystemID, nil
+	default:
+		return "", fmt.Errorf("unexpected type %T for machineOrDevice", machineOrDevice)
+	}
+}
