@@ -8,14 +8,14 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
 )
 
-func testAccMaasNetworkInterfacePhysical(name string, machine string, fabric string) string {
+func testAccMaasNetworkInterfacePhysical(name string, machine string, fabric string, mtu int) string {
 	return fmt.Sprintf(`
 data "maas_fabric" "default" {
 	name = "%s"
@@ -34,11 +34,11 @@ resource "maas_network_interface_physical" "test" {
 	machine     = data.maas_machine.machine.id
 	name        = "%s"
 	mac_address = "01:12:34:56:78:9A"
-	mtu         = 9000
+	mtu         = %d
 	tags        = ["tag1", "tag2"]
 	vlan        = data.maas_vlan.default.id
   }
-`, fabric, machine, name)
+`, fabric, machine, name, mtu)
 }
 
 func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
@@ -52,7 +52,6 @@ func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
 		testAccMaasNetworkInterfacePhysicalCheckExists("maas_network_interface_physical.test", &networkInterfacePhysical),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "name", name),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mac_address", "01:12:34:56:78:9A"),
-		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "9000"),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "tags.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "tags.0", "tag1"),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "tags.1", "tag2"),
@@ -66,8 +65,15 @@ func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfacePhysical(name, machine, fabric),
-				Check:  resource.ComposeTestCheckFunc(checks...),
+				Config: testAccMaasNetworkInterfacePhysical(name, machine, fabric, 1500),
+				Check: resource.ComposeTestCheckFunc(
+					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "1500"))...),
+			},
+			// Test update
+			{
+				Config: testAccMaasNetworkInterfacePhysical(name, machine, fabric, 9000),
+				Check: resource.ComposeTestCheckFunc(
+					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "9000"))...),
 			},
 			// Test import
 			{

@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasNetworkInterfacePhysical() *schema.Resource {
@@ -81,6 +81,7 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 			"vlan": {
 				Type:        schema.TypeInt,
 				Optional:    true,
+				Computed:    true,
 				Description: "Database ID of the VLAN the physical network interface is connected to.",
 			},
 		},
@@ -104,13 +105,27 @@ func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.Resou
 	}
 	if networkInterface == nil {
 		networkInterface, err = client.NetworkInterfaces.CreatePhysical(systemID, getNetworkInterfacePhysicalParams(d))
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	} else {
+		networkInterface, err = client.NetworkInterface.Update(systemID, networkInterface.ID, getNetworkInterfaceUpdateParams(d))
+	}
+	if err != nil {
+		return diag.FromErr(err)
+
 	}
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	return resourceNetworkInterfacePhysicalRead(ctx, d, meta)
+	tfState := map[string]interface{}{
+		"mac_address": networkInterface.MACAddress,
+		"mtu":         networkInterface.EffectiveMTU,
+		"name":        networkInterface.Name,
+		"tags":        networkInterface.Tags,
+		"vlan":        networkInterface.VLAN.ID,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
 }
 
 func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -162,11 +177,24 @@ func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.Resou
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if _, err = client.NetworkInterface.Update(systemID, id, getNetworkInterfaceUpdateParams(d)); err != nil {
+
+	networkInterface, err := client.NetworkInterface.Update(systemID, id, getNetworkInterfaceUpdateParams(d))
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourceNetworkInterfacePhysicalRead(ctx, d, meta)
+	tfState := map[string]interface{}{
+		"mac_address": networkInterface.MACAddress,
+		"mtu":         networkInterface.EffectiveMTU,
+		"name":        networkInterface.Name,
+		"tags":        networkInterface.Tags,
+		"vlan":        networkInterface.VLAN.ID,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
 }
 
 func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

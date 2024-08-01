@@ -7,13 +7,13 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasMachine() *schema.Resource {
@@ -85,6 +85,14 @@ func resourceMaasMachine() *schema.Resource {
 				Computed:    true,
 				Description: "The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.",
 			},
+			"network_interfaces": {
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Description: "A set of MAC addresses of network interfaces attached to the machine.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 			"pool": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -138,7 +146,7 @@ func resourceMaasMachine() *schema.Resource {
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(20 * time.Minute),
+			Create: schema.DefaultTimeout(30 * time.Minute),
 		},
 	}
 }
@@ -160,7 +168,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta int
 	d.SetId(machine.SystemID)
 
 	// Wait for machine to be ready
-	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"})
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -188,6 +196,14 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta inter
 		"pool":           machine.Pool.Name,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
+		return diag.FromErr(err)
+	}
+
+	networkInterfaces := make([]string, len(machine.InterfaceSet))
+	for i, networkInterface := range machine.InterfaceSet {
+		networkInterfaces[i] = networkInterface.MACAddress
+	}
+	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -262,13 +278,13 @@ func getMachineStatusFunc(client *client.Client, systemId string) retry.StateRef
 	}
 }
 
-func waitForMachineStatus(ctx context.Context, client *client.Client, systemID string, pendingStates []string, targetStates []string) (*entity.Machine, error) {
+func waitForMachineStatus(ctx context.Context, client *client.Client, systemID string, pendingStates []string, targetStates []string, maxTimeout time.Duration) (*entity.Machine, error) {
 	log.Printf("[DEBUG] Waiting for machine (%s) status to be one of %s\n", systemID, targetStates)
 	stateConf := &retry.StateChangeConf{
 		Pending:    pendingStates,
 		Target:     targetStates,
 		Refresh:    getMachineStatusFunc(client, systemID),
-		Timeout:    30 * time.Minute,
+		Timeout:    maxTimeout,
 		Delay:      10 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}
@@ -280,7 +296,7 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 }
 
 func getMachine(client *client.Client, identifier string) (*entity.Machine, error) {
-	machines, err := client.Machines.Get()
+	machines, err := client.Machines.Get(&entity.MachinesParams{})
 	if err != nil {
 		return nil, err
 	}

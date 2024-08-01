@@ -1,6 +1,6 @@
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=registry.terraform.io
-NAMESPACE=maas
+NAMESPACE=canonical
 NAME=maas
 PROVIDER_NAME=terraform-provider-${NAME}
 BINARY=terraform-provider-${NAME}

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasNetworkInterfaceLink() *schema.Resource {
@@ -206,7 +206,7 @@ func getNetworkInterfaceLinkParams(d *schema.ResourceData, subnetID int) *entity
 func createNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterface *entity.NetworkInterface, params *entity.NetworkInterfaceLinkParams) (*entity.NetworkInterfaceLink, error) {
 	// Clear existing links
 	// VLAN type interfaces are excluded since this action is not allowed by MAAS itself:
-	// <https://github.com/maas/maas/blob/master/src/maasserver/models/interface.py#L2001-L2006>
+	// <https://github.com/canonical/maas/blob/master/src/maasserver/models/interface.py#L2001-L2006>
 	if networkInterface.Type != "vlan" {
 		_, err := client.NetworkInterface.Disconnect(machineSystemID, networkInterface.ID)
 		if err != nil {

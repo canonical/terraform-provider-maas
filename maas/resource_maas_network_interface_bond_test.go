@@ -8,14 +8,14 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
 )
 
-func testAccMaasNetworkInterfaceBond(name string, machine string, fabric string) string {
+func testAccMaasNetworkInterfaceBond(name string, machine string, fabric string, mtu int) string {
 	return fmt.Sprintf(`
 data "maas_fabric" "default" {
 	name = "%s"
@@ -56,12 +56,12 @@ resource "maas_network_interface_bond" "test" {
 	bond_updelay          = 1
 	bond_xmit_hash_policy = "layer2"
 	mac_address           = "01:12:34:56:78:9A"
-	mtu                   = 9000
+	mtu                   = %d
 	parents               = [maas_network_interface_physical.nic1.name, maas_network_interface_physical.nic2.name]
 	tags                  = ["tag1", "tag2"]
 	vlan                  = data.maas_vlan.default.id
 }
-`, fabric, machine, name)
+`, fabric, machine, name, mtu)
 }
 
 func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
@@ -83,7 +83,6 @@ func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "bond_updelay", "1"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "bond_xmit_hash_policy", "layer2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mac_address", "01:12:34:56:78:9A"),
-		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "9000"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.0", "enp109s0f0"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.1", "enp109s0f1"),
@@ -100,8 +99,15 @@ func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceBond(name, machine, fabric),
-				Check:  resource.ComposeTestCheckFunc(checks...),
+				Config: testAccMaasNetworkInterfaceBond(name, machine, fabric, 1500),
+				Check: resource.ComposeTestCheckFunc(
+					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "1500"))...),
+			},
+			// Test update
+			{
+				Config: testAccMaasNetworkInterfaceBond(name, machine, fabric, 9000),
+				Check: resource.ComposeTestCheckFunc(
+					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "9000"))...),
 			},
 			// Test import
 			{
