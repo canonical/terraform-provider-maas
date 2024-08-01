@@ -152,16 +152,35 @@ func resourceMaasMachine() *schema.Resource {
 }
 
 func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var machine *entity.Machine
 	client := meta.(*client.Client)
 
-	// Create MAAS machine
+	machines, err := client.Machines.Get(&entity.MachinesParams{MACAddress: []string{d.Get("pxe_mac_address").(string)}})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	powerParams, err := getMachinePowerParams(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	machine, err := client.Machines.Create(getMachineParams(d), powerParams)
-	if err != nil {
-		return diag.FromErr(err)
+
+	if len(machines) == 1 && machines[0].StatusName == "New" {
+		// Update MAAS machine with Terraform configuration
+		if machine, err = client.Machine.Update(machines[0].SystemID, getMachineParams(d), powerParams); err != nil {
+			return diag.FromErr(err)
+		}
+		// Commission MAAS machine
+		machine, err = client.Machine.Commission(machine.SystemID, &entity.MachineCommissionParams{})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	} else {
+		// Create MAAS machine
+		machine, err = client.Machines.Create(getMachineParams(d), powerParams)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Save Id
