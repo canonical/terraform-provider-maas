@@ -1,6 +1,6 @@
 module terraform-provider-maas
 
-go 1.20
+go 1.21
 
 require (
 	github.com/bflad/tfproviderlint v0.30.0
