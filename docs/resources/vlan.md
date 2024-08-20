@@ -31,7 +31,6 @@ resource "maas_vlan" "tf_vlan" {
 
 ### Optional
 
-- `dhcp_on` (Boolean) Boolean value. Whether or not DHCP should be managed on the new VLAN. This argument is computed if it's not set.
 - `mtu` (Number) The MTU to use on the new VLAN. This argument is computed if it's not set.
 - `name` (String) The name of the new VLAN. This argument is computed if it's not set.
 - `space` (String) The space of the new VLAN. Passing in an empty string (or the string `undefined`) will cause the VLAN to be placed in the `undefined` space. This argument is computed if it's not set.
