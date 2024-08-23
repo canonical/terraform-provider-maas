@@ -17,7 +17,7 @@ func TestAccDataSourceMaasRackController_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccDataSourceMaasRackController("rack-controller"),
-				ExpectError: regexp.MustCompile("rack controller (rack-controller) was not found"),
+				ExpectError: regexp.MustCompile(`rack controller \(rack-controller\) was not found`),
 			},
 		},
 	})
