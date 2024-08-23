@@ -227,7 +227,7 @@ func getDnsResourceRecordParams(d *schema.ResourceData) *entity.DNSResourceRecor
 }
 
 func getDnsResourceRecord(client *client.Client, identifier string) (*entity.DNSResourceRecord, error) {
-	dnsResourceRecords, err := client.DNSResourceRecords.Get()
+	dnsResourceRecords, err := client.DNSResourceRecords.Get(&entity.DNSResourceRecordsParams{})
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func getDnsResourceRecord(client *client.Client, identifier string) (*entity.DNS
 }
 
 func getDnsResource(client *client.Client, identifier string) (*entity.DNSResource, error) {
-	dnsResources, err := client.DNSResources.Get()
+	dnsResources, err := client.DNSResources.Get(&entity.DNSResourcesParams{})
 	if err != nil {
 		return nil, err
 	}
