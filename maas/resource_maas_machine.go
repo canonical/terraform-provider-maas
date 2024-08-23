@@ -255,15 +255,15 @@ func getMachinePowerParams(d *schema.ResourceData) (powerParams map[string]inter
 
 func getMachineParams(d *schema.ResourceData) *entity.MachineParams {
 	return &entity.MachineParams{
-		Commission:    true,
-		PowerType:     d.Get("power_type").(string),
-		PXEMacAddress: d.Get("pxe_mac_address").(string),
-		Architecture:  d.Get("architecture").(string),
-		MinHWEKernel:  d.Get("min_hwe_kernel").(string),
-		Hostname:      d.Get("hostname").(string),
-		Domain:        d.Get("domain").(string),
-		Zone:          d.Get("zone").(string),
-		Pool:          d.Get("pool").(string),
+		Commission:   true,
+		PowerType:    d.Get("power_type").(string),
+		MACAddresses: []string{d.Get("pxe_mac_address").(string)},
+		Architecture: d.Get("architecture").(string),
+		MinHWEKernel: d.Get("min_hwe_kernel").(string),
+		Hostname:     d.Get("hostname").(string),
+		Domain:       d.Get("domain").(string),
+		Zone:         d.Get("zone").(string),
+		Pool:         d.Get("pool").(string),
 	}
 }
 
