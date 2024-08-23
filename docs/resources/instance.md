@@ -77,7 +77,7 @@ Optional:
 
 - `distro_series` (String) The distro series used to deploy the allocated MAAS machine. If it's not given, the MAAS server default value is used.
 - `enable_hw_sync` (Boolean) Periodically sync hardware
-- `ephemeral` (Boolean) Whether to deploy the machine in memory
+- `ephemeral` (Boolean) Deploy machine in memory
 - `hwe_kernel` (String) Hardware enablement kernel to use with the image. Only used when deploying Ubuntu.
 - `user_data` (String) Cloud-init user data script that gets run on the machine once it has deployed. A good practice is to set this with `file("/tmp/user-data.txt")`, where `/tmp/user-data.txt` is a cloud-init script.
 
