@@ -1,3 +1,17 @@
+## 2.4.0 (Sep 6, 2024)
+
+NEW:
+
+* feat: ephemeral deployment (#218)
+* feat: new datasource for maas_rack_controller (#229)
+
+IMPROVEMENTS:
+
+* fix: tag should query MAAS machines once (#228)
+* fix: correctly parse vlan field of VLAN interfaces (#227)
+* Update dependencies
+* Update Go version to 1.21
+
 ## 2.3.0 (Jul 3, 2024)
 
 :warning: Repository ownership and provider name change
