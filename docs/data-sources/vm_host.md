@@ -41,5 +41,6 @@ data "maas_vm_host" "vm_host" {
 - `resources_local_storage_total` (Number) The VM host total local storage (in bytes).
 - `resources_memory_total` (Number) The VM host total RAM memory (in MB).
 - `tags` (Set of String) A set of VM host tag names.
+- `project` (String) For `lxd` VM hosts, the project that MAAS will manage.
 - `type` (String) The VM host type. Supported values are: `lxd`, `virsh`.
 - `zone` (String) The VM host zone name.
