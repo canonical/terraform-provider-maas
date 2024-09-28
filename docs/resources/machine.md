@@ -45,6 +45,7 @@ resource "maas_machine" "virsh_vm1" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `network_interfaces` (Set of String) A set of MAC addresses of network interfaces attached to the machine.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
