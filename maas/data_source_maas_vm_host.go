@@ -90,6 +90,11 @@ func dataSourceMaasVMHost() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"project": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "For `lxd` VM hosts, the project that MAAS will manage.",
+			},
 			"type": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -130,7 +135,7 @@ func dataSourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta inte
 		"resources_cores_total":         vmHost.Total.Cores,
 		"resources_local_storage_total": vmHost.Total.LocalStorage,
 		"resources_memory_total":        vmHost.Total.Memory,
-		"zone":                          vmHost.Zone.Name,
+		"zone":                          vmHost.Zone.Name,cloudus
 		"type":                          vmHost.Type,
 		"tags":                          vmHost.Tags,
 	}
@@ -146,6 +151,9 @@ func dataSourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 	if certificate, ok := vmHostParameters["certificate"]; ok {
 		tfState["certificate"] = certificate
+	}
+	if project, ok := vmHostParameters["project"]; ok {
+		tfState["project"] = project
 	}
 	if key, ok := vmHostParameters["key"]; ok {
 		tfState["key"] = key
