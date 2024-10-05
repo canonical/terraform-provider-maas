@@ -28,7 +28,7 @@ func dataSourceMaasVMHost() *schema.Resource {
 			"default_macvlan_mode": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The VM host default macvlan mode. Supported values are: `bridge`, `passthru`, `private`, `vepa`.",
+				Description: "The VM host default macvlan mode.",
 			},
 			"key": {
 				Type:        schema.TypeString,
