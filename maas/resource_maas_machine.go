@@ -296,9 +296,21 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 }
 
 func getMachine(client *client.Client, identifier string) (*entity.Machine, error) {
-	machines, err := client.Machines.Get(&entity.MachinesParams{})
+	machine, err := client.Machine.Get(identifier)
+	if err == nil {
+		return machine, nil
+	}
+	identifiers := make([]string, 1)
+	identifiers[0] = strings.Split(identifier,".")[0]
+	machines, err := client.Machines.Get(&entity.MachinesParams{Hostname: identifiers})
 	if err != nil {
 		return nil, err
+	}
+	if len(machines) < 1 {
+		machines, err = client.Machines.Get(&entity.MachinesParams{})
+		if err != nil {
+			return nil, err
+		}
 	}
 	for _, m := range machines {
 		if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier || m.BootInterface.MACAddress == identifier {
