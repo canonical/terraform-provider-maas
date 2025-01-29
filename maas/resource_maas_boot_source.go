@@ -15,14 +15,22 @@ func resourceMaasBootSource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				client := meta.(*client.Client)
-				boot_source, err := getBootSource(client, d.Id())
+				bootsource, err := getBootSource(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
-				if err := d.Set("URL", boot_source.URL); err != nil {
+				tfState := map[string]interface{}{
+					"id":               bootsource.ID,
+					"created":          bootsource.Created,
+					"keyring_data":     bootsource.KeyringData,
+					"keyring_filename": bootsource.KeyringFilename,
+					"resource_uri":     bootsource.ResourceURI,
+					"updated":          bootsource.Updated,
+					"url":              bootsource.URL,
+				}
+				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
-				d.SetId(fmt.Sprintf("%v", boot_source.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -63,11 +71,11 @@ func resourceMaasBootSource() *schema.Resource {
 }
 
 func findBootSource(client *client.Client, identifier string) (*entity.BootSource, error) {
-	boot_sources, err := client.BootSources.Get()
+	bootsources, err := client.BootSources.Get()
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range boot_sources {
+	for _, f := range bootsources {
 		if fmt.Sprintf("%v", f.ID) == identifier || f.URL == identifier {
 			return &f, nil
 		}
@@ -76,12 +84,12 @@ func findBootSource(client *client.Client, identifier string) (*entity.BootSourc
 }
 
 func getBootSource(client *client.Client, identifier string) (*entity.BootSource, error) {
-	boot_source, err := findBootSource(client, identifier)
+	bootsource, err := findBootSource(client, identifier)
 	if err != nil {
 		return nil, err
 	}
-	if boot_source == nil {
+	if bootsource == nil {
 		return nil, fmt.Errorf("boot source (%s) was not found", identifier)
 	}
-	return boot_source, nil
+	return bootsource, nil
 }
