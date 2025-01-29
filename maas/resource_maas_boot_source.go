@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/maas/gomaasclient/client"
-	"github.com/maas/gomaasclient/entity"
 )
 
 func resourceMaasBootSource() *schema.Resource {
 	return &schema.Resource{
-		Description: "Provides a resource to manage MAAS network boot sources.",
+		Description: "Provides a resource to manage MAAS boot sources.",
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				client := meta.(*client.Client)
@@ -28,10 +28,35 @@ func resourceMaasBootSource() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"created": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The creation time of the boot source.",
+			},
+			"keyring_data": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The data on the keyring for the boot source.",
+			},
+			"keyring_filename": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The filename on the keyring for the boot source.",
+			},
+			"resource_uri": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The resource URI for the book source.",
+			},
+			"updated": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The time of most recent update of the boot source.",
+			},
+			"url": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The boot source name.",
+				Description: "The URL of the boot source.",
 			},
 		},
 	}
