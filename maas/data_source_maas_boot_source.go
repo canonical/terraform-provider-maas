@@ -2,6 +2,7 @@ package maas
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -11,6 +12,7 @@ import (
 func dataSourceMaasBootSource() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMaasBootSourceRead,
+		Description: "Provides a resource to fetch MAAS boot sources.",
 
 		Schema: map[string]*schema.Schema{
 			"created": {
@@ -27,11 +29,6 @@ func dataSourceMaasBootSource() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The filename on the keyring for the boot source.",
-			},
-			"resource_uri": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The resource URI for the book source.",
 			},
 			"updated": {
 				Type:        schema.TypeString,
@@ -54,12 +51,12 @@ func dataSourceMaasBootSourceRead(ctx context.Context, d *schema.ResourceData, m
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
+
 	tfState := map[string]interface{}{
-		"id":               bootsource.ID,
 		"created":          bootsource.Created,
 		"keyring_data":     bootsource.KeyringData,
 		"keyring_filename": bootsource.KeyringFilename,
-		"resource_uri":     bootsource.ResourceURI,
 		"updated":          bootsource.Updated,
 		"url":              bootsource.URL,
 	}
