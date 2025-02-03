@@ -37,7 +37,7 @@ func dataSourceMaasBootSource() *schema.Resource {
 			},
 			"url": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Computed:    true,
 				Description: "The URL of the boot source.",
 			},
 		},
@@ -47,7 +47,7 @@ func dataSourceMaasBootSource() *schema.Resource {
 func dataSourceMaasBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
-	bootsource, err := getBootSource(client, d.Get("url").(string))
+	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}

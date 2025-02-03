@@ -10,14 +10,14 @@ import (
 
 func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 
-	url := "https://images.maas.io/ephemeral-v3/candidate/"
+	url := "https://images.maas.io/ephemeral-v3/stable/"
+	keyring_path := "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttr("data.maas_boot_source.test", "url", url),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "created"),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "updated"),
-		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "keyring_data"),
-		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "keyring_filename"),
+		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_filename", keyring_path),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -35,7 +35,6 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 
 func testAccDataSourceMaasBootSource(url string) string {
 	return fmt.Sprintf(`
-
 data "maas_boot_source" "test" {
 	url = "%s"
 }
