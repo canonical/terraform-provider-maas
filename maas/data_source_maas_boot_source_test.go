@@ -1,7 +1,6 @@
 package maas_test
 
 import (
-	"fmt"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
@@ -35,9 +34,5 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 }
 
 func testAccDataSourceMaasBootSource(url string) string {
-	return fmt.Sprintf(`
-data "maas_boot_source" "test" {
-	url = "%s"
-}
-`, url)
+	return `data "maas_boot_source" "test" {}`
 }
