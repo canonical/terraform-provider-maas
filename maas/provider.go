@@ -67,6 +67,7 @@ func Provider() *schema.Provider {
 			"maas_resource_pool":              resourceMaasResourcePool(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"maas_boot_source":                dataSourceMaasBootSource(),
 			"maas_fabric":                     dataSourceMaasFabric(),
 			"maas_vlan":                       dataSourceMaasVlan(),
 			"maas_subnet":                     dataSourceMaasSubnet(),
