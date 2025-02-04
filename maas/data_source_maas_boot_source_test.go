@@ -26,13 +26,13 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 		ErrorCheck: func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootSource(url),
+				Config: testAccDataSourceMaasBootSource(),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootSource(url string) string {
+func testAccDataSourceMaasBootSource() string {
 	return `data "maas_boot_source" "test" {}`
 }
