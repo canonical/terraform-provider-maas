@@ -9,7 +9,7 @@ import (
 
 func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 
-	url := "https://images.maas.io/ephemeral-v3/stable/"
+	url := "http://images.maas.io/ephemeral-v3/stable/"
 	keyring_path := "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
 	checks := []resource.TestCheckFunc{
