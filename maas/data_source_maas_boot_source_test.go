@@ -15,7 +15,7 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttr("data.maas_boot_source.test", "url", url),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "created"),
-		// resource.TestCheckNoResourceAttr("data.maas_boot_source.test", "keyring_data"),
+		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_data", ""),
 		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_filename", keyring_path),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "updated"),
 	}
