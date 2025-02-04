@@ -12,7 +12,7 @@ import (
 func dataSourceMaasBootSource() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMaasBootSourceRead,
-		Description: "Provides a resource to fetch MAAS boot sources.",
+		Description: "Provides a resource to fetch the MAAS boot source.",
 
 		Schema: map[string]*schema.Schema{
 			"created": {
