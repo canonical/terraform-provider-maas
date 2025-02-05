@@ -67,8 +67,7 @@ func testAccMAASBootSource(url string) string {
 	return fmt.Sprintf(`
 resource "maas_boot_source" "test" {
 	url = "%s"
-}
-`, url)
+}`, url)
 }
 
 func testAccCheckMAASBootSourceDestroy(s *terraform.State) error {

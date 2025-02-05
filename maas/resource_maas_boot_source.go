@@ -3,7 +3,6 @@ package maas
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
@@ -53,18 +52,19 @@ func resourceMAASBootSource() *schema.Resource {
 
 func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
-	id, err := strconv.Atoi(d.Id())
+
+	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	// We create by changing the url to the chosen value
 	bootsourceParams := entity.BootSourceParams{
 		URL: d.Get("url").(string),
 	}
 
-	bootsource, err := client.BootSource.Update(id, &bootsourceParams)
-	if err != nil {
+	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
@@ -99,21 +99,21 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta in
 func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
+
 	bootsourceParams := entity.BootSourceParams{
 		KeyringData:     d.Get("keyring_data").(string),
 		KeyringFilename: d.Get("keyring_filename").(string),
 		URL:             d.Get("url").(string),
 	}
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
+
+	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
 		return diag.FromErr(err)
 	}
-
-	bootsource, err := client.BootSource.Update(id, &bootsourceParams)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	return resourceBootSourceRead(ctx, d, meta)
@@ -121,18 +121,19 @@ func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
-	id, err := strconv.Atoi(d.Id())
+
+	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
-	// When deleting, we just change the resource back to stable
+	// We create by changing the url to the chosen value
 	bootsourceParams := entity.BootSourceParams{
 		URL: "http://images.maas.io/ephemeral-v3/stable/",
 	}
 
-	bootsource, err := client.BootSource.Update(id, &bootsourceParams)
-	if err != nil {
+	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
