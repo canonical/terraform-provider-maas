@@ -1,3 +1,3 @@
 resource "maas_boot_source" "test_boot_source" {
-  description = "Test description"
+  url = "http://images.maas.io/ephemeral-v3/candidate/"
 }
