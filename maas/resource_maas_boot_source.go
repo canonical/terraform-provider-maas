@@ -13,8 +13,11 @@ import (
 
 func resourceMAASBootSource() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceMaasBootSourceRead,
-		Description: "Provides a resource to fetch the MAAS boot source.",
+		Description:   "Provides a resource to manage the MAAS boot source.",
+		CreateContext: resourceBootSourceCreate,
+		ReadContext:   resourceBootSourceRead,
+		UpdateContext: resourceBootSourceUpdate,
+		DeleteContext: resourceBootSourceDelete,
 
 		Schema: map[string]*schema.Schema{
 			"created": {
@@ -23,14 +26,16 @@ func resourceMAASBootSource() *schema.Resource {
 				Description: "The creation time of the boot source.",
 			},
 			"keyring_data": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The data on the keyring for the boot source.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   "The data on the keyring for the boot source.",
+				ConflictsWith: []string{"keyring_filename"},
 			},
 			"keyring_filename": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The filename on the keyring for the boot source.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   "The filename on the keyring for the boot source.",
+				ConflictsWith: []string{"keyring_data"},
 			},
 			"updated": {
 				Type:        schema.TypeString,
@@ -39,7 +44,7 @@ func resourceMAASBootSource() *schema.Resource {
 			},
 			"url": {
 				Type:        schema.TypeString,
-				Computed:    true,
+				Required:    true,
 				Description: "The URL of the boot source.",
 			},
 		},
@@ -48,18 +53,20 @@ func resourceMAASBootSource() *schema.Resource {
 
 func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
-
-	bootsourceParams := entity.BootSourceParams{
-		KeyringData:     d.Get("keyring_data").(string),
-		KeyringFilename: d.Get("keyring_filename").(string),
-		URL:             d.Get("url").(string),
-	}
-
-	bootsource, err := client.BootSources.Create(&bootsourceParams)
+	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	// We create by changing the url to the chosen value
+	bootsourceParams := entity.BootSourceParams{
+		URL: d.Get("url").(string),
+	}
+
+	bootsource, err := client.BootSource.Update(id, &bootsourceParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	return resourceBootSourceRead(ctx, d, meta)
@@ -118,7 +125,19 @@ func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	return diag.FromErr(client.BootSource.Delete(id))
+
+	// When deleting, we just change the resource back to stable
+	bootsourceParams := entity.BootSourceParams{
+		URL: "http://images.maas.io/ephemeral-v3/stable/",
+	}
+
+	bootsource, err := client.BootSource.Update(id, &bootsourceParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
+
+	return resourceBootSourceRead(ctx, d, meta)
 }
 
 func getBootSource(client *client.Client) (*entity.BootSource, error) {
