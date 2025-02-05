@@ -65,7 +65,7 @@ func testAccMAASBootSourceCheckExists(rn string, bootSource *entity.BootSource) 
 
 func testAccMAASBootSource(url string) string {
 	return fmt.Sprintf(`
-resource "maas_resource_pool" "test" {
+resource "maas_boot_source" "test" {
 	url = "%s"
 }
 `, url)
