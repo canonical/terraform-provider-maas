@@ -10,6 +10,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const defaultURL = "http://images.maas.io/ephemeral-v3/stable/"
+const defaultKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+
 func resourceMAASBootSource() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage the MAAS boot source.",
@@ -59,9 +62,11 @@ func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
-	// We create by changing the url to the chosen value
+	// We create by transmuting the single boot source
 	bootsourceParams := entity.BootSourceParams{
-		URL: d.Get("url").(string),
+		KeyringData:     d.Get("keyring_data").(string),
+		KeyringFilename: d.Get("keyring_filename").(string),
+		URL:             d.Get("url").(string),
 	}
 
 	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
@@ -79,8 +84,6 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	tfState := map[string]interface{}{
 		"created":          bootsource.Created,
@@ -114,7 +117,6 @@ func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	return resourceBootSourceRead(ctx, d, meta)
 }
@@ -128,9 +130,11 @@ func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta 
 	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
-	// We create by changing the url to the chosen value
+	// We delete by changing the url to the default value
 	bootsourceParams := entity.BootSourceParams{
-		URL: "http://images.maas.io/ephemeral-v3/stable/",
+		URL:             defaultURL,
+		KeyringData:     "",
+		KeyringFilename: defaultKeyring,
 	}
 
 	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {

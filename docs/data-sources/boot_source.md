@@ -3,12 +3,12 @@
 page_title: "maas_boot_source Data Source - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage the MAAS boot source.
+  Provides a resource to fetch the MAAS boot source.
 ---
 
 # maas_boot_source (Data Source)
 
-Provides a resource to manage the MAAS boot source.
+Provides a resource to fetch the MAAS boot source.
 
 ## Example Usage
 
