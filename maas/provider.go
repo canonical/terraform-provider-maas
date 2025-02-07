@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/canonical/gomaasclient/client"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -33,7 +35,7 @@ func Provider() *schema.Provider {
 			"install_method": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "snap",
+				Default:     os.Getenv("MAAS_INSTALL_METHOD"),
 				Description: "The MAAS installation method (Deb / Snap)",
 			},
 			"tls_ca_cert_path": {
@@ -88,6 +90,11 @@ func Provider() *schema.Provider {
 	}
 }
 
+type ClientConfig struct {
+	Client        *client.Client
+	InstallMethod string
+}
+
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	apiKey := d.Get("api_key").(string)
 	if apiKey == "" {
@@ -119,5 +126,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	return c, diags
+	return ClientConfig{Client: c, InstallMethod: config.InstallMethod}, diags
 }
