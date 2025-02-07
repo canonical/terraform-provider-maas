@@ -11,7 +11,8 @@ import (
 )
 
 const defaultURL = "http://images.maas.io/ephemeral-v3/stable/"
-const defaultKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+const snapKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+const debKeyring = "usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
 func resourceMAASBootSource() *schema.Resource {
 	return &schema.Resource{
@@ -28,16 +29,16 @@ func resourceMAASBootSource() *schema.Resource {
 				Description: "The creation time of the boot source.",
 			},
 			"keyring_data": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Description:   "The data on the keyring for the boot source.",
-				ConflictsWith: []string{"keyring_filename"},
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "The data on the keyring for the boot source.",
+				ExactlyOneOf: []string{"keyring_filename"},
 			},
 			"keyring_filename": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Description:   "The filename on the keyring for the boot source.",
-				ConflictsWith: []string{"keyring_data"},
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "The filename on the keyring for the boot source.",
+				ExactlyOneOf: []string{"keyring_data"},
 			},
 			"updated": {
 				Type:        schema.TypeString,
@@ -106,7 +107,6 @@ func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	bootsourceParams := entity.BootSourceParams{
 		KeyringData:     d.Get("keyring_data").(string),
@@ -123,18 +123,23 @@ func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
+	config := meta.(*client.Config)
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
+
+	keyring := snapKeyring
+	if config.install_method != "snap" {
+		keyring = debKeyring
+	}
 
 	// We delete by changing the url to the default value
 	bootsourceParams := entity.BootSourceParams{
 		URL:             defaultURL,
 		KeyringData:     "",
-		KeyringFilename: defaultKeyring,
+		KeyringFilename: keyring,
 	}
 
 	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {

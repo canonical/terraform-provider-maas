@@ -12,6 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+const defaultURL = "http://images.maas.io/ephemeral-v3/stable/"
+const snapKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+
 func TestAccResourceMAASBootSource_basic(t *testing.T) {
 
 	var bootsource entity.BootSource
@@ -20,6 +23,7 @@ func TestAccResourceMAASBootSource_basic(t *testing.T) {
 	checks := []resource.TestCheckFunc{
 		testAccMAASBootSourceCheckExists("maas_boot_source.test", &bootsource),
 		resource.TestCheckResourceAttr("maas_boot_source.test", "url", url),
+		resource.TestCheckResourceAttr("maas_boot_source.test", "keyring_filename", snapKeyring),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -29,7 +33,7 @@ func TestAccResourceMAASBootSource_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASBootSource(url),
+				Config: testAccMAASBootSource(url, snapKeyring),
 				Check:  resource.ComposeAggregateTestCheckFunc(checks...),
 			},
 		},
@@ -63,17 +67,17 @@ func testAccMAASBootSourceCheckExists(rn string, bootSource *entity.BootSource) 
 	}
 }
 
-func testAccMAASBootSource(url string) string {
+func testAccMAASBootSource(url string, keyring_filename string) string {
 	return fmt.Sprintf(`
 resource "maas_boot_source" "test" {
 	url = "%s"
-}`, url)
+	keyring_filename = "%s"
+}`, url, keyring_filename)
 }
 
 func testAccCheckMAASBootSourceDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*client.Client)
-	default_url := "http://images.maas.io/ephemeral-v3/stable/"
 
 	// loop through the resources in state
 	for _, rs := range s.RootModule().Resources {
@@ -87,7 +91,13 @@ func testAccCheckMAASBootSourceDestroy(s *terraform.State) error {
 		}
 		response, err := conn.BootSource.Get(id)
 		if err == nil {
-			if response.URL != default_url {
+			if response.URL != defaultURL {
+				return fmt.Errorf("MAAS Boot Source (%s) not reset to default.", rs.Primary.ID)
+			}
+			if response.KeyringFilename != snapKeyring {
+				return fmt.Errorf("MAAS Boot Source (%s) not reset to default.", rs.Primary.ID)
+			}
+			if response.KeyringData != "" {
 				return fmt.Errorf("MAAS Boot Source (%s) not reset to default.", rs.Primary.ID)
 			}
 
