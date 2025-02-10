@@ -21,7 +21,7 @@ func init() {
 }
 
 func PreCheck(t *testing.T, extra []string) {
-	var requiredVariables = []string{"MAAS_API_URL", "MAAS_API_KEY", "MAAS_INSTALL_METHOD"}
+	var requiredVariables = []string{"MAAS_API_URL", "MAAS_API_KEY"}
 	missingVariables := new([]string)
 
 	for _, rv := range append(requiredVariables, extra...) {
