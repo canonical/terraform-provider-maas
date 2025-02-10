@@ -55,7 +55,7 @@ func resourceMAASBootSource() *schema.Resource {
 }
 
 func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
@@ -79,7 +79,7 @@ func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
@@ -101,7 +101,7 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {

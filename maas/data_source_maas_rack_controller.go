@@ -3,7 +3,6 @@ package maas
 import (
 	"context"
 
-	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -54,7 +53,7 @@ func dataSourceMaasRackController() *schema.Resource {
 }
 
 func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	hostname := d.Get("hostname").(string)
 	rackControllers, err := client.RackControllers.Get(
