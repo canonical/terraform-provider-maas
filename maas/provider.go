@@ -126,5 +126,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	return ClientConfig{client: c, installMethod: config.InstallMethod}, diags
+	return &ClientConfig{client: c, installMethod: config.InstallMethod}, diags
 }
