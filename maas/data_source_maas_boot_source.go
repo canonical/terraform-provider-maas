@@ -44,7 +44,7 @@ func dataSourceMaasBootSource() *schema.Resource {
 }
 
 func dataSourceMaasBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {

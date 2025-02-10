@@ -68,7 +68,7 @@ func dataSourceMaasMachine() *schema.Resource {
 }
 
 func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 	var identifier string
 
 	if v, ok := d.GetOk("hostname"); ok {

@@ -67,7 +67,7 @@ func dataSourceMaasSubnet() *schema.Resource {
 }
 
 func dataSourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	subnet, err := getSubnet(client, d.Get("cidr").(string))
 	if err != nil {

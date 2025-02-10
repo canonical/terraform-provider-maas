@@ -83,7 +83,7 @@ func dataSourceMaasDevice() *schema.Resource {
 }
 
 func dataSourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	device, err := getDevice(client, d.Get("hostname").(string))
 	if err != nil {

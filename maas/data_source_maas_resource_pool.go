@@ -29,7 +29,7 @@ func dataSourceMaasResourcePool() *schema.Resource {
 }
 
 func dataSourceResourcePoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	resourcePool, err := getResourcePool(client, d.Get("name").(string))
 	if err != nil {

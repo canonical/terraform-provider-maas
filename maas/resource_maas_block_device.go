@@ -25,7 +25,7 @@ func resourceMaasBlockDevice() *schema.Resource {
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BLOCK_DEVICE", d.Id())
 				}
-				client := meta.(*ClientConfig).Client
+				client := meta.(*ClientConfig).client
 				machine, err := getMachine(client, idParts[0])
 				if err != nil {
 					return nil, err
@@ -179,7 +179,7 @@ func resourceMaasBlockDevice() *schema.Resource {
 }
 
 func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -201,7 +201,7 @@ func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -232,7 +232,7 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -262,7 +262,7 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

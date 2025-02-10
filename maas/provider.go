@@ -35,7 +35,7 @@ func Provider() *schema.Provider {
 			"install_method": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     os.Getenv("MAAS_INSTALL_METHOD"),
+				DefaultFunc: schema.EnvDefaultFunc("MAAS_INSTALL_METHOD", "snap"),
 				Description: "The MAAS installation method (Deb / Snap)",
 			},
 			"tls_ca_cert_path": {
@@ -91,8 +91,8 @@ func Provider() *schema.Provider {
 }
 
 type ClientConfig struct {
-	Client        *client.Client
-	InstallMethod string
+	client        *client.Client
+	installMethod string
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
@@ -126,5 +126,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	return ClientConfig{Client: c, InstallMethod: config.InstallMethod}, diags
+	return ClientConfig{client: c, installMethod: config.InstallMethod}, diags
 }

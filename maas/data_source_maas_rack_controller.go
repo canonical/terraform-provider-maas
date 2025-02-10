@@ -53,7 +53,7 @@ func dataSourceMaasRackController() *schema.Resource {
 }
 
 func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
+	client := meta.(*ClientConfig).client
 
 	hostname := d.Get("hostname").(string)
 	rackControllers, err := client.RackControllers.Get(
