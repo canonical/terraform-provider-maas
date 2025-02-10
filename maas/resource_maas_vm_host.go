@@ -33,7 +33,9 @@ func resourceMaasVMHost() *schema.Resource {
 		DeleteContext: resourceVMHostDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*ClientConfig).client
+				config := meta.(*ClientConfig)
+				client := config.client
+
 				vmHost, err := getVMHost(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -167,7 +169,11 @@ func resourceMaasVMHost() *schema.Resource {
 }
 
 func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	// Create VM host
 	var vmHost *entity.VMHost
@@ -193,7 +199,11 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	// Get VM host details
 	id, err := strconv.Atoi(d.Id())
@@ -226,7 +236,11 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	// Get the VM host
 	id, err := strconv.Atoi(d.Id())
@@ -244,7 +258,11 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	// Delete VM host
 	id, err := strconv.Atoi(d.Id())

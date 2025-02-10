@@ -24,7 +24,9 @@ func resourceMaasVlan() *schema.Resource {
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected FABRIC:VLAN", d.Id())
 				}
-				client := meta.(*ClientConfig).client
+				config := meta.(*ClientConfig)
+				client := config.client
+
 				fabric, err := getFabric(client, idParts[0])
 				if err != nil {
 					return nil, err
@@ -87,7 +89,11 @@ func resourceMaasVlan() *schema.Resource {
 }
 
 func resourceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
@@ -103,7 +109,11 @@ func resourceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
@@ -127,7 +137,11 @@ func resourceVlanRead(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
@@ -145,7 +159,11 @@ func resourceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceVlanDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {

@@ -20,7 +20,9 @@ func resourceMaasResourcePool() *schema.Resource {
 		DeleteContext: resourceResourcePoolDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*ClientConfig).client
+				config := meta.(*ClientConfig)
+				client := config.client
+
 				resourcePool, err := getResourcePool(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -46,7 +48,11 @@ func resourceMaasResourcePool() *schema.Resource {
 }
 
 func resourceResourcePoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	resourcePoolParams := entity.ResourcePoolParams{
 		Description: d.Get("description").(string),
@@ -63,7 +69,11 @@ func resourceResourcePoolCreate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceResourcePoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -85,7 +95,11 @@ func resourceResourcePoolUpdate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceResourcePoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -95,7 +109,11 @@ func resourceResourcePoolDelete(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceResourcePoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	resourcePool, err := getResourcePool(client, d.Id())
 	if err != nil {

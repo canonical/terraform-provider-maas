@@ -55,7 +55,11 @@ func resourceMAASBootSource() *schema.Resource {
 }
 
 func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
@@ -79,7 +83,11 @@ func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
@@ -101,7 +109,11 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {

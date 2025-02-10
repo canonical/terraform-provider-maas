@@ -52,7 +52,12 @@ func dataSourceMaasNetworkInterfacePhysical() *schema.Resource {
 }
 
 func dataSourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
+
 	n, err := getNetworkInterfacePhysical(client, d.Get("machine").(string), d.Get("name").(string))
 	if err != nil {
 		return diag.FromErr(err)

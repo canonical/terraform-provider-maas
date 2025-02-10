@@ -18,7 +18,9 @@ func resourceMaasUser() *schema.Resource {
 		DeleteContext: resourceUserDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*ClientConfig).client
+				config := meta.(*ClientConfig)
+				client := config.client
+
 				user, err := getUser(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -69,7 +71,11 @@ func resourceMaasUser() *schema.Resource {
 }
 
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	user, err := client.Users.Create(getUserParams(d))
 	if err != nil {
@@ -81,7 +87,11 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	if _, err := client.User.Get(d.Id()); err != nil {
 		return diag.FromErr(err)
@@ -91,7 +101,11 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	if err := client.User.Delete(d.Id()); err != nil {
 		return diag.FromErr(err)

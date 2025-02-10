@@ -53,7 +53,11 @@ func dataSourceMaasRackController() *schema.Resource {
 }
 
 func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	hostname := d.Get("hostname").(string)
 	rackControllers, err := client.RackControllers.Get(

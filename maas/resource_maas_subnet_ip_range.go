@@ -22,7 +22,9 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 		DeleteContext: resourceSubnetIPRangeDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*ClientConfig).client
+				config := meta.(*ClientConfig)
+				client := config.client
+
 				idParts := strings.Split(d.Id(), ":")
 				var ipRange *entity.IPRange
 				var err error
@@ -93,7 +95,11 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 }
 
 func resourceSubnetIPRangeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	subnet, err := findSubnet(client, d.Get("subnet").(string))
 	if err != nil {
@@ -109,7 +115,11 @@ func resourceSubnetIPRangeCreate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -130,7 +140,11 @@ func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceSubnetIPRangeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -148,7 +162,11 @@ func resourceSubnetIPRangeUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceSubnetIPRangeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

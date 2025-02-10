@@ -33,7 +33,9 @@ func resourceMaasMachine() *schema.Resource {
 		},
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*ClientConfig).client
+				config := meta.(*ClientConfig)
+				client := config.client
+
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -152,7 +154,11 @@ func resourceMaasMachine() *schema.Resource {
 }
 
 func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	// Create MAAS machine
 	powerParams, err := getMachinePowerParams(d)
@@ -178,7 +184,11 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	// Get machine
 	machine, err := client.Machine.Get(d.Id())
@@ -211,7 +221,11 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	// Update machine
 	machine, err := client.Machine.Get(d.Id())
@@ -230,7 +244,11 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).client
+	config, ok := meta.(*ClientConfig)
+	if !ok {
+		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
+	}
+	client := config.client
 
 	// Delete machine
 	if err := client.Machine.Delete(d.Id()); err != nil {
