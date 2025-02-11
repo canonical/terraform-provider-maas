@@ -55,11 +55,7 @@ func resourceMAASBootSource() *schema.Resource {
 }
 
 func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
@@ -83,11 +79,7 @@ func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
@@ -109,11 +101,7 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
@@ -136,13 +124,13 @@ func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	clientConfig := meta.(*ClientConfig)
 
-	bootsource, err := getBootSource(clientConfig.client)
+	bootsource, err := getBootSource(clientConfig.Client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	keyring := snapKeyring
-	if clientConfig.installMethod != "snap" {
+	if clientConfig.InstallMethod != "snap" {
 		keyring = debKeyring
 	}
 
@@ -153,7 +141,7 @@ func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta 
 		KeyringFilename: keyring,
 	}
 
-	if _, err := clientConfig.client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
+	if _, err := clientConfig.Client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))

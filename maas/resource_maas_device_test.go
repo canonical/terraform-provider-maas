@@ -3,10 +3,10 @@ package maas_test
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
-	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -85,7 +85,7 @@ func testAccMaasDeviceCheckExists(rn string, device *entity.Device) resource.Tes
 			return fmt.Errorf("resource id not set")
 		}
 
-		conn := testutils.TestAccProvider.Meta().(*client.Client)
+		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		gotDevice, err := conn.Device.Get(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting device: %s", err)
@@ -119,7 +119,7 @@ resource "maas_device" "test" {
 
 func testAccCheckMaasDeviceDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
-	conn := testutils.TestAccProvider.Meta().(*client.Client)
+	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	// loop through the resources in state, verifying each maas_device
 	// is destroyed

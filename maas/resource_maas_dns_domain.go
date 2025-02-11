@@ -20,8 +20,7 @@ func resourceMaasDnsDomain() *schema.Resource {
 		DeleteContext: resourceDnsDomainDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				config := meta.(*ClientConfig)
-				client := config.client
+				client := meta.(*ClientConfig).Client
 
 				domain, err := getDomain(client, d.Id())
 				if err != nil {
@@ -69,11 +68,7 @@ func resourceMaasDnsDomain() *schema.Resource {
 }
 
 func resourceDnsDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	domain, err := client.Domains.Create(getDomainParams(d))
 	if err != nil {
@@ -85,11 +80,7 @@ func resourceDnsDomainCreate(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceDnsDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -103,11 +94,7 @@ func resourceDnsDomainRead(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceDnsDomainUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -127,11 +114,7 @@ func resourceDnsDomainUpdate(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceDnsDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

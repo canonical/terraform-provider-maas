@@ -49,11 +49,7 @@ func dataSourceMaasVlan() *schema.Resource {
 }
 
 func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {

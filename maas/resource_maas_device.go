@@ -17,8 +17,7 @@ func resourceMaasDevice() *schema.Resource {
 		DeleteContext: resourceDeviceDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				config := meta.(*ClientConfig)
-				client := config.client
+				client := meta.(*ClientConfig).Client
 
 				device, err := getDevice(client, d.Id())
 				if err != nil {
@@ -109,11 +108,7 @@ func expandNetworkInterfacesItems(items []interface{}) []string {
 }
 
 func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	deviceParams := entity.DeviceCreateParams{
 		Description:  d.Get("description").(string),
@@ -132,11 +127,7 @@ func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	deviceParams := entity.DeviceUpdateParams{
 		Description: d.Get("description").(string),
@@ -155,21 +146,13 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceDeviceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	return diag.FromErr(client.Device.Delete(d.Id()))
 }
 
 func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	device, err := getDevice(client, d.Id())
 	if err != nil {

@@ -20,8 +20,7 @@ func resourceMaasInstance() *schema.Resource {
 		DeleteContext: resourceInstanceDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				config := meta.(*ClientConfig)
-				client := config.client
+				client := meta.(*ClientConfig).Client
 
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
@@ -220,11 +219,7 @@ func resourceMaasInstance() *schema.Resource {
 }
 
 func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	// Allocate MAAS machine
 	machine, err := client.Machines.Allocate(getMachinesAllocateParams(d))
@@ -258,11 +253,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	// Get MAAS machine
 	machine, err := client.Machine.Get(d.Id())
@@ -292,11 +283,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	// Release MAAS machine
 	err := client.Machines.Release([]string{d.Id()}, "Released by Terraform")

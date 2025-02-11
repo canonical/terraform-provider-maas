@@ -3,10 +3,10 @@ package maas_test
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
-	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -51,7 +51,7 @@ func testAccMAASBootSourceCheckExists(rn string, bootSource *entity.BootSource) 
 			return fmt.Errorf("resource id not set")
 		}
 
-		conn := testutils.TestAccProvider.Meta().(*client.Client)
+		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
@@ -77,7 +77,7 @@ resource "maas_boot_source" "test" {
 
 func testAccCheckMAASBootSourceDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
-	conn := testutils.TestAccProvider.Meta().(*client.Client)
+	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	// loop through the resources in state
 	for _, rs := range s.RootModule().Resources {

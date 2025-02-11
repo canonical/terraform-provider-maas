@@ -96,11 +96,7 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 }
 
 func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -124,11 +120,7 @@ func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Resourc
 }
 
 func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -181,11 +173,7 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 }
 
 func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -212,11 +200,7 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 }
 
 func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {

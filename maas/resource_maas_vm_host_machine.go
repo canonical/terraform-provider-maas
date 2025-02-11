@@ -20,8 +20,7 @@ func resourceMaasVMHostMachine() *schema.Resource {
 		DeleteContext: resourceVMHostMachineDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				config := meta.(*ClientConfig)
-				client := config.client
+				client := meta.(*ClientConfig).Client
 
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
@@ -156,11 +155,7 @@ func resourceMaasVMHostMachine() *schema.Resource {
 }
 
 func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	// Find VM host
 	vmHost, err := getVMHost(client, d.Get("vm_host").(string))
@@ -192,11 +187,7 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	// Get VM host machine
 	machine, err := client.Machine.Get(d.Id())
@@ -219,11 +210,7 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	// Update VM host machine
 	if _, err := client.Machine.Update(d.Id(), getVMHostMachineUpdateParams(d), map[string]interface{}{}); err != nil {
@@ -234,11 +221,7 @@ func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	// Delete VM host machine
 	err := client.Machine.Delete(d.Id())

@@ -91,8 +91,8 @@ func Provider() *schema.Provider {
 }
 
 type ClientConfig struct {
-	client        *client.Client
-	installMethod string
+	Client        *client.Client
+	InstallMethod string
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
@@ -126,5 +126,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	return &ClientConfig{client: c, installMethod: config.InstallMethod}, diags
+	return &ClientConfig{Client: c, InstallMethod: config.InstallMethod}, diags
 }

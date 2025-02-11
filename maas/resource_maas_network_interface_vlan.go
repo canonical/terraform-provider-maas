@@ -71,11 +71,7 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 }
 
 func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -108,11 +104,7 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 }
 
 func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -153,11 +145,7 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -193,11 +181,7 @@ func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceD
 	return resourceNetworkInterfaceVlanRead(ctx, d, meta)
 }
 func resourceNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {

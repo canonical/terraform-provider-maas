@@ -83,11 +83,7 @@ func dataSourceMaasDevice() *schema.Resource {
 }
 
 func dataSourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	device, err := getDevice(client, d.Get("hostname").(string))
 	if err != nil {

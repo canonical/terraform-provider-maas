@@ -25,8 +25,7 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE/NETWORK_INTERFACE", d.Id())
 				}
-				config := meta.(*ClientConfig)
-				client := config.client
+				client := meta.(*ClientConfig).Client
 
 				machine, err := getMachine(client, idParts[0])
 				if err != nil {
@@ -87,11 +86,7 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 }
 
 func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -126,11 +121,7 @@ func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.Resou
 }
 
 func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -160,11 +151,7 @@ func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resourc
 }
 
 func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -194,11 +181,7 @@ func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.Resou
 }
 
 func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config, ok := meta.(*ClientConfig)
-	if !ok {
-		return diag.Errorf("unexpected meta type: %T, expected *ClientConfig", meta)
-	}
-	client := config.client
+	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
