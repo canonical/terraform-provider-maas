@@ -44,7 +44,7 @@ resource "maas_network_interface_physical" "test" {
 func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
 
 	var networkInterfacePhysical entity.NetworkInterface
-	name := acctest.RandomWithPrefix("tf-network-interface-physical")
+	name := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 9))
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	fabric := os.Getenv("TF_ACC_FABRIC")
 

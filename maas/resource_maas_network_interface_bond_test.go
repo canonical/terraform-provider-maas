@@ -67,7 +67,7 @@ resource "maas_network_interface_bond" "test" {
 func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
 
 	var networkInterfaceBond entity.NetworkInterface
-	name := acctest.RandomWithPrefix("tf-network-interface-bond")
+	name := fmt.Sprintf("tf-nic-bond-%d", acctest.RandIntRange(0, 9))
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	fabric := os.Getenv("TF_ACC_FABRIC")
 
