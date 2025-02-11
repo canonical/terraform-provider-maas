@@ -145,7 +145,6 @@ func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta 
 	if _, err := clientConfig.Client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	return resourceBootSourceRead(ctx, d, meta)
 }
