@@ -13,6 +13,7 @@ import (
 )
 
 const defaultURL = "http://images.maas.io/ephemeral-v3/stable/"
+
 // We assume tests are run from a snap MAAS environment
 const snapKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
