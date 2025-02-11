@@ -73,7 +73,6 @@ func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta 
 	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	return resourceBootSourceRead(ctx, d, meta)
 }
@@ -136,7 +135,7 @@ func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta 
 		keyring = debKeyring
 	}
 
-	// We delete by changing the url to the default value
+	// We delete by changing the url and keyring fields to the default values
 	bootsourceParams := entity.BootSourceParams{
 		URL:             defaultURL,
 		KeyringData:     "",

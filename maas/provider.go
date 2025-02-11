@@ -36,7 +36,7 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MAAS_INSTALLATION_METHOD", "snap"),
-				Description: "The MAAS installation method (Deb / Snap)",
+				Description: "The MAAS installation method. Valid options: `snap`, and `deb`.",
 			},
 			"tls_ca_cert_path": {
 				Type:        schema.TypeString,
@@ -108,7 +108,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		APIKey:                apiKey,
 		APIURL:                apiURL,
 		ApiVersion:            d.Get("api_version").(string),
-		InstallationMethod:    d.Get("installation_method").(string),
 		TLSCACertPath:         d.Get("tls_ca_cert_path").(string),
 		TLSInsecureSkipVerify: d.Get("tls_insecure_skip_verify").(bool),
 	}
@@ -126,5 +125,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	return &ClientConfig{Client: c, InstallationMethod: config.InstallationMethod}, diags
+	return &ClientConfig{Client: c, InstallationMethod: d.Get("installation_method").(string)}, diags
 }

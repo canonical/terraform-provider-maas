@@ -12,7 +12,6 @@ type Config struct {
 	APIKey                string
 	APIURL                string
 	ApiVersion            string
-	InstallationMethod    string
 	TLSCACertPath         string
 	TLSInsecureSkipVerify bool
 }
