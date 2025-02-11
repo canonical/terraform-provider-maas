@@ -13,6 +13,7 @@ import (
 )
 
 const defaultURL = "http://images.maas.io/ephemeral-v3/stable/"
+// We assume tests are run from a snap MAAS environment
 const snapKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
 func TestAccResourceMAASBootSource_basic(t *testing.T) {
@@ -92,13 +93,13 @@ func testAccCheckMAASBootSourceDestroy(s *terraform.State) error {
 		response, err := conn.BootSource.Get(id)
 		if err == nil {
 			if response.URL != defaultURL {
-				return fmt.Errorf("MAAS Boot Source (%s) not reset to default.", rs.Primary.ID)
+				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.URL)
 			}
 			if response.KeyringFilename != snapKeyring {
-				return fmt.Errorf("MAAS Boot Source (%s) not reset to default.", rs.Primary.ID)
+				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.KeyringFilename)
 			}
 			if response.KeyringData != "" {
-				return fmt.Errorf("MAAS Boot Source (%s) not reset to default.", rs.Primary.ID)
+				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.KeyringData)
 			}
 
 			return nil

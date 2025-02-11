@@ -32,10 +32,10 @@ func Provider() *schema.Provider {
 				Default:     "2.0",
 				Description: "The MAAS API version (default 2.0)",
 			},
-			"install_method": {
+			"installation_method": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("MAAS_INSTALL_METHOD", "snap"),
+				DefaultFunc: schema.EnvDefaultFunc("MAAS_INSTALLATION_METHOD", "snap"),
 				Description: "The MAAS installation method (Deb / Snap)",
 			},
 			"tls_ca_cert_path": {
@@ -91,8 +91,8 @@ func Provider() *schema.Provider {
 }
 
 type ClientConfig struct {
-	Client        *client.Client
-	InstallMethod string
+	Client             *client.Client
+	InstallationMethod string
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
@@ -108,7 +108,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		APIKey:                apiKey,
 		APIURL:                apiURL,
 		ApiVersion:            d.Get("api_version").(string),
-		InstallMethod:         d.Get("install_method").(string),
+		InstallationMethod:    d.Get("installation_method").(string),
 		TLSCACertPath:         d.Get("tls_ca_cert_path").(string),
 		TLSInsecureSkipVerify: d.Get("tls_insecure_skip_verify").(bool),
 	}
@@ -126,5 +126,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	return &ClientConfig{Client: c, InstallMethod: config.InstallMethod}, diags
+	return &ClientConfig{Client: c, InstallationMethod: config.InstallationMethod}, diags
 }

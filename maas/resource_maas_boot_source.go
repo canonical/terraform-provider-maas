@@ -12,7 +12,7 @@ import (
 
 const defaultURL = "http://images.maas.io/ephemeral-v3/stable/"
 const snapKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
-const debKeyring = "usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+const debKeyring = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
 func resourceMAASBootSource() *schema.Resource {
 	return &schema.Resource{
@@ -129,8 +129,10 @@ func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	keyring := snapKeyring
-	if clientConfig.InstallMethod != "snap" {
+	var keyring string
+	if clientConfig.InstallationMethod == "snap" {
+		keyring = snapKeyring
+	} else {
 		keyring = debKeyring
 	}
 

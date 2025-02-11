@@ -11,7 +11,7 @@ provider "maas" {
   api_version    = "2.0"
   api_key        = "<YOUR API KEY>"
   api_url        = "<YOUR API URL>"
-  install_method = "snap"
+  installation_method = "snap"
 }
 
 resource "maas_space" "tf_space" {
