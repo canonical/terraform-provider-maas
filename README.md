@@ -85,8 +85,9 @@ The provider accepts the following config options:
 ```hcl
 provider "maas" {
   api_version = "2.0"
-  api_key = "YOUR MAAS API KEY"
-  api_url = "http://<MAAS_SERVER>[:MAAS_PORT]/MAAS"
+  api_key     = "YOUR MAAS API KEY"
+  api_url     = "http://<MAAS_SERVER>[:MAAS_PORT]/MAAS"
+
   installation_method = "snap"
 }
 ```
