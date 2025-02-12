@@ -20,7 +20,8 @@ func resourceMaasResourcePool() *schema.Resource {
 		DeleteContext: resourceResourcePoolDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*client.Client)
+				client := meta.(*ClientConfig).Client
+
 				resourcePool, err := getResourcePool(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -46,7 +47,7 @@ func resourceMaasResourcePool() *schema.Resource {
 }
 
 func resourceResourcePoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	resourcePoolParams := entity.ResourcePoolParams{
 		Description: d.Get("description").(string),
@@ -63,7 +64,7 @@ func resourceResourcePoolCreate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceResourcePoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -85,7 +86,7 @@ func resourceResourcePoolUpdate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceResourcePoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -95,7 +96,7 @@ func resourceResourcePoolDelete(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceResourcePoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	resourcePool, err := getResourcePool(client, d.Id())
 	if err != nil {

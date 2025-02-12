@@ -21,7 +21,8 @@ func resourceMaasSubnet() *schema.Resource {
 		DeleteContext: resourceSubnetDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*client.Client)
+				client := meta.(*ClientConfig).Client
+
 				subnet, err := getSubnet(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -138,7 +139,7 @@ func resourceMaasSubnet() *schema.Resource {
 }
 
 func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	params, err := getSubnetParams(client, d)
 	if err != nil {
@@ -154,7 +155,7 @@ func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -184,7 +185,7 @@ func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -205,7 +206,7 @@ func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

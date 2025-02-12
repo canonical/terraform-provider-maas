@@ -24,7 +24,8 @@ func resourceMaasVlan() *schema.Resource {
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected FABRIC:VLAN", d.Id())
 				}
-				client := meta.(*client.Client)
+				client := meta.(*ClientConfig).Client
+
 				fabric, err := getFabric(client, idParts[0])
 				if err != nil {
 					return nil, err
@@ -87,7 +88,7 @@ func resourceMaasVlan() *schema.Resource {
 }
 
 func resourceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
@@ -103,7 +104,7 @@ func resourceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
@@ -127,7 +128,7 @@ func resourceVlanRead(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
@@ -145,7 +146,7 @@ func resourceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceVlanDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {

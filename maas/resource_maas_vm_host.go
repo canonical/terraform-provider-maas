@@ -33,7 +33,8 @@ func resourceMaasVMHost() *schema.Resource {
 		DeleteContext: resourceVMHostDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*client.Client)
+				client := meta.(*ClientConfig).Client
+
 				vmHost, err := getVMHost(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -167,7 +168,7 @@ func resourceMaasVMHost() *schema.Resource {
 }
 
 func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Create VM host
 	var vmHost *entity.VMHost
@@ -193,7 +194,7 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Get VM host details
 	id, err := strconv.Atoi(d.Id())
@@ -226,7 +227,7 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Get the VM host
 	id, err := strconv.Atoi(d.Id())
@@ -244,7 +245,7 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Delete VM host
 	id, err := strconv.Atoi(d.Id())

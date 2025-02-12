@@ -33,7 +33,8 @@ func resourceMaasMachine() *schema.Resource {
 		},
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*client.Client)
+				client := meta.(*ClientConfig).Client
+
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -152,7 +153,7 @@ func resourceMaasMachine() *schema.Resource {
 }
 
 func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Create MAAS machine
 	powerParams, err := getMachinePowerParams(d)
@@ -178,7 +179,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Get machine
 	machine, err := client.Machine.Get(d.Id())
@@ -211,7 +212,7 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Update machine
 	machine, err := client.Machine.Get(d.Id())
@@ -230,7 +231,7 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Delete machine
 	if err := client.Machine.Delete(d.Id()); err != nil {

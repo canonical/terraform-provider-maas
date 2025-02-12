@@ -66,7 +66,7 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 }
 
 func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Create network interface link
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -93,7 +93,7 @@ func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceD
 }
 
 func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Get params for the read operation
 	linkID, err := strconv.Atoi(d.Id())
@@ -124,7 +124,7 @@ func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Get params for the update operation
 	linkID, err := strconv.Atoi(d.Id())
@@ -154,7 +154,7 @@ func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceD
 }
 
 func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Get params for the delete operation
 	linkID, err := strconv.Atoi(d.Id())

@@ -5,10 +5,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
-	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -71,7 +71,7 @@ func testAccMaasTagCheckExists(rn string, tag *entity.Tag) resource.TestCheckFun
 			return fmt.Errorf("resource id not set")
 		}
 
-		conn := testutils.TestAccProvider.Meta().(*client.Client)
+		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		gotTag, err := conn.Tag.Get(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting tag: %s", err)
@@ -96,7 +96,7 @@ resource "maas_tag" "test" {
 
 func testAccCheckMaasTagDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
-	conn := testutils.TestAccProvider.Meta().(*client.Client)
+	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	// loop through the resources in state, verifying each maas_tag
 	// is destroyed

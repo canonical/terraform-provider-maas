@@ -78,14 +78,17 @@ The provider accepts the following config options:
 - **api_key**: [MAAS API key](https://maas.io/docs/snap/3.0/cli/maas-cli#heading--log-in-required).
 - **api_url**: URL for the MAAS API server (eg: <http://127.0.0.1:5240/MAAS>).
 - **api_version**: MAAS API version used. It is optional and it defaults to `2.0`.
+- **installation_method**: MAAS Installation method used. Optional, defaults to `snap`. Valid options: `snap`, and `deb`.
 
 #### `maas`
 
 ```hcl
 provider "maas" {
   api_version = "2.0"
-  api_key = "YOUR MAAS API KEY"
-  api_url = "http://<MAAS_SERVER>[:MAAS_PORT]/MAAS"
+  api_key     = "YOUR MAAS API KEY"
+  api_url     = "http://<MAAS_SERVER>[:MAAS_PORT]/MAAS"
+
+  installation_method = "snap"
 }
 ```
 

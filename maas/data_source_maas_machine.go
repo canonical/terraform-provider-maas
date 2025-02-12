@@ -3,7 +3,6 @@ package maas
 import (
 	"context"
 
-	"github.com/canonical/gomaasclient/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
@@ -69,7 +68,8 @@ func dataSourceMaasMachine() *schema.Resource {
 }
 
 func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
+
 	var identifier string
 
 	if v, ok := d.GetOk("hostname"); ok {

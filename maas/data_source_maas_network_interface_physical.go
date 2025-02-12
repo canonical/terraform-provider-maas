@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/canonical/gomaasclient/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -53,7 +52,8 @@ func dataSourceMaasNetworkInterfacePhysical() *schema.Resource {
 }
 
 func dataSourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
+
 	n, err := getNetworkInterfacePhysical(client, d.Get("machine").(string), d.Get("name").(string))
 	if err != nil {
 		return diag.FromErr(err)

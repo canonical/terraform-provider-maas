@@ -20,7 +20,8 @@ func resourceMaasSpace() *schema.Resource {
 		DeleteContext: resourceSpaceDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*client.Client)
+				client := meta.(*ClientConfig).Client
+
 				space, err := getSpace(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -47,7 +48,7 @@ func resourceMaasSpace() *schema.Resource {
 }
 
 func resourceSpaceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	space, err := client.Spaces.Create(d.Get("name").(string))
 	if err != nil {
@@ -59,7 +60,7 @@ func resourceSpaceCreate(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceSpaceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -73,7 +74,7 @@ func resourceSpaceRead(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func resourceSpaceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -87,7 +88,7 @@ func resourceSpaceUpdate(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceSpaceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

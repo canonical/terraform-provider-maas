@@ -46,10 +46,14 @@ A typical provider API block might look like this:
 ```nohighlight
 provider "maas" {
   api_version = "2.0"
-  api_key = "<YOUR API KEY>"
-  api_url = "http://127.0.0.1:5240/MAAS"
+  api_key     = "<YOUR API KEY>"
+  api_url     = "http://127.0.0.1:5240/MAAS"
+
+  installation_method = "snap"
 }
 ```
+
+Where `installation_method` is the method used to install the MAAS terraform is interacting with (`deb`, or `snap`). If undefined, terraform will default to `snap`.
 
 A completed definition would also include some data sources and resources, like this typical example:
 

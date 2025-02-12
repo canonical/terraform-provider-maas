@@ -20,7 +20,8 @@ func resourceMaasTag() *schema.Resource {
 		DeleteContext: resourceTagDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				client := meta.(*client.Client)
+				client := meta.(*ClientConfig).Client
+
 				tag, err := getTag(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -80,7 +81,7 @@ func resourceMaasTag() *schema.Resource {
 }
 
 func resourceTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	params := getTagCreateParams(d)
 	tag, err := findTag(client, params.Name)
@@ -99,7 +100,7 @@ func resourceTagCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func resourceTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	tag, err := findTag(client, d.Id())
 	if err != nil {
@@ -117,7 +118,7 @@ func resourceTagRead(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	if d.HasChanges("definition", "comment", "kernel_opts") {
 		if _, err := client.Tag.Update(d.Id(), getTagCreateParams(d)); err != nil {
@@ -146,7 +147,7 @@ func resourceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func resourceTagDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	if err := client.Tag.Delete(d.Id()); err != nil {
 		return diag.FromErr(err)

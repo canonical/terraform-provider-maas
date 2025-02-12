@@ -45,6 +45,7 @@ The provider API block contains the necessary credentials to allow Terraform to 
 - `api_key` (String) The MAAS API key
 - `api_url` (String) The MAAS API URL (eg: http://127.0.0.1:5240/MAAS)
 - `api_version` (String) The MAAS API version (default 2.0)
+- `installation_method` (String) The MAAS installation method. Valid options: `snap`, and `deb`.
 - `tls_ca_cert_path` (String) Certificate CA bundle path to use to verify the MAAS certificate.
 - `tls_insecure_skip_verify` (Boolean) Skip TLS certificate verification.
 
@@ -55,10 +56,14 @@ A typical provider API block might look like this:
 ```nohighlight
 provider "maas" {
   api_version = "2.0"
-  api_key = "<YOUR API KEY>"
-  api_url = "http://127.0.0.1:5240/MAAS"
+  api_key     = "<YOUR API KEY>"
+  api_url     = "http://127.0.0.1:5240/MAAS"
+
+  installation_method = "snap"
 }
 ```
+
+Where `installation_method` is the method used to install the MAAS terraform is interacting with (`deb`, or `snap`). If undefined, terraform will default to `snap`.
 
 A completed definition would also include some data sources and resources, like this typical example:
 
@@ -73,9 +78,10 @@ terraform {
 }
 
 provider "maas" {
-  api_version = "2.0"
-  api_key     = "<YOUR API KEY>"
-  api_url     = "<YOUR API URL>"
+  api_version         = "2.0"
+  api_key             = "<YOUR API KEY>"
+  api_url             = "<YOUR API URL>"
+  installation_method = "snap"
 }
 
 resource "maas_space" "tf_space" {

@@ -34,7 +34,8 @@ func resourceMaasDnsRecord() *schema.Resource {
 				if _, errors := validation.StringInSlice(validDnsRecordTypes, false)(resourceType, "type"); len(errors) > 0 {
 					return nil, errors[0]
 				}
-				client := meta.(*client.Client)
+				client := meta.(*ClientConfig).Client
+
 				resourceIdentifier := idParts[1]
 				var tfState map[string]interface{}
 				if resourceType == "A/AAAA" {
@@ -115,7 +116,7 @@ func resourceMaasDnsRecord() *schema.Resource {
 }
 
 func resourceDnsRecordCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	var resourceID int
 	if d.Get("type").(string) == "A/AAAA" {
@@ -137,7 +138,7 @@ func resourceDnsRecordCreate(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceDnsRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -157,7 +158,7 @@ func resourceDnsRecordRead(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceDnsRecordUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -177,7 +178,7 @@ func resourceDnsRecordUpdate(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceDnsRecordDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
