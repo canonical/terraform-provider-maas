@@ -74,7 +74,8 @@ Where
 - `description` is a brief summary of a change (try to keep it short, so overall title no more than 72 characters).
 - `footer` is detailed information about the change (e.g. breaking change, related bugs, etc.).
 
-
+## Running the provider
+See [docs/index.md](../docs/index.md) for more information.
 
 ## Getting Help
 
