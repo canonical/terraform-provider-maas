@@ -50,7 +50,7 @@ resource "maas_network_interface_vlan" "test" {
 	parent    = maas_network_interface_physical.nic1.name
 	tags      = ["tag1", "tag2"]
 	vlan      = maas_vlan.tf_vlan.id
-  }
+}
   `, fabric, machine, mtu)
 }
 
