@@ -81,78 +81,81 @@ Where
 1. Build a local version of the provider. At the root of the repository run:
    1. Run `make build` to build the provider.
    1. Run `make install` to install the provider locally. This installs the provider binary in the `~/.terraform.d/plugins` directory.
-1. Create a new directory with a `main.tf` file:
-    ```bash
-    mkdir -p ./terraform-provider-maas-dev
-    cd ./terraform-provider-maas-dev
-    touch main.tf
-    ```
-1. Create a `main.tf` file with the following hcl code. For more information, see [docs/index.md](docs/index.md):
-    ```hcl
-    terraform {
-        required_providers {
-            maas = {
-                source  = "registry.terraform.io/canonical/maas"
-                version = "=1.0.1"
-            }
-        }
-    }
+1. Create a terraform 
+   1. Create a new directory with a `main.tf` file:
+       ```bash
+       mkdir -p ./terraform-provider-maas-dev
+       cd ./terraform-provider-maas-dev
+       touch main.tf
+       ```
+   2. Add the Terraform configuration below to `main.tf`. For more information, see [docs/index.md](docs/index.md):
+       ```hcl
+       terraform {
+           required_providers {
+               maas = {
+                   source  = "registry.terraform.io/canonical/maas"
+                   version = "=1.0.1"
+               }
+           }
+       }
 
-    provider "maas" {
-        api_version = "2.0"
-    }
+       provider "maas" {
+           api_version = "2.0"
+       }
 
-    resource "maas_space" "tf_space" {
-        name = "tf-space"
-    }
+       resource "maas_space" "tf_space" {
+           name = "tf-space"
+       }
 
-    resource "maas_fabric" "tf_fabric" {
-        name = "tf-fabric"
-    }
+       resource "maas_fabric" "tf_fabric" {
+           name = "tf-fabric"
+       }
 
-    resource "maas_vlan" "tf_vlan" {
-        fabric = maas_fabric.tf_fabric.id
-        vid    = 14
-        name   = "tf-vlan14"
-        space  = maas_space.tf_space.name
-    }
+       resource "maas_vlan" "tf_vlan" {
+           fabric = maas_fabric.tf_fabric.id
+           vid    = 14
+           name   = "tf-vlan14"
+           space  = maas_space.tf_space.name
+       }
 
-    resource "maas_subnet" "tf_subnet" {
-        cidr       = "10.88.88.0/24"
-        fabric     = maas_fabric.tf_fabric.id
-        vlan       = maas_vlan.tf_vlan.vid
-        name       = "tf_subnet"
-        gateway_ip = "10.88.88.1"
-        dns_servers = [
-            "1.1.1.1",
-        ]
-        ip_ranges {
-            type     = "reserved"
-            start_ip = "10.88.88.1"
-            end_ip   = "10.88.88.50"
-        }
-        ip_ranges {
-            type     = "dynamic"
-            start_ip = "10.88.88.200"
-            end_ip   = "10.88.88.254"
-        }
-    }
-    ```
-1. In your environment running MAAS, obtain the MAAS API key:
-    ```bash
-    sudo maas apikey --username=maas
-    ```
-1. Create an `env.sh` file and put in it the following variables: 
-    ```shell
-    export MAAS_API_KEY=<api-key>
-    export MAAS_API_URL=<maas-api-url> # e.g. http://10.10.0.18:5240/MAAS/
-    ```
-1. Run `source env.sh` to load the environment variables.
-1. Run `terraform fmt` to format the `main.tf` file.
-1. Run `terraform init` to initialize the provider.
-1. Run `terraform plan` to see the changes that will be applied.
-1. Run `terraform apply` to apply the changes. These should be reflected in the MAAS environment.
-1. Run `terraform destroy` to destroy the resources.
+       resource "maas_subnet" "tf_subnet" {
+           cidr       = "10.88.88.0/24"
+           fabric     = maas_fabric.tf_fabric.id
+           vlan       = maas_vlan.tf_vlan.vid
+           name       = "tf_subnet"
+           gateway_ip = "10.88.88.1"
+           dns_servers = [
+               "1.1.1.1",
+           ]
+           ip_ranges {
+               type     = "reserved"
+               start_ip = "10.88.88.1"
+               end_ip   = "10.88.88.50"
+           }
+           ip_ranges {
+               type     = "dynamic"
+               start_ip = "10.88.88.200"
+               end_ip   = "10.88.88.254"
+           }
+       }
+       ```
+1. Create and source your environment variables:
+   1. In your environment running MAAS, obtain the MAAS API key:
+       ```bash
+       sudo maas apikey --username=maas
+       ```
+   1. Create an `env.sh` file and put in it the following variables: 
+       ```shell
+       export MAAS_API_KEY=<api-key>
+       export MAAS_API_URL=<maas-api-url> # e.g. http://10.10.0.18:5240/MAAS/
+       ```
+   1. Run `source env.sh` to load the environment variables.
+1. Use this configuration to start terraforming:
+   1. Run `terraform fmt` to format the `main.tf` file.
+   1. Run `terraform init` to initialize the provider.
+   1. Run `terraform plan` to see the changes that will be applied.
+   1. Run `terraform apply` to apply the changes. These should be reflected in the MAAS environment.
+   1. Run `terraform destroy` to destroy the resources.
 
 ## Getting Help
 
@@ -164,6 +167,6 @@ Releases are handled by the maintainers, see [README.md](../README.md).
 
 ## Additional Resources
 
-- [Terraform Provider Development](https://www.terraform.io/docs/extend/writing-custom-providers.html)
+- [Terraform Provider Development](https://developer.hashicorp.com/terraform/plugin)
 - [Go Documentation](https://golang.org/doc/)
 - [MAAS API Documentation](https://maas.io/docs/api)
