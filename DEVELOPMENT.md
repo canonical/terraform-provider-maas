@@ -157,6 +157,20 @@ Where
    1. Run `terraform apply` to apply the changes. These should be reflected in the MAAS environment.
    1. Run `terraform destroy` to destroy the resources.
 
+## Testing
+
+- Run the unit tests with:
+    ```bash
+    make test
+    ```
+- Run the unit tests and terraform acceptance tests with:
+    ```bash
+    export TF_ACC=1
+    make test
+    ```
+    Note that you may need to specify a specific machine or fabric to test against as other environment variables.
+- 
+
 ## Getting Help
 
 Open an issue for bugs or feature requests.
