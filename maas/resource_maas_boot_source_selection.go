@@ -2,7 +2,6 @@ package maas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -21,7 +20,7 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 		UpdateContext: resourceBootSourceSelectionUpdate,
 		DeleteContext: resourceBootSourceSelectionDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceBootSourceSelectionImport,
+			StateContext: resourceBootSourceSelectionImport,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -29,40 +28,41 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
-				Description: "The architecture list for this resource",
+				Description: "The architecture list for this selection.",
 			},
 			"boot_source": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "The BootSource database ID this resource is associated with",
+				ForceNew:    true,
+				Description: "The boot source database ID this selection is associated with.",
 			},
 			"labels": {
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
-				Description: "The label lists for this resource",
+				Description: "The label list for this selection.",
 			},
 			"os": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The Operating system for this resource",
+				Description: "The operating system for this selection.",
 			},
 			"release": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The specific release of the Operating system for this resource",
+				Description: "The specific release of the operating system for this selection.",
 			},
 			"subarches": {
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
-				Description: "The list of subarches for this resource",
+				Description: "The list of subarches for this selection.",
 			},
 		},
 	}
 }
 
-func resourceBootSourceSelectionImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceBootSourceSelectionImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected BOOT_SOURCE:BOOT_SOURCE_SELECTION_ID", d.Id())
@@ -131,11 +131,6 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	bootsourceselection, err := getBootSourceSelection(client, d.Get("boot_source").(int), id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	bootsourceselectionParams := entity.BootSourceSelectionParams{
 		OS:        d.Get("os").(string),
 		Release:   d.Get("release").(string),
@@ -144,7 +139,7 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 		Labels:    convertToStringSlice(d.Get("labels").(*schema.Set).List()),
 	}
 
-	if _, err := client.BootSourceSelection.Update(bootsourceselection.BootSourceID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
+	if _, err := client.BootSourceSelection.Update(d.Get("boot_source").(int), id, &bootsourceselectionParams); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -159,39 +154,7 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	bootsourceselection, err := getBootSourceSelection(client, d.Get("boot_source").(int), id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Fetch the default commissioning details
-	var default_release string
-	default_release_bytes, err := client.MAASServer.Get("commissioning_distro_series")
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	err = json.Unmarshal(default_release_bytes, &default_release)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// if the boot source selection is the default, we need to treat it differently
-	if bootsourceselection.OS == "ubuntu" && bootsourceselection.Release == default_release {
-		bootsourceselectionParams := entity.BootSourceSelectionParams{
-			OS:        "ubuntu",
-			Release:   default_release,
-			Arches:    []string{"amd64"},
-			Subarches: []string{"*"},
-			Labels:    []string{"*"},
-		}
-		if _, err := client.BootSourceSelection.Update(bootsourceselection.BootSourceID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
-			return diag.FromErr(err)
-		}
-	} else {
-		return diag.FromErr(client.BootSourceSelection.Delete(bootsourceselection.BootSourceID, bootsourceselection.ID))
-	}
-
-	return nil
+	return diag.FromErr(client.BootSourceSelection.Delete(d.Get("boot_source").(int), id))
 }
 
 func getBootSourceSelection(client *client.Client, boot_source int, id int) (*entity.BootSourceSelection, error) {

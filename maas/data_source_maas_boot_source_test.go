@@ -1,6 +1,7 @@
 package maas_test
 
 import (
+	"fmt"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
@@ -21,18 +22,22 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:   func() { testutils.PreCheck(t, nil) },
-		Providers:  testutils.TestAccProviders,
-		ErrorCheck: func(err error) error { return err },
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: testAccCheckMAASBootSourceDestroy,
+		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootSource(),
+				Config: testAccDataSourceMaasBootSource(url, keyring_path),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootSource() string {
-	return `data "maas_boot_source" "test" {}`
+func testAccDataSourceMaasBootSource(url string, keyring_path string) string {
+	return fmt.Sprintf(`
+%s
+
+data "maas_boot_source" "test" {}`, testAccMAASBootSource(url, keyring_path))
 }

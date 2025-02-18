@@ -19,35 +19,35 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 			"arches": {
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
-				Description: "The architecture list for this resource",
+				Computed:    true,
+				Description: "The architecture list for this selection.",
 			},
 			"boot_source": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "The BootSource database ID this resource is associated with",
+				Description: "The boot source database ID this resource is associated with.",
 			},
 			"labels": {
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
-				Description: "The label lists for this resource",
+				Computed:    true,
+				Description: "The label list for this selection.",
 			},
 			"os": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The Operating system for this resource",
+				Description: "The operating system for this selection.",
 			},
 			"release": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The specific release of the Operating system for this resource",
+				Description: "The specific release of the operating system for this selection.",
 			},
 			"subarches": {
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
-				Description: "The list of subarches for this resource",
+				Computed:    true,
+				Description: "The list of subarches for this selection.",
 			},
 		},
 	}
@@ -94,7 +94,7 @@ func findBootSourceSelection(client *client.Client, boot_source int, os string, 
 		return nil, err
 	}
 	for _, d := range bootsourceselections {
-		if d.OS == os || d.Release == release {
+		if d.OS == os && d.Release == release {
 			return &d, nil
 		}
 	}

@@ -26,15 +26,15 @@ resource "maas_boot_source_selection" "test" {
 
 ### Required
 
-- `boot_source` (Number) The BootSource database ID this resource is associated with
-- `os` (String) The Operating system for this resource
-- `release` (String) The specific release of the Operating system for this resource
+- `boot_source` (Number) The boot source database ID this selection is associated with.
+- `os` (String) The operating system for this selection.
+- `release` (String) The specific release of the operating system for this selection.
 
 ### Optional
 
-- `arches` (Set of String) The architecture list for this resource
-- `labels` (Set of String) The label lists for this resource
-- `subarches` (Set of String) The list of subarches for this resource
+- `arches` (Set of String) The architecture list for this selection.
+- `labels` (Set of String) The label list for this selection.
+- `subarches` (Set of String) The list of subarches for this selection.
 
 ### Read-Only
 

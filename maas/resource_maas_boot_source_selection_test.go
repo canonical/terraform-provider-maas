@@ -1,9 +1,9 @@
 package maas_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
@@ -19,6 +19,8 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 	os := "ubuntu"
 	release := "oracular"
 	arches := []string{"amd64"}
+	subarches := []string{"*"}
+	labels := []string{"*"}
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASBootSourceSelectionCheckExists("maas_boot_source_selection.test", &bootsourceselection),
@@ -26,6 +28,10 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "release", release),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.#", "1"),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.0", arches[0]),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "subarches.#", "1"),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "subarches.0", subarches[0]),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.#", "1"),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.0", labels[0]),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -35,7 +41,7 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASBootSourceSelection(os, release, arches),
+				Config: testAccMAASBootSourceSelection(os, release, arches, subarches, labels),
 				Check:  resource.ComposeAggregateTestCheckFunc(checks...),
 			},
 		},
@@ -73,37 +79,25 @@ func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *e
 	}
 }
 
-func testAccMAASBootSourceSelection(os string, release string, arches []string) string {
+func testAccMAASBootSourceSelection(os string, release string, arches []string, subarches []string, labels []string) string {
 	return fmt.Sprintf(`
-resource "maas_boot_source" "test" {
-	url 			 = "http://images.maas.io/ephemeral-v3/stable/"
-	keyring_filename = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
-}
+data "maas_boot_source" "test" {}
 
 resource "maas_boot_source_selection" "test" {
-	boot_source = maas_boot_source.test.id
+	boot_source = data.maas_boot_source.test.id
 
-	os      = "%s"
-	release = "%s"
-	arches  = ["%s"]
+	os         = "%s"
+	release    = "%s"
+	arches     = ["%s"]
+	subarches  = ["%s"]
+	labels     = ["%s"]
 }
-`, os, release, arches[0])
+`, os, release, arches[0], subarches[0], labels[0])
 }
 
 func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-
-	// Fetch the default commissioning details
-	var default_release string
-	default_release_bytes, err := conn.MAASServer.Get("default_distro_series")
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(default_release_bytes, &default_release)
-	if err != nil {
-		return err
-	}
 
 	// loop through the resources in state
 	for _, rs := range s.RootModule().Resources {
@@ -123,25 +117,19 @@ func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 
 		response, err := conn.BootSourceSelection.Get(boot_source_id, id)
 		if err == nil {
-			// default boot source selection
-			if response.OS == "ubuntu" && response.Release == default_release {
-				if len(response.Arches) != 1 || response.Arches[0] != "amd64" {
-					return fmt.Errorf("MAAS Boot Source Selection (%s) Arches not reset to default. Returned value: %s", rs.Primary.ID, response.Arches)
-				}
-				if len(response.Subarches) != 1 || response.Subarches[0] != "*" {
-					return fmt.Errorf("MAAS Boot Source Selection (%s) Subarches not reset to default. Returned value: %s", rs.Primary.ID, response.Subarches)
-				}
-				if len(response.Labels) != 1 || response.Labels[0] != "*" {
-					return fmt.Errorf("MAAS Boot Source Selection (%s) Labels not reset to default. Returned value: %s", rs.Primary.ID, response.Labels)
-				}
-			} else if response != nil && response.ID == id {
-				return fmt.Errorf("MAAS Boot Source Selection (%s) still exists.", rs.Primary.ID)
+			// default boot source selection leads to noop
+			if response != nil && response.ID == id {
+				return fmt.Errorf("MAAS Boot Source Selection (%s %d %d) still exists.", rs.Primary.ID, boot_source_id, id)
 			}
 
 			return nil
 		}
 
-		return err
+		// If the error is equivalent to 404 not found, the maas_boot_source_selection is destroyed.
+		// Otherwise return the error
+		if !strings.Contains(err.Error(), "404 Not Found") {
+			return err
+		}
 	}
 
 	return nil
