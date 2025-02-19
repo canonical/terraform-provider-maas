@@ -36,7 +36,7 @@ This project follows a fork-based development model with a single long-running m
        git checkout master
        git merge upstream/master
        ```
-    2. Then, rebase or merge your feature branch if necessary:
+    1. Then, rebase or merge your feature branch if necessary:
         ```bash
         git checkout feat/feature-name
         git rebase master
@@ -48,13 +48,13 @@ This project follows a fork-based development model with a single long-running m
         git push origin feat/feature-name
         ```
 1. Submit a Pull Request:
-    1. Go to the original repository on GitHub.
-    1. Click "New Pull Request" and select your feature branch.
+    1. Go to the your forked repository on GitHub.
+    1. Click "New Pull Request". Select your feature branch to merge from your forked repo, into the master branch of the original repo.
     1. Ensure your PR includes:
        - A clear description of changes.
-       - Links to relevant issues (e.g., Fixes #123).
+       - Links to relevant issues (e.g., Fixes #113).
        - Passing tests, if applicable.
-2. Address Review Feedback. Once approved, a maintainer will merge your PR. 🎉
+1. Address Review Feedback. Once approved, a maintainer will merge your PR. 🎉
 
 ## Commit messages
 
@@ -88,7 +88,7 @@ Where
        cd ./terraform-provider-maas-dev
        touch main.tf
        ```
-   2. Add the Terraform configuration below to `main.tf`. For more information, see [docs/index.md](docs/index.md):
+   1. Add the Terraform configuration below to `main.tf`. For more information, see [docs/index.md](docs/index.md):
        ```hcl
        terraform {
            required_providers {
