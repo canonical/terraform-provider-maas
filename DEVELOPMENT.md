@@ -8,7 +8,7 @@ Thank you for your interest in contributing to the Terraform MAAS Provider! We a
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.4.x
 - [Go](https://golang.org/doc/install) >= 1.22
 - A MAAS installation running. See the [maas-dev-setup](https://github.com/canonical/maas-dev-setup) repository for more information on a development setup.
-
+- [CLA](https://ubuntu.com/legal/contributors) signed with the email used with git and GitHub.
 
 ## Branching strategy
 
