@@ -13,7 +13,11 @@ Provides a resource to fetch a MAAS boot source selection.
 ## Example Usage
 
 ```terraform
+data "maas_boot_source" "default" {}
+
 data "maas_boot_source_selection" "default" {
+  boot_source = maas_boot_source.default.boot_source
+
   os      = "ubuntu"
   release = "noble"
 }
