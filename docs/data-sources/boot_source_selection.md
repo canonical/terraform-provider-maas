@@ -16,7 +16,7 @@ Provides a resource to fetch a MAAS boot source selection.
 data "maas_boot_source" "default" {}
 
 data "maas_boot_source_selection" "default" {
-  boot_source = maas_boot_source.default.boot_source
+  boot_source = maas_boot_source.default.id
 
   os      = "ubuntu"
   release = "noble"
