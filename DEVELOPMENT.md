@@ -172,7 +172,7 @@ Where
 
 ## Getting Help
 
-Open an issue for bugs or feature requests.
+Check for existing issues [here](https://github.com/canonical/terraform-provider-maas/issues), or open a new one for bugs and feature requests.
 
 ## Release Process
 
