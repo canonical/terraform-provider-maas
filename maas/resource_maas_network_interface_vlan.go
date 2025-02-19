@@ -46,6 +46,12 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 				Computed:    true,
 				Description: "The MTU of the VLAN interface.",
 			},
+			"name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The name of the VLAN interface.",
+			},
 			"parent": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -62,8 +68,8 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 			},
 			"vlan": {
 				Type:        schema.TypeInt,
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
+				ForceNew:    true,
 				Description: "Database ID of the VLAN the VLAN interface is connected to.",
 			},
 		},
@@ -130,6 +136,7 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 
 	tfState := map[string]interface{}{
 		"mtu":    networkInterface.EffectiveMTU,
+		"name":   networkInterface.Name,
 		"parent": networkInterface.Parents[0],
 		"tags":   networkInterface.Tags,
 		"vlan":   networkInterface.VLAN.ID,
