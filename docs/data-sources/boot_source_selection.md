@@ -14,8 +14,8 @@ Provides a resource to fetch a MAAS boot source selection.
 
 ```terraform
 data "maas_boot_source_selection" "default" {
-	os      = "ubuntu"
-	release = "noble"
+  os      = "ubuntu"
+  release = "noble"
 }
 ```
 
