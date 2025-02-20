@@ -29,13 +29,14 @@ resource "maas_network_interface_vlan" "example" {
 - `fabric` (String) The identifier (name or ID) of the fabric for the new VLAN interface.
 - `machine` (String) The identifier (system ID, hostname, or FQDN) of the machine with the VLAN interface.
 - `parent` (String) Parent interface name for this VLAN interface.
+- `vlan` (Number) Database ID of the VLAN the VLAN interface is connected to.
 
 ### Optional
 
 - `accept_ra` (Boolean) Accept router advertisements. (IPv6 only).
 - `mtu` (Number) The MTU of the VLAN interface.
+- `name` (String) The name of the VLAN interface.
 - `tags` (Set of String) A set of tag names to be assigned to the VLAN interface.
-- `vlan` (Number) Database ID of the VLAN the VLAN interface is connected to.
 
 ### Read-Only
 

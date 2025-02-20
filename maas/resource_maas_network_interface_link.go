@@ -189,10 +189,8 @@ func getNetworkInterfaceLinkParams(d *schema.ResourceData, subnetID int) *entity
 
 func createNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterface *entity.NetworkInterface, params *entity.NetworkInterfaceLinkParams) (*entity.NetworkInterfaceLink, error) {
 	// Clear existing links
-	// VLAN type interfaces are excluded since this action is not allowed by MAAS itself:
-	// <https://github.com/canonical/maas/blob/master/src/maasserver/models/interface.py#L2001-L2006>
-	if networkInterface.Type != "vlan" {
-		_, err := client.NetworkInterface.Disconnect(machineSystemID, networkInterface.ID)
+	for _, link := range networkInterface.Links {
+		_, err := client.NetworkInterface.UnlinkSubnet(machineSystemID, networkInterface.ID, link.ID)
 		if err != nil {
 			return nil, err
 		}
