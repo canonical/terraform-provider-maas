@@ -49,6 +49,6 @@ resource "maas_boot_source_selection" "test" {
 Import is supported using the following syntax:
 
 ```shell
-# A bond network interface can be imported using the boot source ID and ID. e.g.
+# A boot resource selection can be imported using the boot source ID and the boot source selection ID. e.g.
 $ terraform import maas_boot_source.example boot_source:id
 ```
