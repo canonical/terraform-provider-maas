@@ -18,13 +18,13 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     os.Getenv("MAAS_API_KEY"),
-				Description: "The MAAS API key",
+				Description: "The MAAS API key. If not provided, it will be read from the MAAS_API_KEY environment variable.",
 			},
 			"api_url": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     os.Getenv("MAAS_API_URL"),
-				Description: "The MAAS API URL (eg: http://127.0.0.1:5240/MAAS)",
+				Description: "The MAAS API URL (eg: http://127.0.0.1:5240/MAAS). If not provided, it will be read from the MAAS_API_URL environment variable.",
 			},
 			"api_version": {
 				Type:        schema.TypeString,
@@ -41,7 +41,7 @@ func Provider() *schema.Provider {
 			"tls_ca_cert_path": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Certificate CA bundle path to use to verify the MAAS certificate.",
+				Description: "Certificate CA bundle path to use to verify the MAAS certificate. If not provided, it will be read from the MAAS_API_CACERT environment variable.",
 				Default:     os.Getenv("MAAS_API_CACERT"),
 			},
 			"tls_insecure_skip_verify": {
