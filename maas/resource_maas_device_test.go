@@ -20,7 +20,7 @@ func TestAccResourceMaasDevice_basic(t *testing.T) {
 	domain := acctest.RandomWithPrefix("tf-domain-")
 	hostname := acctest.RandomWithPrefix("tf-device-")
 	zone := "default"
-	mac_address := "12:23:45:67:89:de"
+	mac_address := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
 		testAccMaasDeviceCheckExists("maas_device.test", &device),
