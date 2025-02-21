@@ -72,7 +72,7 @@ func testAccMAASBootSourceCheckExists(rn string, bootSource *entity.BootSource) 
 func testAccMAASBootSource(url string, keyring_filename string) string {
 	return fmt.Sprintf(`
 resource "maas_boot_source" "test" {
-	url = "%s"
+	url              = "%s"
 	keyring_filename = "%s"
 }`, url, keyring_filename)
 }
