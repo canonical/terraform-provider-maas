@@ -18,13 +18,13 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     os.Getenv("MAAS_API_KEY"),
-				Description: "The MAAS API key",
+				Description: "The MAAS API key. If not provided, it will be read from the MAAS_API_KEY environment variable.",
 			},
 			"api_url": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     os.Getenv("MAAS_API_URL"),
-				Description: "The MAAS API URL (eg: http://127.0.0.1:5240/MAAS)",
+				Description: "The MAAS API URL (eg: http://127.0.0.1:5240/MAAS). If not provided, it will be read from the MAAS_API_URL environment variable.",
 			},
 			"api_version": {
 				Type:        schema.TypeString,
@@ -41,7 +41,7 @@ func Provider() *schema.Provider {
 			"tls_ca_cert_path": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Certificate CA bundle path to use to verify the MAAS certificate.",
+				Description: "Certificate CA bundle path to use to verify the MAAS certificate. If not provided, it will be read from the MAAS_API_CACERT environment variable.",
 				Default:     os.Getenv("MAAS_API_CACERT"),
 			},
 			"tls_insecure_skip_verify": {
@@ -52,6 +52,7 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"maas_boot_source_selection":      resourceMAASBootSourceSelection(),
 			"maas_boot_source":                resourceMAASBootSource(),
 			"maas_device":                     resourceMaasDevice(),
 			"maas_instance":                   resourceMaasInstance(),
@@ -74,9 +75,11 @@ func Provider() *schema.Provider {
 			"maas_tag":                        resourceMaasTag(),
 			"maas_user":                       resourceMaasUser(),
 			"maas_resource_pool":              resourceMaasResourcePool(),
+			"maas_zone":                       resourceMaasZone(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"maas_boot_source":                dataSourceMaasBootSource(),
+			"maas_boot_source_selection":      dataSourceMaasBootSourceSelection(),
 			"maas_fabric":                     dataSourceMaasFabric(),
 			"maas_vlan":                       dataSourceMaasVlan(),
 			"maas_subnet":                     dataSourceMaasSubnet(),
@@ -85,6 +88,7 @@ func Provider() *schema.Provider {
 			"maas_device":                     dataSourceMaasDevice(),
 			"maas_resource_pool":              dataSourceMaasResourcePool(),
 			"maas_rack_controller":            dataSourceMaasRackController(),
+			"maas_zone":                       dataSourceMaasZone(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

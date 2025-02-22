@@ -15,10 +15,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfacePhysical(name string, machine string, fabric string, mtu int) string {
+func testAccMaasNetworkInterfacePhysical(name string, machine string, mac_address string, mtu int) string {
 	return fmt.Sprintf(`
-data "maas_fabric" "default" {
-	name = "%s"
+resource "maas_fabric" "default" {
+	name = "tf-fabric-physical"
 }
 
 data "maas_machine" "machine" {
@@ -26,19 +26,19 @@ data "maas_machine" "machine" {
 }
 
 data "maas_vlan" "default" {
-	fabric = data.maas_fabric.default.id
+	fabric = maas_fabric.default.id
 	vlan   = 0
 }
 
 resource "maas_network_interface_physical" "test" {
 	machine     = data.maas_machine.machine.id
 	name        = "%s"
-	mac_address = "01:12:34:56:78:9A"
+	mac_address = "%s"
 	mtu         = %d
 	tags        = ["tag1", "tag2"]
 	vlan        = data.maas_vlan.default.id
   }
-`, fabric, machine, name, mtu)
+`, machine, name, mac_address, mtu)
 }
 
 func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
@@ -46,12 +46,12 @@ func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
 	var networkInterfacePhysical entity.NetworkInterface
 	name := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 9))
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
-	fabric := os.Getenv("TF_ACC_FABRIC")
+	mac_address := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
 		testAccMaasNetworkInterfacePhysicalCheckExists("maas_network_interface_physical.test", &networkInterfacePhysical),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "name", name),
-		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mac_address", "01:12:34:56:78:9A"),
+		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mac_address", mac_address),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "tags.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "tags.0", "tag1"),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "tags.1", "tag2"),
@@ -59,19 +59,19 @@ func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE", "TF_ACC_FABRIC"}) },
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheckMaasNetworkInterfacePhysicalDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfacePhysical(name, machine, fabric, 1500),
+				Config: testAccMaasNetworkInterfacePhysical(name, machine, mac_address, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMaasNetworkInterfacePhysical(name, machine, fabric, 9000),
+				Config: testAccMaasNetworkInterfacePhysical(name, machine, mac_address, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "9000"))...),
 			},

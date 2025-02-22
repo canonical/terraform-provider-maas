@@ -12,19 +12,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfaceLink(machine string, cidr string, gateway string, ip string) string {
+func testAccMaasNetworkInterfaceLink(machine string, cidr string, gateway string, ip string, mac_address string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = "%s"
 }
 
 resource "maas_fabric" "test" {
-  name = "tf-fabric-0"
+  name = "tf-fabric-link"
 }
 
-resource "maas_vlan" "default" {
+data "maas_vlan" "default" {
   fabric = maas_fabric.test.id
-  vid    = 1
+  vlan   = 0
 }
 
 resource "maas_vlan" "test" {
@@ -34,9 +34,9 @@ resource "maas_vlan" "test" {
 
 resource "maas_network_interface_physical" "test" {
   machine     = data.maas_machine.machine.id
-  mac_address = "52:54:00:15:f5:3e"
+  mac_address = "%s"
   name        = "tf0"
-  vlan        = maas_vlan.default.id
+  vlan        = data.maas_vlan.default.id
 }
 
 resource "maas_network_interface_vlan" "test" {
@@ -69,7 +69,7 @@ resource "maas_network_interface_link" "test" {
   ip_address        = "%s"
   default_gateway   = true
 }
-`, machine, cidr, gateway, ip)
+`, machine, mac_address, cidr, gateway, ip)
 }
 
 func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
@@ -77,6 +77,7 @@ func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	cidr := "30.30.30.0/24"
 	gateway := "30.30.30.1"
+	mac_address := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
 		testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.test"),
@@ -94,13 +95,13 @@ func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.2"),
+				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.2", mac_address),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_link.test", "ip_address", "30.30.30.2"))...),
 			},
 			// Test update
 			{
-				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.3"),
+				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.3", mac_address),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_link.test", "ip_address", "30.30.30.3"))...),
 			},
