@@ -75,6 +75,7 @@ func Provider() *schema.Provider {
 			"maas_tag":                        resourceMaasTag(),
 			"maas_user":                       resourceMaasUser(),
 			"maas_resource_pool":              resourceMaasResourcePool(),
+			"maas_zone":                       resourceMaasZone(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"maas_boot_source":                dataSourceMaasBootSource(),
@@ -87,6 +88,7 @@ func Provider() *schema.Provider {
 			"maas_device":                     dataSourceMaasDevice(),
 			"maas_resource_pool":              dataSourceMaasResourcePool(),
 			"maas_rack_controller":            dataSourceMaasRackController(),
+			"maas_zone":                       dataSourceMaasZone(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
