@@ -81,7 +81,7 @@ Where
 1. Build a local version of the provider. At the root of the repository run:
    1. Run `make build` to build the provider.
    1. Run `make install` to install the provider locally. This installs the provider binary in the `~/.terraform.d/plugins` directory.
-1. Create a terraform 
+1. Create a terraform configuration:
    1. Create a new directory with a `main.tf` file:
        ```bash
        mkdir -p ./terraform-provider-maas-dev
@@ -158,17 +158,19 @@ Where
    1. Run `terraform destroy` to destroy the resources.
 
 ## Testing
+Tests are written as advised in the [Terraform docs](https://developer.hashicorp.com/terraform/plugin/sdkv2/testing). They are split into unit tests and acceptance tests, with the latter creating real resources in the MAAS environment. Therefore, you will need to ensure MAAS is running locally for these tests to pass.
 
-- Ensure MAAS_API_KEY and MAAS_API_URL are set in your environment (see [Running the local provider](#running-the-local-provider)).
-- Run the unit tests with:
+To run the tests:
+1. Ensure MAAS_API_KEY and MAAS_API_URL environment variables are set (see [Running the local provider](#running-the-local-provider)).
+1. Run the unit tests with:
     ```bash
     make test
     ```
-- Run the unit tests and terraform acceptance tests with:
+1. Run both the unit tests and terraform acceptance tests with:
     ```bash
     make testacc
     ```
-    Note that you may need to specify a specific machine or fabric to test against as other environment variables. Add these to your `env.sh` file before sourcing it again, if required:
+    Note that you may need to specify a specific environment variables for some tests to pass, for example machine ids. Add these to your `env.sh` file before sourcing it again, if required:
     ```bash
     export TF_ACC=1
     export TF_ACC_NETWORK_INTERFACE_MACHINE=<machine_id> # e.g. b68rn4
