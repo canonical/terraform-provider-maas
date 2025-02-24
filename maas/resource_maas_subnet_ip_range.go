@@ -121,7 +121,10 @@ func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 	tfState := map[string]interface{}{
-		"comment": ipRange.Comment,
+		"comment":  ipRange.Comment,
+		"type":     ipRange.Type,
+		"start_ip": ipRange.StartIP.String(),
+		"end_ip":   ipRange.EndIP.String(),
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
