@@ -41,7 +41,7 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*ClientConfig).Client
 
 	for isImporting(client) {
-		time.Sleep(5)
+		time.Sleep(5 * time.Second)
 	}
 
 	resources, err := getBootResources(client, "synced")
@@ -118,7 +118,7 @@ func resourceBootResourcesUpdate(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*ClientConfig).Client
 
 	for isImporting(client) {
-		time.Sleep(5)
+		time.Sleep(5 * time.Second)
 	}
 
 	return resourceBootResourcesRead(ctx, d, meta)
