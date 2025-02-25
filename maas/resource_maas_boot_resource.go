@@ -121,6 +121,27 @@ func resourceBootResourcesUpdate(ctx context.Context, d *schema.ResourceData, me
 		time.Sleep(5 * time.Second)
 	}
 
+	resources, err := getBootResources(client, "synced")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	resourceMap := make(map[string]struct{})
+	for _, res := range resources {
+		resourceMap[res.Name] = struct{}{}
+	}
+
+	selections := d.Get("boot_source_selections").([]int)
+	for _, selection := range selections {
+		bootselection, err := getBootSourceSelection(client, d.Get("boot_source").(int), selection)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		
+		if _, exists := resourceMap[fmt.Sprintf("%s/%s", bootselection.OS, bootselection.Release)]; !exists {
+			return diag.Errorf("Boot Resource missing for %s/%s", bootselection.OS, bootselection.Release)
+		}
+	}
+
 	return resourceBootResourcesRead(ctx, d, meta)
 }
 
