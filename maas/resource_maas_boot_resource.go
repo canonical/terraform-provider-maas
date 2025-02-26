@@ -93,6 +93,11 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 		}
 		os, release := parts[0], parts[1]
 
+		// avoid the bootloaders
+		if strings.HasPrefix(os, "uefi") || strings.HasPrefix(os, "pxe") {
+			continue
+		}
+
 		selection, err := getBootSourceSelectionByRelease(client, bootsource.ID, os, release)
 		if err != nil {
 			return diag.FromErr(err)
@@ -102,7 +107,7 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 
 	tfState := map[string]interface{}{
 		"boot_source":            bootsource.ID,
-		"boot_source_selections": selectionSet,
+		"boot_source_selections": unique(selectionSet),
 	}
 
 	if err := setTerraformState(d, tfState); err != nil {
@@ -136,7 +141,7 @@ func resourceBootResourcesUpdate(ctx context.Context, d *schema.ResourceData, me
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		
+
 		if _, exists := resourceMap[fmt.Sprintf("%s/%s", bootselection.OS, bootselection.Release)]; !exists {
 			return diag.Errorf("Boot Resource missing for %s/%s", bootselection.OS, bootselection.Release)
 		}
@@ -192,4 +197,16 @@ func getBootResources(client *client.Client, synctype string) ([]entity.BootReso
 func isImporting(client *client.Client) bool {
 	importing, _ := client.BootResources.IsImporting()
 	return importing
+}
+
+func unique(values []int) []int {
+	foundValue := make(map[int]bool)
+	var output []int
+	for _, val := range values {
+		if _, ok := foundValue[val]; !ok {
+			foundValue[val] = true
+			output = append(output, val)
+		}
+	}
+	return output
 }
