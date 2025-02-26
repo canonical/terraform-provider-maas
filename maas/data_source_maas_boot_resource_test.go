@@ -8,18 +8,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+
 func TestAccDataSourceMaasBootSources_basic(t *testing.T) {
 	os := "ubuntu"
 	release := "mantic"
-	arches := []string{"amd64"}
-	subarches := []string{"*"}
-	labels := []string{"*"}
 
 	checks := []resource.TestCheckFunc{
-		resource.TestCheckResourceAttrSet("data.maas_boot_resource.test", "boot_source"),
-		resource.TestCheckResourceAttrSet("data.maas_boot_resource.test", "boot_source_selections"),
-		resource.TestCheckResourceAttr("data.maas_boot_resource.test", "boot_source_selections.#", "1"),
-		resource.TestCheckResourceAttr("data.maas_boot_resource.test", "boot_source_selections.0", "data.boot_source_selections.test.id"),
+		resource.TestCheckResourceAttrSet("data.maas_boot_resources.test", "boot_source"),
+		resource.TestCheckResourceAttrSet("data.maas_boot_resources.test", "boot_source_selections"),
+		resource.TestCheckResourceAttr("data.maas_boot_resources.test", "os", os),
+		resource.TestCheckResourceAttr("data.maas_boot_resources.test", "release", release),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -29,30 +27,22 @@ func TestAccDataSourceMaasBootSources_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootReources(os, release, arches, subarches, labels),
+				Config: testAccDataSourceMaasBootReources(os, release),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootReources(os string, release string, arches []string, subarches []string, labels []string) string {
+func testAccDataSourceMaasBootReources(os string, release string) string {
 	return fmt.Sprintf(`
-%s
-
-data "maas_boot_source_selection" "test" {
-	boot_source = maas_boot_source_selection.test.boot_source
-
-	os      = maas_boot_source_selection.test.os
-	release = maas_boot_source_selection.test.release
-}
+data "maas_boot_source", "test" {}
 
 data "maas_boot_resources" "test" {
     boot_source = data.maas_boot_source.test.id
-	
-    boot_source_selections = [
-        data.maas_boot_source_selection.test.id,
-    ]
+
+	os      = %s
+	release = %s
 }
-`, testAccMAASBootSourceSelection(os, release, arches, subarches, labels))
+`, os, release)
 }

@@ -1,4 +1,4 @@
 data "maas_boot_resources" "default" {
-    series = "jammy"
-    os = "ubuntu"
+  series = "jammy"
+  os     = "ubuntu"
 }

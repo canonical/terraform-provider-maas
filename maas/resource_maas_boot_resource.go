@@ -200,13 +200,18 @@ func isImporting(client *client.Client) bool {
 }
 
 func unique(values []int) []int {
-	foundValue := make(map[int]bool)
-	var output []int
-	for _, val := range values {
-		if _, ok := foundValue[val]; !ok {
-			foundValue[val] = true
-			output = append(output, val)
-		}
+	// prepopulate the memory required to increase speed
+	foundValues := make(map[int]struct{}, len(values))
+	for _, v := range values {
+		foundValues[v] = struct{}{}
+	}
+
+	// convert from mapping to slice, with pre-alloc of memory
+	output := make([]int, len(foundValues))
+	i := 0
+	for k := range foundValues {
+		output[i] = k
+		i++
 	}
 	return output
 }
