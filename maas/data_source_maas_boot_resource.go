@@ -20,11 +20,6 @@ func dataSourceMaasBootResources() *schema.Resource {
 				Description: "The set of boot resources for this os/release",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "The id of the network interface.",
-						},
 						"type": {
 							Type:        schema.TypeString,
 							Computed:    true,
@@ -53,12 +48,6 @@ func dataSourceMaasBootResources() *schema.Resource {
 					},
 				},
 			},
-			"boot_source": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The boot source database ID this resource is associated with.",
-			},
 			"os": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -84,24 +73,24 @@ func dataSourceMaasBootResourcesRead(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	var foundresources []map[string]interface{}
 	for _, res := range resources {
 		if res.Name == fmt.Sprintf("%s/%s", d.Get("os"), d.Get("release")) {
-			foundresources = append(foundresources, map[string]interface{}{
-				"id":            res.ID,
+			this_resource := map[string]interface{}{
 				"type":          res.Type,
 				"name":          res.Name,
 				"architecture":  res.Architecture,
 				"last_deployed": res.LastDeployed,
 				"subarches":     res.Subarches,
-			})
+			}
+			foundresources = append(foundresources, this_resource)
 		}
 	}
 
 	tfState := map[string]interface{}{
 		"boot_resources": foundresources,
-		"boot_source":    bootsource.ID,
 		"os":             d.Get("os"),
 		"release":        d.Get("release"),
 	}

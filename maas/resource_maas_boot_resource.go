@@ -21,12 +21,6 @@ func resourceMAASBootResources() *schema.Resource {
 		DeleteContext: resourceBootResourcesDelete,
 
 		Schema: map[string]*schema.Schema{
-			"boot_source": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The boot source database ID this resource is associated with.",
-			},
 			"boot_source_selections": {
 				Type:        schema.TypeSet,
 				Required:    true,
@@ -57,9 +51,14 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 	if len(bootselections) == 0 {
 		return diag.Errorf("At least one boot source selection must be added to the boot resources")
 	}
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	for _, bootselection := range bootselections {
-		bootselection, err := getBootSourceSelection(client, d.Get("boot_source").(int), bootselection.(int))
+		bootselection, err := getBootSourceSelection(client, bootsource.ID, bootselection.(int))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -83,6 +82,7 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	// TODO: This seems unclean, is there a smarter way to get the selection IDs?
 	var selectionSet []int
@@ -134,10 +134,15 @@ func resourceBootResourcesUpdate(ctx context.Context, d *schema.ResourceData, me
 	for _, res := range resources {
 		resourceMap[res.Name] = struct{}{}
 	}
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	selections := d.Get("boot_source_selections").([]int)
 	for _, selection := range selections {
-		bootselection, err := getBootSourceSelection(client, d.Get("boot_source").(int), selection)
+		bootselection, err := getBootSourceSelection(client, bootsource.ID, selection)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -157,6 +162,10 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 	for isImporting(client) {
 		time.Sleep(time.Second * 5)
 	}
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	existing, err := getBootResources(client, "synced")
 	if err != nil {
@@ -170,7 +179,7 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 		os, release := parts[0], parts[1]
 
 		// the selection should be deleted
-		bootsourceselection, err := findBootSourceSelection(client, d.Get("boot_source").(int), os, release)
+		bootsourceselection, err := findBootSourceSelection(client, bootsource.ID, os, release)
 		if err != nil {
 			return diag.FromErr(err)
 		}

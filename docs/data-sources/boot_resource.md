@@ -24,7 +24,6 @@ data "maas_boot_resources" "default" {
 
 ### Required
 
-- `boot_source` (Number) The boot source database ID this resource is associated with.
 - `os` (String) The operating system for this resource.
 - `release` (String) The specific release of the operating system for this resource.
 
@@ -39,7 +38,6 @@ data "maas_boot_resources" "default" {
 Read-Only:
 
 - `architecture` (String)
-- `id` (Number)
 - `last_deployed` (String)
 - `name` (String)
 - `subarches` (String)

@@ -23,15 +23,14 @@ func TestAccResourceMAASBootResources_basic(t *testing.T) {
 	var bootresources BootResources
 
 	checks := []resource.TestCheckFunc{
-		testAccMAASBootResourcesCheckExists("maas_boot_resources.test", &bootresources),
-		resource.TestCheckResourceAttrSet("maas_boot_resources.test", "boot_source"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.#", "3"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.0.os", "ubuntu"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.0.series", "jammy"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.1.os", "ubuntu"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.1.series", "noble"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.2.os", "ubuntu"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.2.series", "oracular"),
+		testAccMAASBootResourcesCheckExists("maas_boot_resource.test", &bootresources),
+		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.#", "3"),
+		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.0.os", "ubuntu"),
+		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.0.release", "jammy"),
+		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.1.os", "ubuntu"),
+		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.1.release", "noble"),
+		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.2.os", "ubuntu"),
+		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.2.release", "oracular"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -59,12 +58,13 @@ func testAccMAASBootResourcesCheckExists(rn string, bootReources *BootResources)
 			return fmt.Errorf("resource id not set")
 		}
 
-		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
+		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+		bootsource, err := conn.BootSources.Get()
 		if err != nil {
 			return err
 		}
+		boot_source_id := bootsource[0].ID
 
-		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		gotBootResources, err := conn.BootResources.Get(&entity.BootResourcesReadParams{Type: "synced"})
 		if err != nil {
 			return fmt.Errorf("error getting boot resource: %s", err)
@@ -102,31 +102,22 @@ func testAccMAASBootResources() string {
 	return `
 data "maas_boot_source" "test" {}
 
-resource "maas_boot_source_selection" "jammy" {
+resource "maas_boot_source_selection" "kinetic" {
     boot_source = data.maas_boot_source.test.id
     os = "ubuntu"
-    series = "jammy"
+    release = "kinetic"
 }
 
-resource "maas_boot_source_selection" "noble" {
+resource "maas_boot_source_selection" "lunar" {
     boot_source = data.maas_boot_source.test.id
     os = "ubuntu"
-    series = "noble"
+    release = "lunar"
 }
 
-resource "maas_boot_source_selection" "oracular" {
-    boot_source = data.maas_boot_source.test.id
-    os = "ubuntu"
-    series = "oracular"
-}
-
-resource "maas_boot_resources" "test" {
-    boot_source = data.maas_boot_source.test.id
-	
+resource "maas_boot_resource" "test" {
     boot_source_selections = [
-        maas_boot_source_selection.jammy.id,
-        maas_boot_source_selection.noble.id,
-        maas_boot_source_selection.oracular.id,
+        maas_boot_source_selection.kinetic.id,
+        maas_boot_source_selection.lunar.id,
     ]
 }`
 }
@@ -137,7 +128,7 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 
 	// loop through the resources in state
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "maas_boot_resources" {
+		if rs.Type != "maas_boot_resource" {
 			continue
 		}
 
@@ -150,10 +141,12 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 			resourceMap[res.Name] = struct{}{}
 		}
 
-		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
+		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+		bootsource, err := conn.BootSources.Get()
 		if err != nil {
 			return err
 		}
+		boot_source_id := bootsource[0].ID
 
 		for _, selection := range strings.Split(rs.Primary.Attributes["boot_source_selections"], ",") {
 			selection_id, err := strconv.Atoi(selection)

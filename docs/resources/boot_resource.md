@@ -46,7 +46,6 @@ resource "maas_boot_resources" "test" {
 
 ### Required
 
-- `boot_source` (Number) The boot source database ID this resource is associated with.
 - `boot_source_selections` (Set of Number) The set of database IDs for boot source selections to attach to this boot resource
 
 ### Read-Only
