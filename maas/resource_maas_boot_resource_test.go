@@ -3,6 +3,7 @@ package maas_test
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
@@ -74,8 +75,13 @@ func testAccMAASBootResourcesCheckExists(rn string, bootReources *BootResources)
 		}
 
 		var selectionSet []int
-		for _, res := range rs.Primary.Attributes["boot_source_selection"] {
-			selection, err := conn.BootSourceSelection.Get(boot_source_id, res.(int))
+		for _, sel := range strings.Split(rs.Primary.Attributes["boot_source_selection"], ",") {
+			selection_id, err := strconv.Atoi(sel)
+			if err != nil {
+				return err
+			}
+
+			selection, err := conn.BootSourceSelection.Get(boot_source_id, selection_id)
 			if err != nil {
 				return err
 			}
@@ -144,8 +150,17 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 			resourceMap[res.Name] = struct{}{}
 		}
 
-		for _, selection := range rs.BootSourceSelections {
-			bootselection, err := conn.BootSourceSelection.Get(rs.BootSource.(int), selection)
+		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
+		if err != nil {
+			return err
+		}
+
+		for _, selection := range strings.Split(rs.Primary.Attributes["boot_source_selections"], ",") {
+			selection_id, err := strconv.Atoi(selection)
+			if err != nil {
+				return err
+			}
+			bootselection, err := conn.BootSourceSelection.Get(boot_source_id, selection_id)
 			if err != nil {
 				return err
 			}

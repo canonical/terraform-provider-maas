@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
 
 func dataSourceMaasBootResources() *schema.Resource {
 	return &schema.Resource{
@@ -27,15 +25,30 @@ func dataSourceMaasBootResources() *schema.Resource {
 							Computed:    true,
 							Description: "The id of the network interface.",
 						},
-						"mac_address": {
+						"type": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "MAC address of the network interface.",
+							Description: "The Synced type for this resource",
 						},
 						"name": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The name of the network interface.",
+							Description: "The name of this resource.",
+						},
+						"architecture": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The architecture of this resource.",
+						},
+						"last_deployed": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The time of last deploy for this resource",
+						},
+						"subarches": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The subarches for this resource.",
 						},
 					},
 				},
@@ -72,15 +85,22 @@ func dataSourceMaasBootResourcesRead(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	var output []entity.BootResource
+	var foundresources []map[string]interface{}
 	for _, res := range resources {
 		if res.Name == fmt.Sprintf("%s/%s", d.Get("os"), d.Get("release")) {
-			output = append(output, res)
+			foundresources = append(foundresources, map[string]interface{}{
+				"id":            res.ID,
+				"type":          res.Type,
+				"name":          res.Name,
+				"architecture":  res.Architecture,
+				"last_deployed": res.LastDeployed,
+				"subarches":     res.Subarches,
+			})
 		}
 	}
 
 	tfState := map[string]interface{}{
-		"boot_resources": output,
+		"boot_resources": foundresources,
 		"boot_source":    bootsource.ID,
 		"os":             d.Get("os"),
 		"release":        d.Get("release"),

@@ -69,7 +69,7 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	return nil
+	return resourceBootResourcesRead(ctx, d, meta)
 }
 
 func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

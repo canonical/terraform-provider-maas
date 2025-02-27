@@ -8,16 +8,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-
 func TestAccDataSourceMaasBootSources_basic(t *testing.T) {
 	os := "ubuntu"
 	release := "mantic"
 
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttrSet("data.maas_boot_resources.test", "boot_source"),
-		resource.TestCheckResourceAttrSet("data.maas_boot_resources.test", "boot_source_selections"),
 		resource.TestCheckResourceAttr("data.maas_boot_resources.test", "os", os),
 		resource.TestCheckResourceAttr("data.maas_boot_resources.test", "release", release),
+		resource.TestCheckResourceAttrSet("data.maas_boot_resources.test", "boot_source_selections"),
+		resource.TestCheckResourceAttr("data.maas_boot_resources.test", "boot_source_selections.0.name", fmt.Sprintf("%s/%s", os, release)),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
