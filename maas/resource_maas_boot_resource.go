@@ -34,8 +34,9 @@ func resourceMAASBootResources() *schema.Resource {
 func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	for isImporting(client) {
-		time.Sleep(5 * time.Second)
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	resources, err := getBootResources(client, "synced")
@@ -73,6 +74,11 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
+
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	resources, err := getBootResources(client, "synced")
 	if err != nil {
@@ -122,8 +128,9 @@ func resourceBootResourcesUpdate(ctx context.Context, d *schema.ResourceData, me
 	// TODO: How to see if old selections no longer exist
 	client := meta.(*ClientConfig).Client
 
-	for isImporting(client) {
-		time.Sleep(5 * time.Second)
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	resources, err := getBootResources(client, "synced")
@@ -159,9 +166,11 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 	// if you delete a resource in terraform, we ensure the selections contained are also deleted
 	client := meta.(*ClientConfig).Client
 
-	for isImporting(client) {
-		time.Sleep(time.Second * 5)
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
 	}
+
 	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
@@ -203,9 +212,23 @@ func getBootResources(client *client.Client, synctype string) ([]entity.BootReso
 	return bootresources, nil
 }
 
-func isImporting(client *client.Client) bool {
-	importing, _ := client.BootResources.IsImporting()
-	return importing
+func awaitImportComplete(client *client.Client) error {
+	err := client.BootResources.Import()
+	if err != nil {
+		return err
+	}
+	time.Sleep(10*time.Minute)
+	for {
+		importing, _ := client.BootResources.IsImporting()
+		// fmt.Printf("Waiting for MAAS to finish import, importing: %v, err: %v", importing, err)
+		// if err != nil {
+		// 	return err
+		// }
+		if !importing {
+			return nil
+		}
+		time.Sleep(time.Second * 5)
+	}
 }
 
 func unique(values []int) []int {

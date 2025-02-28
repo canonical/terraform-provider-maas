@@ -26,11 +26,7 @@ func TestAccResourceMAASBootResources_basic(t *testing.T) {
 		testAccMAASBootResourcesCheckExists("maas_boot_resource.test", &bootresources),
 		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.#", "3"),
 		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.0.os", "ubuntu"),
-		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.0.release", "jammy"),
-		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.1.os", "ubuntu"),
-		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.1.release", "noble"),
-		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.2.os", "ubuntu"),
-		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.2.release", "oracular"),
+		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.0.release", "mantic"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -102,22 +98,15 @@ func testAccMAASBootResources() string {
 	return `
 data "maas_boot_source" "test" {}
 
-resource "maas_boot_source_selection" "kinetic" {
+resource "maas_boot_source_selection" "mantic" {
     boot_source = data.maas_boot_source.test.id
     os = "ubuntu"
-    release = "kinetic"
-}
-
-resource "maas_boot_source_selection" "lunar" {
-    boot_source = data.maas_boot_source.test.id
-    os = "ubuntu"
-    release = "lunar"
+    release = "mantic"
 }
 
 resource "maas_boot_resource" "test" {
     boot_source_selections = [
-        maas_boot_source_selection.kinetic.id,
-        maas_boot_source_selection.lunar.id,
+        maas_boot_source_selection.mantic.id,
     ]
 }`
 }

@@ -56,6 +56,11 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	bootsourceselection, err := getBootSourceSelectionByRelease(client, d.Get("boot_source").(int), d.Get("os").(string), d.Get("release").(string))
 	if err != nil {
 		return diag.FromErr(err)

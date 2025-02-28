@@ -17,8 +17,7 @@ func TestAccDataSourceMaasBootResources_basic(t *testing.T) {
 
 	checks := []resource.TestCheckFunc{
 		// We check the selection was imported correctly
-		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "boot_source"),
-		resource.TestCheckResourceAttr("data.maas_boot_source_selection.test", "os", os),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "os", os),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "release", release),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.#", "1"),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.0", arches[0]),

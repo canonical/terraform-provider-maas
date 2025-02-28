@@ -65,6 +65,11 @@ func dataSourceMaasBootResources() *schema.Resource {
 func dataSourceMaasBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	resources, err := getBootResources(client, "synced")
 	if err != nil {
 		return diag.FromErr(err)
@@ -94,6 +99,8 @@ func dataSourceMaasBootResourcesRead(ctx context.Context, d *schema.ResourceData
 		"os":             d.Get("os"),
 		"release":        d.Get("release"),
 	}
+
+	fmt.Printf("%#v", foundresources)
 
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)

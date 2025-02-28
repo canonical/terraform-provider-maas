@@ -77,6 +77,11 @@ func resourceBootSourceSelectionImport(ctx context.Context, d *schema.ResourceDa
 func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	bootsourceselectionParams := entity.BootSourceSelectionParams{
 		OS:        d.Get("os").(string),
 		Release:   d.Get("release").(string),
@@ -100,6 +105,11 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 
 func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
+
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -130,6 +140,11 @@ func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData
 func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -156,6 +171,11 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 
 func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
+
+	err := awaitImportComplete(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
