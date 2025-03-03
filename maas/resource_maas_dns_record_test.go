@@ -3,6 +3,7 @@ package maas_test
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	"terraform-provider-maas/maas"
@@ -21,7 +22,7 @@ func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: func(s *terraform.State) error { return nil },
+		CheckDestroy: testAccMAASDNSRecordCheckDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
@@ -32,35 +33,6 @@ func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 			},
 		},
 	})
-}
-
-// Check if the DNS record specified actually exists in MAAS
-func testAccMAASDNSRecordCheckExists(rn string, dnsRecord *entity.DNSResource) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		// Check if it exists in state
-		rs, ok := s.RootModule().Resources[rn]
-		if !ok {
-			return fmt.Errorf("resource not found: %s\n %#v", rn, s.RootModule().Resources)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("resource id not set")
-		}
-
-		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-		id, err := strconv.Atoi(rs.Primary.ID)
-		if err != nil {
-			return err
-		}
-		gotDNSRecord, err := conn.DNSResource.Get(id)
-		if err != nil {
-			return fmt.Errorf("error getting dns record: %s", err)
-		}
-
-		*dnsRecord = *gotDNSRecord
-
-		return nil
-	}
 }
 
 func getDNSRecordConfig(randomString string) string {
@@ -78,5 +50,65 @@ func getDNSRecordConfig(randomString string) string {
 		domain = "maas"
 	}
 	`, randomString, randomString)
+}
+
+// Check if the DNS record specified actually exists in MAAS
+func testAccMAASDNSRecordCheckExists(rn string, dnsRecord *entity.DNSResource) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		// Check if it exists in state
+		rs, ok := s.RootModule().Resources[rn]
+		if !ok {
+			return fmt.Errorf("resource not found: %s\n %#v", rn, s.RootModule().Resources)
+		}	
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("resource id not set")
+		}	
+
+		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+		id, err := strconv.Atoi(rs.Primary.ID)
+		if err != nil {
+			return err
+		}	
+		gotDNSRecord, err := conn.DNSResource.Get(id)
+		if err != nil {
+			return fmt.Errorf("error getting dns record: %s", err)
+		}	
+
+		*dnsRecord = *gotDNSRecord
+
+		return nil
+	}	
+}	
+
+func testAccMAASDNSRecordCheckDestroy(s *terraform.State) error {
+	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+	for _, rs := range s.RootModule().Resources {
+		// Skip if the resource is not a dns record
+		if rs.Type != "maas_dns_record" {
+			continue
+		}
+		// Convert the resource ID to an integer
+		id, err := strconv.Atoi(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		// Check if the dns record exists
+		response, err := conn.DNSResource.Get(id)
+		if err == nil {
+			if response != nil && response.ID == id {
+				return fmt.Errorf("dns record still exists: %s", rs.Primary.ID)
+			}
+		}
+
+		// If the error is equivalent to 404 not found, the dns record is destroyed.
+		// Otherwise return the error
+		if !strings.Contains(err.Error(), "404 Not Found") {	
+			return err
+		}
+
+	}
+	return nil
 }
 
