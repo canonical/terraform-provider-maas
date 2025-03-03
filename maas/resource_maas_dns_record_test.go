@@ -17,7 +17,7 @@ import (
 
 func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 	var dnsRecord entity.DNSResource
-	randomString := acctest.RandomWithPrefix("tf-dns-record-")
+	recordBaseName := acctest.RandomWithPrefix("tf-dns-record-")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
@@ -26,16 +26,17 @@ func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: getDNSRecordConfig(randomString),
+				Config: getDNSRecordConfig(recordBaseName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccMAASDNSRecordCheckExists("maas_dns_record.test_aaaa_1", &dnsRecord),
+					resource.TestCheckResourceAttr("maas_dns_record.test_aaaa_1", "name", recordBaseName+"-1"),
 				),
 			},
 		},
 	})
 }
 
-func getDNSRecordConfig(randomString string) string {
+func getDNSRecordConfig(recordBaseName string) string {
 	return fmt.Sprintf(`
 	resource "maas_dns_record" "test_aaaa_1" {
 		name = "%s-1"
@@ -49,7 +50,7 @@ func getDNSRecordConfig(randomString string) string {
 		data = "8.8.8.8"
 		domain = "maas"
 	}
-	`, randomString, randomString)
+	`, recordBaseName, recordBaseName)
 }
 
 // Check if the DNS record specified actually exists in MAAS
