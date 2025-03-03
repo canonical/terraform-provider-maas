@@ -185,18 +185,18 @@ func resourceDnsRecordDelete(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 	if d.Get("type").(string) == "A/AAAA" {
-		dnsResource, err := client.DNSResource.Get(id)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+		// dnsResource, err := client.DNSResource.Get(id)
+		// if err != nil {
+		// 	return diag.FromErr(err)
+		// }
 		if err := client.DNSResource.Delete(id); err != nil {
 			return diag.FromErr(err)
-		}
-		for _, ipAddress := range dnsResource.IPAddresses {
-			if err := client.IPAddresses.Release(&entity.IPAddressesParams{IP: ipAddress.IP.String()}); err != nil {
-				return diag.FromErr(err)
-			}
-		}
+		}	
+		// for _, ipAddress := range dnsResource.IPAddresses {
+		// 	if err := client.IPAddresses.Release(&entity.IPAddressesParams{IP: ipAddress.IP.String()}); err != nil {
+		// 		return diag.FromErr(err)
+		// 	}
+		// }
 	} else {
 		if err := client.DNSResourceRecord.Delete(id); err != nil {
 			return diag.FromErr(err)
