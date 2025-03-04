@@ -16,8 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-
-
 func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 	var dnsRecord entity.DNSResource
 	recordName := acctest.RandomWithPrefix("tf-dns-record-")
@@ -112,28 +110,27 @@ func testAccMAASDNSRecordCheckExists(rn string, dnsRecord *entity.DNSResource) r
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
 			return fmt.Errorf("resource not found: %s\n %#v", rn, s.RootModule().Resources)
-		}	
+		}
 
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("resource id not set")
-		}	
+		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
-		}	
+		}
 		gotDNSRecord, err := conn.DNSResource.Get(id)
 		if err != nil {
 			return fmt.Errorf("error getting dns record: %s", err)
-		}	
+		}
 
 		*dnsRecord = *gotDNSRecord
 
 		return nil
-	}	
-}	
-
+	}
+}
 
 func testAccMAASDNSRecordCheckDestroy(ipAddress string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -159,7 +156,7 @@ func testAccMAASDNSRecordCheckDestroy(ipAddress string) resource.TestCheckFunc {
 
 			// If the error is equivalent to 404 not found, the dns record is destroyed.
 			// Otherwise return the error
-			if !strings.Contains(err.Error(), "404 Not Found") {	
+			if !strings.Contains(err.Error(), "404 Not Found") {
 				return err
 			}
 		}
@@ -170,7 +167,7 @@ func testAccMAASDNSRecordCheckDestroy(ipAddress string) resource.TestCheckFunc {
 			return fmt.Errorf("error checking if ip address is released: %s", err)
 		}
 		if ipAllocated {
-			return fmt.Errorf("ip address is not released: %s with error: %s", ipAddress, err	)
+			return fmt.Errorf("ip address is not released: %s with error: %s", ipAddress, err)
 		}
 		return nil
 	}
@@ -186,7 +183,7 @@ func isIPAddressAllocated(conn *client.Client, ipAddress string) (bool, error) {
 			return false, nil
 		}
 		// The IP address could be allocated, return the error
-		return false, err 
+		return false, err
 	}
 
 	for _, ip := range allIPAddresses {
