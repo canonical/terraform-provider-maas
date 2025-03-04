@@ -206,7 +206,7 @@ func resourceDnsRecordDelete(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 // Release all IP addresses of a DNS resource, but only if it is not used by other DNS resources.
-// NOTE: exactly why this is required here and not in MAAS itself is not clear. 
+// NOTE: exactly why this is required here and not in MAAS itself is not clear.
 func releaseDNSResourceIPAddresses(client *client.Client, dnsResource *entity.DNSResource, dnsID int) error {
 	allDNSResources, err := client.DNSResources.Get(&entity.DNSResourcesParams{})
 	if err != nil {
@@ -225,8 +225,8 @@ func releaseDNSResourceIPAddresses(client *client.Client, dnsResource *entity.DN
 		if allOtherDNSResourcesIPAddresses.Contains(ipAddress.IP.String()) {
 			continue
 		}
-		// Release the IP address if it is not used by another DNS resource. 
-		// Terraform removes resources in parallel, so if it's already been deleted 
+		// Release the IP address if it is not used by another DNS resource.
+		// Terraform removes resources in parallel, so if it's already been deleted
 		// by another resource pointing to the same IP being removed, ignore it.
 		if err := client.IPAddresses.Release(&entity.IPAddressesParams{IP: ipAddress.IP.String()}); err != nil && !strings.Contains(err.Error(), "does not exist") {
 			return err
