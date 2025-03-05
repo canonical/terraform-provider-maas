@@ -199,4 +199,3 @@ func isIPAddressAllocated(conn *client.Client, ipAddress string) (bool, error) {
 	// Unexpected error
 	return false, fmt.Errorf("unexpected error, IP address got from client is not the expected one: %v", maasIPAddress)
 }
-
