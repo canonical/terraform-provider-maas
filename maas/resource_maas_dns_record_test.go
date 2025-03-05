@@ -18,24 +18,26 @@ import (
 
 func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 	var dnsRecord entity.DNSResource
-	recordName := acctest.RandomWithPrefix("tf-dns-record-")
-	const recordName1 = "maas_dns_record.test"
-	const TEST_IP_ADDRESS = "8.8.8.8"
+	recordName := acctest.RandomWithPrefix("tf-")
+	const resourceName = "test"
+	const testIPAddress = "8.8.8.8"
+	const testDomain = "maas"
+	const testRecordType = "A/AAAA"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccMAASDNSRecordCheckDestroy(TEST_IP_ADDRESS),
+		CheckDestroy: testAccMAASDNSRecordCheckDestroy(testIPAddress),
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: getDNSRecordConfigBasic(recordName, "A/AAAA", TEST_IP_ADDRESS, "maas"),
+				Config: getDNSRecordConfigBasic(recordName, testRecordType, testIPAddress, testDomain),
 				Check: resource.ComposeTestCheckFunc(
-					testAccMAASDNSRecordCheckExists(recordName1, &dnsRecord),
-					resource.TestCheckResourceAttr(recordName1, "name", recordName),
-					resource.TestCheckResourceAttr(recordName1, "type", "A/AAAA"),
-					resource.TestCheckResourceAttr(recordName1, "data", TEST_IP_ADDRESS),
-					resource.TestCheckResourceAttr(recordName1, "domain", "maas"),
+					testAccMAASDNSRecordCheckExists("maas_dns_record."+resourceName, &dnsRecord),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName, "name", recordName),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName, "type", testRecordType),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName, "data", testIPAddress),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName, "domain", testDomain),
 				),
 			},
 		},
@@ -45,51 +47,52 @@ func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 // Test that two DNS records with the same IP address can be created and destroyed.
 func TestAccResourceMAASDNSRecord_same_ip_address(t *testing.T) {
 	var dnsRecord entity.DNSResource
-	recordBaseName := acctest.RandomWithPrefix("tf-dns-record-")
-	const recordName1 = "maas_dns_record.test_aaaa_1"
-	const recordName2 = "maas_dns_record.test_aaaa_2"
-	const TEST_IP_ADDRESS_2 = "8.8.8.9"
+	recordName1 := acctest.RandomWithPrefix("tf-1-")
+	recordName2 := acctest.RandomWithPrefix("tf-2-")
+	resourceName1 := "test_aaaa_1"
+	resourceName2 := "test_aaaa_2"
+	const testIPAddress = "8.8.8.9"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccMAASDNSRecordCheckDestroy(TEST_IP_ADDRESS_2),
+		CheckDestroy: testAccMAASDNSRecordCheckDestroy(testIPAddress),
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: getDNSRecordConfigSameIPA_AAAA(recordBaseName, TEST_IP_ADDRESS_2),
+				Config: getDNSRecordConfigSameIPA_AAAA(resourceName1, resourceName2, recordName1, recordName2, testIPAddress),
 				Check: resource.ComposeTestCheckFunc(
-					testAccMAASDNSRecordCheckExists(recordName1, &dnsRecord),
-					testAccMAASDNSRecordCheckExists(recordName2, &dnsRecord),
-					resource.TestCheckResourceAttr(recordName1, "name", recordBaseName+"-1"),
-					resource.TestCheckResourceAttr(recordName2, "name", recordBaseName+"-2"),
-					resource.TestCheckResourceAttr(recordName1, "type", "A/AAAA"),
-					resource.TestCheckResourceAttr(recordName2, "type", "A/AAAA"),
-					resource.TestCheckResourceAttr(recordName1, "data", TEST_IP_ADDRESS_2),
-					resource.TestCheckResourceAttr(recordName2, "data", TEST_IP_ADDRESS_2),
-					resource.TestCheckResourceAttr(recordName1, "domain", "maas"),
-					resource.TestCheckResourceAttr(recordName2, "domain", "maas"),
+					testAccMAASDNSRecordCheckExists("maas_dns_record."+resourceName1, &dnsRecord),
+					testAccMAASDNSRecordCheckExists("maas_dns_record."+resourceName2, &dnsRecord),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName1, "name", recordName1),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName2, "name", recordName2),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName1, "type", "A/AAAA"),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName2, "type", "A/AAAA"),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName1, "data", testIPAddress),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName2, "data", testIPAddress),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName1, "domain", "maas"),
+					resource.TestCheckResourceAttr("maas_dns_record."+resourceName2, "domain", "maas"),
 				),
 			},
 		},
 	})
 }
 
-func getDNSRecordConfigSameIPA_AAAA(recordBaseName string, ipAddress string) string {
+func getDNSRecordConfigSameIPA_AAAA(resourceName1 string, resourceName2 string, recordName1 string, recordName2 string, ipAddress string) string {
 	return fmt.Sprintf(`
-	resource "maas_dns_record" "test_aaaa_1" {
-	  name   = "%s-1"
+	resource "maas_dns_record" %q {
+	  name   = %q
 	  type   = "A/AAAA"
 	  data   = %q
 	  domain = "maas"
 	}
-	resource "maas_dns_record" "test_aaaa_2" {
-	  name   = "%s-2"
+	resource "maas_dns_record" %q {
+	  name   = %q
 	  type   = "A/AAAA"
 	  data   = %q
 	  domain = "maas"
 	}
-	`, recordBaseName, ipAddress, recordBaseName, ipAddress)
+	`, resourceName1, recordName1, ipAddress, resourceName2, recordName2, ipAddress)
 }
 
 func getDNSRecordConfigBasic(name string, recordType string, data string, domain string) string {
@@ -109,7 +112,7 @@ func testAccMAASDNSRecordCheckExists(rn string, dnsRecord *entity.DNSResource) r
 		// Check if it exists in state
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
-			return fmt.Errorf("resource not found: %s\n %#v", rn, s.RootModule().Resources)
+			return fmt.Errorf("resource not found: %s\n %v", rn, s.RootModule().Resources)
 		}
 
 		if rs.Primary.ID == "" {
