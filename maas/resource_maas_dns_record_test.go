@@ -45,7 +45,7 @@ func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 }
 
 // Test that two DNS records with the same IP address can be created and destroyed.
-func TestAccResourceMAASDNSRecord_same_ip_address(t *testing.T) {
+func TestAccResourceMAASDNSRecord_sameIPAddress(t *testing.T) {
 	var dnsRecord entity.DNSResource
 	recordName1 := acctest.RandomWithPrefix("tf-1-")
 	recordName2 := acctest.RandomWithPrefix("tf-2-")
