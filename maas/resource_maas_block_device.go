@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -342,6 +343,29 @@ func setBlockDeviceTags(client *client.Client, d *schema.ResourceData, blockDevi
 
 func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[string]interface{} {
 	partitions := make([]map[string]interface{}, len(blockDevice.Partitions))
+
+	// Order by database ID since MAAS is returning the partitions in no particular order.
+	// MAAS is always maintaining a continuous sequence of numbers for partition indexes.
+	// Partition index is not exposed by the API, but database ID can also be used.
+	// The ID sequence may not be continuous but if an intermediate partition is deleted,
+	// the partitions with greater index are shifted so that there is no gap. As such,
+	// the remaining partitions have only incremental database IDs, and it is safe to order them
+	// by this field when their index is not known.
+	//
+	// Example of partition deletion
+	//
+	// before deletion
+	// sda-part1 (index: 1, ID: 40), sda-part2 (index: 2, ID: 41), sda-part3 (index: 3, ID: 42)
+	//
+	// after deletion of sda-part2 with database ID 41
+	// sda-part1 (index: 1, ID: 40), sda-part2 (index: 2, ID: 42)
+	//
+	// after creation of new sda-part3 with database ID 43
+	// sda-part1 (index: 1, ID: 40), sda-part2 (index: 2, ID: 42), sda-part3 (index: 3, ID: 43)
+	sort.Slice(blockDevice.Partitions, func(i, j int) bool {
+		return blockDevice.Partitions[i].ID < blockDevice.Partitions[j].ID
+	})
+
 	for i, p := range blockDevice.Partitions {
 		part := map[string]interface{}{
 			"size_gigabytes": int(p.Size / (1024 * 1024 * 1024)),

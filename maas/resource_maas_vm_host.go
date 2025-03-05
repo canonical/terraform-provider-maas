@@ -2,7 +2,6 @@ package maas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -75,6 +74,41 @@ func resourceMaasVMHost() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Description: "The new VM host default macvlan mode. Supported values are: `bridge`, `passthru`, `private`, `vepa`. This is computed if it's not set.",
+			},
+			"deploy_params": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				ForceNew:    true,
+				MaxItems:    1,
+				Description: "Nested argument with the config used to deploy the machine specified using `machine`.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"distro_series": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "The distro series used to deploy the specifed MAAS machine. If it's not given, the MAAS server default value is used.",
+						},
+						"enable_hw_sync": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "Periodically sync hardware",
+						},
+						"hwe_kernel": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "Hardware enablement kernel to use with the image. Only used when deploying Ubuntu.",
+						},
+						"user_data": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "Cloud-init user data script that gets run on the machine once it has deployed. A good practice is to set this with `file(\"/tmp/user-data.txt\")`, where `/tmp/user-data.txt` is a cloud-init script.",
+						},
+					},
+				},
 			},
 			"machine": {
 				Type:          schema.TypeString,
@@ -169,13 +203,20 @@ func resourceMaasVMHost() *schema.Resource {
 
 func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-
 	// Create VM host
 	var vmHost *entity.VMHost
 	var err error
 	if p, ok := d.GetOk("machine"); ok {
+		// Get parameters for deployment
+		timeout := d.Timeout(schema.TimeoutCreate)
+		vmHostType := d.Get("type").(string)
+		deployParams, err := getVMHostDeployParams(d, vmHostType)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		// Deploy machine, and register it as VM host
-		vmHost, err = deployMachineAsVMHost(ctx, client, p.(string), d.Get("type").(string), d.Timeout(schema.TimeoutCreate))
+		vmHost, err = deployMachineAsVMHost(ctx, client, p.(string), timeout, deployParams)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -301,7 +342,7 @@ func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
 	}
 }
 
-func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineIdentifier string, vmHostType string, maxTimeout time.Duration) (*entity.VMHost, error) {
+func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineIdentifier string, maxTimeout time.Duration, deployParams *entity.MachineDeployParams) (*entity.VMHost, error) {
 	// Find machine
 	machine, err := getMachine(client, machineIdentifier)
 	if err != nil {
@@ -315,33 +356,8 @@ func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineId
 		return nil, err
 	}
 
-	// Get Default OS and series
-	var defaultOsystem string
-	defaultOsystemBytes, err := client.MAASServer.Get("default_osystem")
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(defaultOsystemBytes, &defaultOsystem)
-	if err != nil {
-		return nil, err
-	}
-	var defaultSeries string
-	defaultSeriesBytes, err := client.MAASServer.Get("default_distro_series")
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(defaultSeriesBytes, &defaultSeries)
-	if err != nil {
-		return nil, err
-	}
-
 	// Deploy machine
-	deployParams := entity.MachineDeployParams{
-		DistroSeries:   fmt.Sprintf("%s/%s", defaultOsystem, defaultSeries),
-		InstallKVM:     (vmHostType == "virsh"),
-		RegisterVMHost: (vmHostType == "lxd"),
-	}
-	machine, err = client.Machine.Deploy(machine.SystemID, &deployParams)
+	machine, err = client.Machine.Deploy(machine.SystemID, deployParams)
 	if err != nil {
 		return nil, err
 	}
@@ -377,4 +393,25 @@ func getVMHost(client *client.Client, identifier string) (*entity.VMHost, error)
 		}
 	}
 	return nil, fmt.Errorf("VM host (%s) not found", identifier)
+}
+
+func getVMHostDeployParams(d *schema.ResourceData, vmHostType string) (*entity.MachineDeployParams, error) {
+	deployParams := entity.MachineDeployParams{
+		InstallKVM:     (vmHostType == "virsh"),
+		RegisterVMHost: (vmHostType == "lxd"),
+	}
+
+	// Set deploy params if given
+	if p, ok := d.GetOk("deploy_params"); ok {
+		deployParamsData := p.([]interface{})
+		if deployParamsData[0] != nil {
+			params := deployParamsData[0].(map[string]interface{})
+			deployParams.DistroSeries = params["distro_series"].(string)
+			deployParams.EnableHwSync = params["enable_hw_sync"].(bool)
+			deployParams.HWEKernel = params["hwe_kernel"].(string)
+			deployParams.UserData = base64Encode([]byte(params["user_data"].(string)))
+		}
+	}
+
+	return &deployParams, nil
 }
