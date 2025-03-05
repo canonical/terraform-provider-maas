@@ -8,7 +8,7 @@ import (
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
-	"github.com/hashicorp/go-set/v3"
+	"github.com/hashicorp/go-set/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
