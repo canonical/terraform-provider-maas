@@ -170,7 +170,7 @@ func testAccMAASDNSRecordCheckDestroy(ipAddress string) resource.TestCheckFunc {
 			return fmt.Errorf("error checking if ip address is released: %s", err)
 		}
 		if ipAllocated {
-			return fmt.Errorf("ip address is not released: %s with error: %s", ipAddress, err)
+			return fmt.Errorf("ip address is not released: %s", ipAddress)
 		}
 		return nil
 	}
@@ -179,20 +179,24 @@ func testAccMAASDNSRecordCheckDestroy(ipAddress string) resource.TestCheckFunc {
 // Check if a particular IP address is allocated in MAAS
 func isIPAddressAllocated(conn *client.Client, ipAddress string) (bool, error) {
 	params := &entity.IPAddressesParams{IP: ipAddress}
-	allIPAddresses, err := conn.IPAddresses.Get(params)
+	maasIPAddress, err := conn.IPAddresses.Get(params)
 	if err != nil {
-		if strings.Contains(err.Error(), "does not exist") {
-			// The IP address is already allocated
-			return false, nil
-		}
-		// The IP address could be allocated, return the error
+		// Unexpected error
 		return false, err
 	}
-
-	for _, ip := range allIPAddresses {
-		if ip.IP.String() == ipAddress {
-			return true, fmt.Errorf("ip address is allocated")
-		}
+	// The IP address is not allocated.
+	if len(maasIPAddress) == 0 {
+		return false, nil
 	}
-	return false, nil
+	// More than one IP address found unexpectedly
+	if len(maasIPAddress) > 1 {
+		return false, fmt.Errorf("more than one IP address found for %s", ipAddress)
+	}
+	// The IP address is allocated
+	if len(maasIPAddress) == 1 && maasIPAddress[0].IP.String() == ipAddress {
+		return true, nil
+	}
+	// Unexpected error
+	return false, fmt.Errorf("unexpected error, IP address got from client is not the expected one: %v", maasIPAddress)
 }
+
