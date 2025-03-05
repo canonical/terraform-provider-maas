@@ -206,7 +206,6 @@ func resourceDnsRecordDelete(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 // Release all IP addresses of a DNS resource, but only if it is not used by other DNS resources.
-// NOTE: exactly why this is required here and not in MAAS itself is not clear.
 func releaseDNSResourceIPAddresses(client *client.Client, dnsResource *entity.DNSResource, dnsID int) error {
 	allDNSResources, err := client.DNSResources.Get(&entity.DNSResourcesParams{})
 	if err != nil {
