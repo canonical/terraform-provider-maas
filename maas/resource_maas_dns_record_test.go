@@ -61,8 +61,8 @@ func TestAccResourceMAASDNSRecord_same_ip_address(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccMAASDNSRecordCheckExists(recordName1, &dnsRecord),
 					testAccMAASDNSRecordCheckExists(recordName2, &dnsRecord),
-					// resource.TestCheckResourceAttr(recordName1, "name", recordBaseName+"-1"),
-					// resource.TestCheckResourceAttr(recordName2, "name", recordBaseName+"-2"),
+					resource.TestCheckResourceAttr(recordName1, "name", recordBaseName+"-1"),
+					resource.TestCheckResourceAttr(recordName2, "name", recordBaseName+"-2"),
 					resource.TestCheckResourceAttr(recordName1, "type", "A/AAAA"),
 					resource.TestCheckResourceAttr(recordName2, "type", "A/AAAA"),
 					resource.TestCheckResourceAttr(recordName1, "data", TEST_IP_ADDRESS_2),
