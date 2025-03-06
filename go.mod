@@ -6,6 +6,7 @@ require (
 	github.com/bflad/tfproviderlint v0.31.0
 	github.com/canonical/gomaasclient v0.8.0
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
+	github.com/hashicorp/go-set/v2 v2.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.21.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.36.1
 	github.com/juju/gomaasapi/v2 v2.3.0
@@ -71,6 +72,7 @@ require (
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
+	github.com/shoenig/test v1.11.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
