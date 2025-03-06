@@ -53,7 +53,7 @@ func TestAccResourceMAASDNSRecord_sameIPAddress(t *testing.T) {
 	resourceName2 := "test_aaaa_2"
 	testIPAddress := "8.8.8.9"
 	testDomain := acctest.RandomWithPrefix("tf")
-	
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
@@ -96,7 +96,7 @@ func getDNSRecordConfigSameIPA_AAAA(domain string, resourceName1 string, resourc
 	  data   = %q
 	  domain = maas_dns_domain.test.name
 	}
-	`, domain,resourceName1, recordName1, ipAddress, resourceName2, recordName2, ipAddress)
+	`, domain, resourceName1, recordName1, ipAddress, resourceName2, recordName2, ipAddress)
 }
 
 func getDNSRecordConfigBasic(name string, recordType string, data string, domain string) string {
