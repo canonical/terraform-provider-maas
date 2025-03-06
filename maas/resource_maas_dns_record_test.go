@@ -19,10 +19,10 @@ import (
 func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 	var dnsRecord entity.DNSResource
 	recordName := acctest.RandomWithPrefix("tf-")
-	const resourceName = "test"
-	const testIPAddress = "8.8.8.8"
-	const testDomain = "maas"
-	const testRecordType = "A/AAAA"
+	resourceName := "test"
+	testIPAddress := "8.8.8.8"
+	testDomain := "maas"
+	testRecordType := "A/AAAA"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
@@ -51,7 +51,7 @@ func TestAccResourceMAASDNSRecord_sameIPAddress(t *testing.T) {
 	recordName2 := acctest.RandomWithPrefix("tf-2-")
 	resourceName1 := "test_aaaa_1"
 	resourceName2 := "test_aaaa_2"
-	const testIPAddress = "8.8.8.9"
+	testIPAddress := "8.8.8.9"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
