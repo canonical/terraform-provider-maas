@@ -72,6 +72,58 @@ resource "maas_network_interface_link" "test" {
 `, machine, mac_address, cidr, gateway, ip)
 }
 
+func testAccMaasNetworkInterfaceLinkDevice() string {
+	return `
+resource "maas_device" "test" {
+  hostname    = "test-device"
+  network_interfaces {
+    mac_address = "12:23:45:67:89:de"
+  }
+}
+
+data "maas_fabric" "default" {
+  name = "fabric-0"
+}
+
+resource "maas_subnet" "test" {
+  cidr       = "10.77.77.0/24"
+  name       = "test"
+  fabric     = data.maas_fabric.default.id
+  gateway_ip = "10.77.77.1"
+  dns_servers = [
+    "1.1.1.1",
+  ]
+}
+
+resource "maas_network_interface_link" "first" {
+  device            = maas_device.test.id
+  network_interface = tolist(maas_device.test.network_interfaces)[0].id
+  subnet            = maas_subnet.test.id
+  mode              = "STATIC"
+  ip_address        = "10.77.77.42"
+}
+`
+}
+
+func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() {testutils.PreCheck(t, nil)},
+		Providers:    testutils.TestAccProviders,
+		ErrorCheck:   func(err error) error { return err },
+		CheckDestroy: func(s *terraform.State) error { return nil },
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMaasNetworkInterfaceLinkDevice(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.first", "device"),
+					testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.second", "device"),
+				),
+			},
+		},
+	})
+}
+
+
 func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
@@ -80,7 +132,7 @@ func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 	mac_address := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.test"),
+		testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.test", "machine"),
 		resource.TestCheckResourceAttr("maas_network_interface_link.test", "subnet", cidr),
 		resource.TestCheckResourceAttr("maas_network_interface_link.test", "mode", "STATIC"),
 		resource.TestCheckResourceAttr("maas_network_interface_link.test", "default_gateway", "true"),
@@ -109,7 +161,7 @@ func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasNetworkInterfaceLinkCheckExists(rn string) resource.TestCheckFunc {
+func testAccMaasNetworkInterfaceLinkCheckExists(rn string, nodeType string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -130,7 +182,7 @@ func testAccMaasNetworkInterfaceLinkCheckExists(rn string) resource.TestCheckFun
 			return err
 		}
 
-		gotNetworkInterface, err := conn.NetworkInterface.Get(rs.Primary.Attributes["machine"], networkInterfaceID)
+		gotNetworkInterface, err := conn.NetworkInterface.Get(rs.Primary.Attributes[nodeType], networkInterfaceID)
 		if err != nil {
 			return fmt.Errorf("error getting network interface: %s", err)
 		}
