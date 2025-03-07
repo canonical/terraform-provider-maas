@@ -38,15 +38,17 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 			},
 			"machine": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
-				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the network interface.",
+				ConflictsWith: []string{"device"},
+				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the network interface. Either `machine` or `device` must be provided.",
 			},
 			"device": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
-				Description: "The identifier (system ID, hostname, or FQDN) of the device with the network interface.",
+				ConflictsWith: []string{"machine"},
+				Description: "The identifier (system ID, hostname, or FQDN) of the device with the network interface. Either `machine` or `device` must be provided.",
 			},
 			"mode": {
 				Type:             schema.TypeString,
