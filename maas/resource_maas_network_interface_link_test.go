@@ -125,7 +125,6 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 					resource.TestCheckResourceAttr("maas_network_interface_link.first", "mode", "STATIC"),
 					resource.TestCheckResourceAttr("maas_network_interface_link.first", "subnet", cidr),
 					resource.TestCheckResourceAttrPair("maas_network_interface_link.first", "device", "maas_device.test", "id"),
-					// resource.TestCheckResourceAttrPair("maas_network_interface_link.first", "network_interface", "tolist(maas_device.test.network_interfaces)[0]", "id"),
 				),
 			},
 		},
