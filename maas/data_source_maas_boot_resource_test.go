@@ -26,10 +26,10 @@ func TestAccDataSourceMaasBootResources_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.#", "1"),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.0", labels[0]),
 		// and then that the resources are populated correctly too
-		resource.TestCheckResourceAttr("data.maas_boot_resource.test", "os", os),
-		resource.TestCheckResourceAttr("data.maas_boot_resource.test", "release", release),
-		resource.TestCheckResourceAttrSet("data.maas_boot_resource.test", "boot_resources.#"),
-		resource.TestCheckResourceAttr("data.maas_boot_resource.test", "boot_resources.0.name", fmt.Sprintf("%s/%s", os, release)),
+		resource.TestCheckResourceAttr("data.maas_boot_resources.test", "os", os),
+		resource.TestCheckResourceAttr("data.maas_boot_resources.test", "release", release),
+		resource.TestCheckResourceAttrSet("data.maas_boot_resources.test", "boot_resources.#"),
+		resource.TestCheckResourceAttr("data.maas_boot_resources.test", "boot_resources.0.name", fmt.Sprintf("%s/%s", os, release)),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -50,7 +50,7 @@ func testAccDataSourceMaasBootReources(os string, release string, arches []strin
 	return fmt.Sprintf(`
 %s
 
-data "maas_boot_resource" "test" {
+data "maas_boot_resources" "test" {
 	os      = maas_boot_source_selection.test.os
 	release = maas_boot_source_selection.test.release
 }

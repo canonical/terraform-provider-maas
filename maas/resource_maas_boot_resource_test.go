@@ -23,10 +23,10 @@ func TestAccResourceMAASBootResources_basic(t *testing.T) {
 	var bootresources BootResources
 
 	checks := []resource.TestCheckFunc{
-		testAccMAASBootResourcesCheckExists("maas_boot_resource.test", &bootresources),
-		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.#", "3"),
-		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.0.os", "ubuntu"),
-		resource.TestCheckResourceAttr("maas_boot_resource.test", "boot_source_selections.0.release", "mantic"),
+		testAccMAASBootResourcesCheckExists("maas_boot_resources.test", &bootresources),
+		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.#", "3"),
+		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.0.os", "ubuntu"),
+		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.0.release", "mantic"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -104,7 +104,7 @@ resource "maas_boot_source_selection" "mantic" {
     release = "mantic"
 }
 
-resource "maas_boot_resource" "test" {
+resource "maas_boot_resources" "test" {
     boot_source_selections = [
         maas_boot_source_selection.mantic.id,
     ]
@@ -117,7 +117,7 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 
 	// loop through the resources in state
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "maas_boot_resource" {
+		if rs.Type != "maas_boot_resources" {
 			continue
 		}
 
