@@ -228,7 +228,7 @@ func awaitImportComplete(client *client.Client) error {
 		if !importing {
 			return nil
 		}
-		return retry.RetryableError(nil)
+		return retry.RetryableError(fmt.Errorf("boot resources importing, waiting 30 seconds... "))
 	})
 }
 
