@@ -217,7 +217,6 @@ func awaitImportComplete(client *client.Client) error {
 	if err != nil {
 		return err
 	}
-	time.Sleep(10 * time.Minute)
 	for {
 		importing, _ := client.BootResources.IsImporting()
 		// fmt.Printf("Waiting for MAAS to finish import, importing: %v, err: %v", importing, err)
