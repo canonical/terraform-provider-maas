@@ -72,12 +72,12 @@ resource "maas_network_interface_link" "test" {
 `, machine, mac_address, cidr, gateway, ip)
 }
 
-func testAccMaasNetworkInterfaceLinkDevice() string {
-	return `
+func testAccMaasNetworkInterfaceLinkDevice(macAddress string) string {
+	return fmt.Sprintf(`
 resource "maas_device" "test" {
   hostname    = "test-device"
   network_interfaces {
-    mac_address = "12:23:45:67:89:de"
+    mac_address = %q
   }
 }
 
@@ -102,10 +102,12 @@ resource "maas_network_interface_link" "first" {
   mode              = "STATIC"
   ip_address        = "10.77.77.42"
 }
-`
+`, macAddress)
 }
 
 func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
+	macAddress := testutils.RandomMAC()
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() {testutils.PreCheck(t, nil)},
 		Providers:    testutils.TestAccProviders,
@@ -113,10 +115,11 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceLinkDevice(),
+				Config: testAccMaasNetworkInterfaceLinkDevice(macAddress),
 				Check: resource.ComposeTestCheckFunc(
 					testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.first", "device"),
-					testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.second", "device"),
+					resource.TestCheckResourceAttr("maas_network_interface_link.first", "ip_address", "10.77.77.42"),
+					resource.TestCheckResourceAttr("maas_network_interface_link.first", "mode", "STATIC"),
 				),
 			},
 		},

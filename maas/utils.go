@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/mail"
+	"strings"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
@@ -123,21 +124,21 @@ func setTerraformState(d *schema.ResourceData, tfState map[string]interface{}) e
 
 // Get the system ID of the relevant entity from resource data that accepts either a `machine` or `device`. 
 func getMachineOrDeviceSystemID(client *client.Client, d *schema.ResourceData) (string, error) {
-	var systemID string
-	if d.Get("machine") != nil {
+	if d.Get("machine") != "" {
 		machine, err := getMachine(client, d.Get("machine").(string))
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
 			return "", err
 		}
-		systemID = machine.SystemID
-	} else if d.Get("device") != nil {
+		return machine.SystemID, nil
+	} 
+	
+	if d.Get("device") != "" {
 		device, err := getDevice(client, d.Get("device").(string))
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
 			return "", err
 		}
-		systemID = device.SystemID
-	} else {
-		return "", fmt.Errorf("either `machine` or `device` is required")
-	}
-	return systemID, nil
+		return device.SystemID, nil
+	} 
+	return "", fmt.Errorf("either `machine` or `device` is required")
 }
+
