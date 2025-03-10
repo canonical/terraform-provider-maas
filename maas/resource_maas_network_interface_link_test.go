@@ -73,7 +73,7 @@ resource "maas_network_interface_link" "test" {
 `, machine, mac_address, cidr, gateway, ip)
 }
 
-func testAccMaasNetworkInterfaceLinkDevice(macAddress string, randomName string) string {
+func testAccMaasNetworkInterfaceLinkDevice(macAddress string, randomName string, cidr string, gateway string, ip string) string {
 	return fmt.Sprintf(`
 resource "maas_device" "test" {
   hostname    = %q
@@ -88,28 +88,28 @@ resource "maas_fabric" "test" {
 }
 
 resource "maas_subnet" "test" {
-  cidr       = "10.77.77.0/24"
+  cidr       = %q
   name       = %q
   fabric     = maas_fabric.test.id
-  gateway_ip = "10.77.77.1"
-  dns_servers = [
-    "1.1.1.1",
-  ]
+  gateway_ip = %q
 }
 
 resource "maas_network_interface_link" "first" {
   device            = maas_device.test.id
   network_interface = tolist(maas_device.test.network_interfaces)[0].id
-  subnet            = maas_subnet.test.id
+  subnet            = maas_subnet.test.cidr
   mode              = "STATIC"
-  ip_address        = "10.77.77.42"
+  ip_address        = %q
 }
-`, randomName, macAddress, randomName, randomName)
+`, randomName, macAddress, randomName, cidr, randomName, gateway, ip)
 }
 
 func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 	macAddress := testutils.RandomMAC()
 	randomName := acctest.RandomWithPrefix("tf-test")
+	cidr := "10.77.77.0/24"
+	gateway := "10.77.77.1"
+	ipAddress := "10.77.77.42"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() {testutils.PreCheck(t, nil)},
@@ -118,11 +118,14 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceLinkDevice(macAddress, randomName),
+				Config: testAccMaasNetworkInterfaceLinkDevice(macAddress, randomName, cidr, gateway, ipAddress),
 				Check: resource.ComposeTestCheckFunc(
 					testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.first", "device"),
-					resource.TestCheckResourceAttr("maas_network_interface_link.first", "ip_address", "10.77.77.42"),
+					resource.TestCheckResourceAttr("maas_network_interface_link.first", "ip_address", ipAddress),
 					resource.TestCheckResourceAttr("maas_network_interface_link.first", "mode", "STATIC"),
+					resource.TestCheckResourceAttr("maas_network_interface_link.first", "subnet", cidr),
+					resource.TestCheckResourceAttrPair("maas_network_interface_link.first", "device", "maas_device.test", "id"),
+					// resource.TestCheckResourceAttrPair("maas_network_interface_link.first", "network_interface", "tolist(maas_device.test.network_interfaces)[0]", "id"),
 				),
 			},
 		},
