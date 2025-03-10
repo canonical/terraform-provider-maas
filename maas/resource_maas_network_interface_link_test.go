@@ -8,6 +8,7 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -72,23 +73,24 @@ resource "maas_network_interface_link" "test" {
 `, machine, mac_address, cidr, gateway, ip)
 }
 
-func testAccMaasNetworkInterfaceLinkDevice(macAddress string) string {
+func testAccMaasNetworkInterfaceLinkDevice(macAddress string, randomName string) string {
 	return fmt.Sprintf(`
 resource "maas_device" "test" {
-  hostname    = "test-device"
+  hostname    = %q
   network_interfaces {
     mac_address = %q
   }
+  depends_on = [maas_fabric.test]
 }
 
-data "maas_fabric" "default" {
-  name = "fabric-0"
+resource "maas_fabric" "test" {
+  name = %q
 }
 
 resource "maas_subnet" "test" {
   cidr       = "10.77.77.0/24"
-  name       = "test"
-  fabric     = data.maas_fabric.default.id
+  name       = %q
+  fabric     = maas_fabric.test.id
   gateway_ip = "10.77.77.1"
   dns_servers = [
     "1.1.1.1",
@@ -102,11 +104,12 @@ resource "maas_network_interface_link" "first" {
   mode              = "STATIC"
   ip_address        = "10.77.77.42"
 }
-`, macAddress)
+`, randomName, macAddress, randomName, randomName)
 }
 
 func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 	macAddress := testutils.RandomMAC()
+	randomName := acctest.RandomWithPrefix("tf-test")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() {testutils.PreCheck(t, nil)},
@@ -115,7 +118,7 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceLinkDevice(macAddress),
+				Config: testAccMaasNetworkInterfaceLinkDevice(macAddress, randomName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.first", "device"),
 					resource.TestCheckResourceAttr("maas_network_interface_link.first", "ip_address", "10.77.77.42"),
