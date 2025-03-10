@@ -9,6 +9,7 @@ import (
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -217,17 +218,18 @@ func awaitImportComplete(client *client.Client) error {
 	if err != nil {
 		return err
 	}
-	for {
-		importing, _ := client.BootResources.IsImporting()
-		// fmt.Printf("Waiting for MAAS to finish import, importing: %v, err: %v", importing, err)
-		// if err != nil {
-		// 	return err
-		// }
+
+	ctx := context.Background()
+	return retry.RetryContext(ctx, 30*time.Second, func() *retry.RetryError {
+		importing, err := client.BootResources.IsImporting()
+		if err != nil {
+			return retry.NonRetryableError(err)
+		}
 		if !importing {
 			return nil
 		}
-		time.Sleep(time.Second * 5)
-	}
+		return retry.RetryableError(nil)
+	})
 }
 
 func unique(values []int) []int {
