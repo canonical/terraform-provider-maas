@@ -90,19 +90,9 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 		Labels:    convertToStringSlice(d.Get("labels").(*schema.Set).List()),
 	}
 
-	created, err := client.BootSourceSelections.Get(d.Get("boot_source").(int))
-	if err != nil {
-		fmt.Print("Couldn't fetch all boot selections")
-		return diag.FromErr(err)
-	}
-	for _, create := range created {
-		fmt.Printf("found %s %s", create.OS, create.Release)
-	}
-
 	bootsourceselection, err := client.BootSourceSelections.Create(d.Get("boot_source").(int), &bootsourceselectionParams)
 	if err != nil {
-		fmt.Printf("Error creating %s %s", d.Get("os"), d.Get("release"))
-		return diag.FromErr(err)
+		return diag.FromErr(fmt.Errorf("error creating %s %s %s", d.Get("os"), d.Get("release"), err))
 	}
 	d.SetId(fmt.Sprintf("%v", bootsourceselection.ID))
 
