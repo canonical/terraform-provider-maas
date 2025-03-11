@@ -100,8 +100,6 @@ func dataSourceMaasBootResourcesRead(ctx context.Context, d *schema.ResourceData
 		"release":        d.Get("release"),
 	}
 
-	fmt.Printf("%#v", foundresources)
-
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
