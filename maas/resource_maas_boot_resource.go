@@ -219,16 +219,21 @@ func awaitImportComplete(client *client.Client) error {
 		return err
 	}
 
-	ctx := context.Background()
-	return retry.RetryContext(ctx, 30*time.Second, func() *retry.RetryError {
+	timeout := 30 * time.Minute
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
 		importing, err := client.BootResources.IsImporting()
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
-		if !importing {
-			return nil
+
+		if importing {
+			return retry.RetryableError(fmt.Errorf("boot resources still importing, waiting... "))
 		}
-		return retry.RetryableError(fmt.Errorf("boot resources importing, waiting 30 seconds... "))
+		return nil
 	})
 }
 

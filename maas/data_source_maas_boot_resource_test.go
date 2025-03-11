@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceMaasBootResources_basic(t *testing.T) {
 	os := "ubuntu"
-	release := "mantic"
+	release := "kinetic"
 	arches := []string{"*"}
 	subarches := []string{"*"}
 	labels := []string{"*"}
