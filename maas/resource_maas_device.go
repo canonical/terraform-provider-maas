@@ -2,8 +2,10 @@ package maas
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/canonical/gomaasclient/entity"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -108,6 +110,7 @@ func expandNetworkInterfacesItems(items []interface{}) []string {
 }
 
 func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tflog.Debug(ctx, fmt.Sprintf("Device creating"))
 	client := meta.(*ClientConfig).Client
 
 	deviceParams := entity.DeviceCreateParams{
@@ -127,6 +130,7 @@ func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tflog.Debug(ctx, fmt.Sprintf("Device updating"))
 	client := meta.(*ClientConfig).Client
 
 	deviceParams := entity.DeviceUpdateParams{
@@ -139,18 +143,63 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(device.SystemID)	
+	d.SetId(device.SystemID)
 
 	if d.HasChange("network_interfaces") {
-		networkInterfaces := d.Get("network_interfaces").(*schema.Set).List()
-		for _, networkInterface := range networkInterfaces {
-			networkInterfaceParams := entity.NetworkInterfaceUpdateParams{
-				MACAddress: networkInterface.(map[string]interface{})["mac_address"].(string),
-				Name:       networkInterface.(map[string]interface{})["name"].(string),
+		newInterfaces := d.Get("network_interfaces").(*schema.Set).List()
+
+		// Get all existing interfaces from MAAS
+		device, err := client.Device.Get(d.Id())
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		existingInterfaces := device.InterfaceSet
+		existingInterfacesMap := make(map[int]entity.NetworkInterface)
+		for _, existingInterface := range existingInterfaces {
+			tflog.Debug(ctx, fmt.Sprintf("Existing network interface %s with MAC address %s\n", existingInterface.Name, existingInterface.MACAddress))
+			existingInterfacesMap[existingInterface.ID] = existingInterface
+		}
+
+		// Create a map to keep track of which interfaces to keep (update or create) or delete
+		keepMap := make(map[int]bool)
+		for _, existingInterface := range existingInterfaces {
+			keepMap[existingInterface.ID] = false
+		}
+		for _, newInterface := range newInterfaces {
+			keepMap[newInterface.(map[string]interface{})["id"].(int)] = true
+		}
+
+		// Create, update, or delete interfaces
+		for id, keep := range keepMap {
+			if !keep {
+				tflog.Debug(ctx, fmt.Sprintf("Deleting network interface %d", id))
+				err := client.NetworkInterface.Delete(d.Id(), id)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+			} else {
+				if networkInterface, ok := existingInterfacesMap[id]; ok {
+					networkInterfaceParams := entity.NetworkInterfaceUpdateParams{
+						MACAddress: networkInterface.MACAddress,
+						Name:       networkInterface.Name,
+					}
+					tflog.Debug(ctx, fmt.Sprintf("Updating network interface %s with MAC address %s", networkInterface.Name, networkInterfaceParams.MACAddress))
+					_, err := client.NetworkInterface.Update(d.Id(), id, &networkInterfaceParams)
+					if err != nil {
+						return diag.FromErr(err)
+					}
+				} else {
+					networkInterfaceParams := entity.NetworkInterfacePhysicalParams{
+						MACAddress: networkInterface.MACAddress,
+						Name:       networkInterface.Name,
+					}
+					tflog.Debug(ctx, fmt.Sprintf("Creating network interface %s with MAC address %s", networkInterfaceParams.Name, networkInterfaceParams.MACAddress))
+					_, err := client.NetworkInterfaces.CreatePhysical(d.Id(), &networkInterfaceParams)
+					if err != nil {
+						return diag.FromErr(err)
+					}
+				}
 			}
-			interfaceID := networkInterface.(map[string]interface{})["id"].(int)
-	
-			client.NetworkInterface.Update(d.Id(), interfaceID, &networkInterfaceParams)
 		}
 	}
 
