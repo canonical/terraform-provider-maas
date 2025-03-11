@@ -20,16 +20,6 @@ func dataSourceMaasBootResources() *schema.Resource {
 				Description: "The set of boot resources for this os/release",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"type": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The Synced type for this resource",
-						},
-						"name": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The name of this resource.",
-						},
 						"architecture": {
 							Type:        schema.TypeString,
 							Computed:    true,
@@ -40,10 +30,20 @@ func dataSourceMaasBootResources() *schema.Resource {
 							Computed:    true,
 							Description: "The time of last deploy for this resource",
 						},
+						"name": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The name of this resource.",
+						},
 						"subarches": {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The subarches for this resource.",
+						},
+						"type": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The Synced type for this resource",
 						},
 					},
 				},
