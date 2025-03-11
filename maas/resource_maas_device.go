@@ -134,14 +134,25 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		Domain:      d.Get("domain").(string),
 		Hostname:    d.Get("hostname").(string),
 		Zone:        d.Get("zone").(string),
-		// NetworkInterfaces: ...
 	}
-
 	device, err := client.Device.Update(d.Id(), &deviceParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(device.SystemID)
+	d.SetId(device.SystemID)	
+
+	if d.HasChange("network_interfaces") {
+		networkInterfaces := d.Get("network_interfaces").(*schema.Set).List()
+		for _, networkInterface := range networkInterfaces {
+			networkInterfaceParams := entity.NetworkInterfaceUpdateParams{
+				MACAddress: networkInterface.(map[string]interface{})["mac_address"].(string),
+				Name:       networkInterface.(map[string]interface{})["name"].(string),
+			}
+			interfaceID := networkInterface.(map[string]interface{})["id"].(int)
+	
+			client.NetworkInterface.Update(d.Id(), interfaceID, &networkInterfaceParams)
+		}
+	}
 
 	return resourceDeviceRead(ctx, d, meta)
 }
