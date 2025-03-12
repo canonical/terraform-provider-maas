@@ -42,14 +42,15 @@ resource "maas_network_interface_link" "virsh_vm1_nic3" {
 
 ### Required
 
-- `machine` (String) The identifier (system ID, hostname, or FQDN) of the machine with the network interface.
 - `network_interface` (String) The identifier (MAC address, name, or ID) of the network interface.
 - `subnet` (String) The identifier (CIDR or ID) of the subnet to be connected.
 
 ### Optional
 
 - `default_gateway` (Boolean) Boolean value. When enabled, it sets the subnet gateway IP address as the default gateway for the machine the interface belongs to. This option can only be used with the `AUTO` and `STATIC` modes. Defaults to `false`.
+- `device` (String) The identifier (system ID, hostname, or FQDN) of the device with the network interface. Either `machine` or `device` must be provided.
 - `ip_address` (String) Valid IP address (from the given subnet) to be configured on the network interface. Only used when `mode` is set to `STATIC`.
+- `machine` (String) The identifier (system ID, hostname, or FQDN) of the machine with the network interface. Either `machine` or `device` must be provided.
 - `mode` (String) Connection mode to subnet. It defaults to `AUTO`. Valid options are:
 	* `AUTO` - Random static IP address from the subnet.
 	* `DHCP` - IP address from the DHCP on the given subnet.
