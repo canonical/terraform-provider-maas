@@ -2,10 +2,8 @@ package maas
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/canonical/gomaasclient/entity"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -110,7 +108,6 @@ func expandNetworkInterfacesItems(items []interface{}) []string {
 }
 
 func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, fmt.Sprintf("Device creating"))
 	client := meta.(*ClientConfig).Client
 
 	deviceParams := entity.DeviceCreateParams{
