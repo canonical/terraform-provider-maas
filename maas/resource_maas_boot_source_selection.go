@@ -25,9 +25,12 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"arches": {
-				Type:        schema.TypeSet,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{"*"}, nil
+				},
 				Description: "The architecture list for this selection.",
 			},
 			"boot_source": {
@@ -37,9 +40,12 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Description: "The boot source database ID this selection is associated with.",
 			},
 			"labels": {
-				Type:        schema.TypeSet,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{"*"}, nil
+				},
 				Description: "The label list for this selection.",
 			},
 			"os": {
@@ -53,9 +59,12 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Description: "The specific release of the operating system for this selection.",
 			},
 			"subarches": {
-				Type:        schema.TypeSet,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{"*"}, nil
+				},
 				Description: "The list of subarches for this selection.",
 			},
 		},
