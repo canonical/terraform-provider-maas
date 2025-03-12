@@ -142,7 +142,6 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		for _, existingInterface := range existingInterfaces {
 			client.NetworkInterface.Delete(d.Id(), existingInterface.ID)
 		}
-
 		// Create new interfaces
 		newInterfaces := d.Get("network_interfaces").(*schema.Set).List()
 		for _, newIface := range newInterfaces {
@@ -152,15 +151,7 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 			})
 		}
 		// Update the network interfaces in the state
-		networkInterfaces := make([]map[string]interface{}, len(device.InterfaceSet))
-		for i, iface := range device.InterfaceSet {
-			networkInterfaces[i] = map[string]interface{}{
-				"id":          iface.ID,
-				"mac_address": iface.MACAddress,
-				"name":        iface.Name,
-			}
-		}
-		if err := d.Set("network_interfaces", networkInterfaces); err != nil {
+		if err := updateNetworkInterfaceState(d, device); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -201,7 +192,7 @@ func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("hostname", device.Hostname)
 	d.Set("owner", device.Owner)
 	d.Set("zone", device.Zone.Name)
-
+	
 	ipAddresses := make([]string, len(device.IPAddresses))
 	for i, ip := range device.IPAddresses {
 		ipAddresses[i] = ip.String()
@@ -210,17 +201,25 @@ func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	networkInterfaces := make([]map[string]interface{}, len(device.InterfaceSet))
-	for i, networkInterface := range device.InterfaceSet {
-		networkInterfaces[i] = map[string]interface{}{
-			"id":          networkInterface.ID,
-			"mac_address": networkInterface.MACAddress,
-			"name":        networkInterface.Name,
-		}
-	}
-	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
+	if err := updateNetworkInterfaceState(d, device); err != nil {
 		return diag.FromErr(err)
 	}
 
+	return nil
+}
+
+// Update the state with the current network interfaces on a device.
+func updateNetworkInterfaceState(d *schema.ResourceData, device *entity.Device) error {
+	networkInterfaces := make([]map[string]interface{}, len(device.InterfaceSet))
+	for i, iface := range device.InterfaceSet {
+		networkInterfaces[i] = map[string]interface{}{
+			"id":          iface.ID,
+			"mac_address": iface.MACAddress,
+			"name":        iface.Name,
+		}
+	}
+	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
+		return err
+	}
 	return nil
 }
