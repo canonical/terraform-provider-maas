@@ -188,7 +188,7 @@ func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("hostname", device.Hostname)
 	d.Set("owner", device.Owner)
 	d.Set("zone", device.Zone.Name)
-	
+
 	ipAddresses := make([]string, len(device.IPAddresses))
 	for i, ip := range device.IPAddresses {
 		ipAddresses[i] = ip.String()

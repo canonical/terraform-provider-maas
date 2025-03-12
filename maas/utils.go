@@ -122,7 +122,7 @@ func setTerraformState(d *schema.ResourceData, tfState map[string]interface{}) e
 	return nil
 }
 
-// Get the system ID of the relevant entity from resource data that accepts either a `machine` or `device`. 
+// Get the system ID of the relevant entity from resource data that accepts either a `machine` or `device`.
 func getMachineOrDeviceSystemID(client *client.Client, d *schema.ResourceData) (string, error) {
 	if d.Get("machine") != "" {
 		machine, err := getMachine(client, d.Get("machine").(string))
@@ -130,15 +130,14 @@ func getMachineOrDeviceSystemID(client *client.Client, d *schema.ResourceData) (
 			return "", err
 		}
 		return machine.SystemID, nil
-	} 
-	
+	}
+
 	if d.Get("device") != "" {
 		device, err := getDevice(client, d.Get("device").(string))
 		if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
 			return "", err
 		}
 		return device.SystemID, nil
-	} 
+	}
 	return "", fmt.Errorf("either `machine` or `device` is required")
 }
-

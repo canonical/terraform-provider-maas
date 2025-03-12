@@ -112,7 +112,7 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 	ipAddress := "10.77.77.42"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() {testutils.PreCheck(t, nil)},
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
 		CheckDestroy: func(s *terraform.State) error { return nil },
@@ -130,7 +130,6 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 		},
 	})
 }
-
 
 func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 

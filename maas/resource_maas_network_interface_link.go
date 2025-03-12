@@ -22,11 +22,11 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"default_gateway": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
+				Type:          schema.TypeBool,
+				Optional:      true,
+				Default:       false,
 				ConflictsWith: []string{"device"},
-				Description: "Boolean value. When enabled, it sets the subnet gateway IP address as the default gateway for the machine the interface belongs to. This option can only be used with the `AUTO` and `STATIC` modes. Defaults to `false`.",
+				Description:   "Boolean value. When enabled, it sets the subnet gateway IP address as the default gateway for the machine the interface belongs to. This option can only be used with the `AUTO` and `STATIC` modes. Defaults to `false`.",
 			},
 			"ip_address": {
 				Type:             schema.TypeString,
@@ -37,16 +37,16 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 				Description:      "Valid IP address (from the given subnet) to be configured on the network interface. Only used when `mode` is set to `STATIC`.",
 			},
 			"machine": {
-				Type:        schema.TypeString,
-				Optional:    true,
+				Type:         schema.TypeString,
+				Optional:     true,
 				ExactlyOneOf: []string{"machine", "device"},
-				Description: "The identifier (system ID, hostname, or FQDN) of the machine with the network interface. Either `machine` or `device` must be provided.",
+				Description:  "The identifier (system ID, hostname, or FQDN) of the machine with the network interface. Either `machine` or `device` must be provided.",
 			},
 			"device": {
-				Type:        schema.TypeString,
-				Optional:    true,
+				Type:         schema.TypeString,
+				Optional:     true,
 				ExactlyOneOf: []string{"machine", "device"},
-				Description: "The identifier (system ID, hostname, or FQDN) of the device with the network interface. Either `machine` or `device` must be provided.",
+				Description:  "The identifier (system ID, hostname, or FQDN) of the device with the network interface. Either `machine` or `device` must be provided.",
 			},
 			"mode": {
 				Type:             schema.TypeString,

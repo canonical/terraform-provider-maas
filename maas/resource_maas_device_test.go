@@ -92,7 +92,6 @@ func TestAccResourceMaasDevice_update(t *testing.T) {
 		resource.TestCheckResourceAttrSet("maas_device.test", "owner"),
 	}
 
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
@@ -105,7 +104,7 @@ func TestAccResourceMaasDevice_update(t *testing.T) {
 					checks,
 					resource.TestCheckResourceAttr("maas_device.test", "network_interfaces.0.mac_address", mac_address),
 					resource.TestCheckResourceAttr("maas_device.test", "ip_addresses.#", "0"), // No IP addresses are initially assigned. MAAS will assign them when the device is created.
-					)...),
+				)...),
 			},
 			{
 				Config: testAccMaasDeviceNetworkInterfaceConfig(deviceHostname, mac_address2, fabricName, subnetCIDR, subnetName, subnetGatewayIP, linkIPAddress),
