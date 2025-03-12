@@ -137,7 +137,13 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 		}
 		boot_source_id := bootsource[0].ID
 
-		for _, selection := range strings.Split(rs.Primary.Attributes["boot_source_selections"], ",") {
+		// an empty string means no selections present
+		existing_selections := rs.Primary.Attributes["boot_source_selections"]
+		if existing_selections == "" {
+			continue
+		}
+
+		for _, selection := range strings.Split(existing_selections, ",") {
 			selection_id, err := strconv.Atoi(selection)
 			if err != nil {
 				return err
