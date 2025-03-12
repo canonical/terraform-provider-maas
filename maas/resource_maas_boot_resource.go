@@ -64,6 +64,7 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		// check the selection has it's resource created
 		if _, exists := resourceMap[fmt.Sprintf("%s/%s", bootselection.OS, bootselection.Release)]; !exists {
 			return diag.Errorf("Boot Resource missing for %s/%s", bootselection.OS, bootselection.Release)
@@ -101,7 +102,7 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 		os, release := parts[0], parts[1]
 
 		// avoid the bootloaders
-		if strings.HasPrefix(os, "uefi") || strings.HasPrefix(os, "pxe") {
+		if strings.Contains(os, "uefi") || strings.Contains(os, "pxe") {
 			continue
 		}
 
@@ -173,6 +174,20 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// delete the selections attached to this resource
+
+	bootselections := d.Get("boot_source_selections").(*schema.Set).List()
+	for _, bootselection := range bootselections {
+		err := client.BootSourceSelection.Delete(bootsource.ID, bootselection.(int))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	err = awaitImportComplete(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
