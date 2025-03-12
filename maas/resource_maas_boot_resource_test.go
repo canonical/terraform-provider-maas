@@ -100,8 +100,11 @@ data "maas_boot_source" "test" {}
 
 resource "maas_boot_source_selection" "mantic" {
     boot_source = data.maas_boot_source.test.id
-    os = "ubuntu"
-    release = "mantic"
+    os 			= "ubuntu"
+    release		= "mantic"
+	arches     	= ["*"]
+	subarches  	= ["*"]
+	labels     	= ["*"]
 }
 
 resource "maas_boot_resources" "test" {
