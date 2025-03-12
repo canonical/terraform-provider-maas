@@ -150,10 +150,7 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 				Name:       newIface.(map[string]interface{})["name"].(string),
 			})
 		}
-		// Update the network interfaces in the state
-		if err := updateNetworkInterfaceState(d, device); err != nil {
-			return diag.FromErr(err)
-		}
+
 	}
 
 	deviceParams := entity.DeviceUpdateParams{
