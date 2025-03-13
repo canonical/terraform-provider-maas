@@ -129,19 +129,37 @@ func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta inte
 func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	if d.HasChange("network_interfaces") {
+		device, err := client.Device.Get(d.Id())
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		existingInterfaces := device.InterfaceSet
+		// Delete all existing interfaces
+		for _, existingInterface := range existingInterfaces {
+			client.NetworkInterface.Delete(d.Id(), existingInterface.ID)
+		}
+		// Create new interfaces
+		newInterfaces := d.Get("network_interfaces").(*schema.Set).List()
+		for _, newIface := range newInterfaces {
+			client.NetworkInterfaces.CreatePhysical(d.Id(), &entity.NetworkInterfacePhysicalParams{
+				MACAddress: newIface.(map[string]interface{})["mac_address"].(string),
+				Name:       newIface.(map[string]interface{})["name"].(string),
+			})
+		}
+	}
+
 	deviceParams := entity.DeviceUpdateParams{
 		Description: d.Get("description").(string),
 		Domain:      d.Get("domain").(string),
 		Hostname:    d.Get("hostname").(string),
 		Zone:        d.Get("zone").(string),
 	}
-
 	device, err := client.Device.Update(d.Id(), &deviceParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(device.SystemID)
-
 	return resourceDeviceRead(ctx, d, meta)
 }
 
@@ -187,6 +205,5 @@ func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interf
 	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
 		return diag.FromErr(err)
 	}
-
 	return nil
 }
