@@ -22,6 +22,12 @@ func resourceMAASBootResources() *schema.Resource {
 		DeleteContext: resourceBootResourcesDelete,
 
 		Schema: map[string]*schema.Schema{
+			"boot_source": {
+				Type:        schema.TypeInt,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The boot source database ID this resource set is associated with.",
+			},
 			"boot_source_selections": {
 				Type:        schema.TypeSet,
 				Required:    true,
@@ -102,7 +108,7 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 		os, release := parts[0], parts[1]
 
 		// avoid the bootloaders
-		if strings.Contains(os, "uefi") || strings.Contains(os, "pxe") {
+		if strings.Contains(os, "efi") || strings.Contains(os, "pxe") || strings.Contains(os, "grub") {
 			continue
 		}
 
@@ -181,6 +187,11 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 	// delete the selections attached to this resource
 
 	bootselections := d.Get("boot_source_selections").(*schema.Set).List()
+
+	resourceMap := make(map[int]struct{})
+	for _, bootselection := range bootselections {
+		resourceMap[bootselection.(int)] = struct{}{}
+	}
 	for _, bootselection := range bootselections {
 		err := client.BootSourceSelection.Delete(bootsource.ID, bootselection.(int))
 		if err != nil {
@@ -192,11 +203,11 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	existing, err := getBootResources(client, "synced")
+	resources, err := getBootResources(client, "synced")
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	for _, resource := range existing {
+	for _, resource := range resources {
 		parts := strings.SplitN(resource.Name, "/", 2)
 		if len(parts) < 2 {
 			return diag.Errorf("Invalid resource name: %s", resource.Name)
@@ -208,7 +219,8 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if bootsourceselection != nil {
+
+		if _, exists := resourceMap[bootsourceselection.ID]; exists {
 			return diag.Errorf("boot source selection (%s %s) was unexpectedly found on deleted resource", os, release)
 		}
 	}
@@ -234,7 +246,7 @@ func awaitImportComplete(client *client.Client) error {
 		return err
 	}
 
-	timeout := 30 * time.Minute
+	timeout := 40 * time.Minute
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
