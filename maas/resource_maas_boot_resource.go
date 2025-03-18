@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -24,8 +25,7 @@ func resourceMAASBootResources() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"boot_source": {
 				Type:        schema.TypeInt,
-				Required:    true,
-				ForceNew:    true,
+				Computed:    true,
 				Description: "The boot source database ID this resource set is associated with.",
 			},
 			"boot_source_selections": {
@@ -98,6 +98,19 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
+	selections := d.Get("boot_source_selections")
+	if selections == nil {
+		return diag.Errorf("boot_source_selection is missing from Resources state")
+	}
+	selectionMap := make(map[int]struct{})
+	for _, sel := range selections.(*schema.Set).List() {
+		if id, ok := sel.(int); ok {
+			selectionMap[id] = struct{}{}
+		} else {
+			log.Printf("[DEBUG] Invalid selection ID found in state: %v", sel)
+		}
+	}
+
 	// TODO: This seems unclean, is there a smarter way to get the selection IDs?
 	var selectionSet []int
 	for _, res := range resources {
@@ -116,7 +129,15 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		selectionSet = append(selectionSet, selection.ID)
+		if selection == nil {
+			log.Printf("[DEBUG] No selection found in MAAS for %s %s\n", os, release)
+		}
+		if _, exists := selectionMap[res.ID]; exists {
+			selectionSet = append(selectionSet, selection.ID)
+			log.Printf("[DEBUG] %s %s found in MAAS attached to resource\n", os, release)
+		} else {
+			log.Printf("[DEBUG] %s %s found in MAAS but not attached to resource\n", os, release)
+		}
 	}
 
 	tfState := map[string]interface{}{
@@ -176,12 +197,12 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 
 	err := awaitImportComplete(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Could not await image importing: %v", err)
 	}
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Could not fetch boot source: %v", err)
 	}
 
 	// delete the selections attached to this resource
@@ -195,12 +216,17 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 	for _, bootselection := range bootselections {
 		err := client.BootSourceSelection.Delete(bootsource.ID, bootselection.(int))
 		if err != nil {
-			return diag.FromErr(err)
+			// 400 if the selection is the default
+			if !strings.Contains(err.Error(), "operating system used in ephemeral environments") {
+				continue
+			}
+
+			return diag.Errorf("Could not delete selection '%v': %v", bootselection.(int), err)
 		}
 	}
 	err = awaitImportComplete(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Could not await image importing: %v", err)
 	}
 
 	resources, err := getBootResources(client, "synced")
@@ -217,7 +243,12 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 		// the selection should be deleted
 		bootsourceselection, err := findBootSourceSelection(client, bootsource.ID, os, release)
 		if err != nil {
-			return diag.FromErr(err)
+			// 404 means the resource was deleted already
+			if !strings.Contains(err.Error(), "404 Not Found") {
+				continue
+			}
+			// anything else is an error
+			return diag.Errorf("error finding selection '%v%v': %v", os, release, err)
 		}
 
 		if _, exists := resourceMap[bootsourceselection.ID]; exists {

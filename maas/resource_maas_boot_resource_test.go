@@ -3,7 +3,6 @@ package maas_test
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
@@ -24,9 +23,8 @@ func TestAccResourceMAASBootResources_basic(t *testing.T) {
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASBootResourcesCheckExists("maas_boot_resources.test", &bootresources),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.#", "3"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.0.os", "ubuntu"),
-		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.0.release", "mantic"),
+		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.#", "1"),
+		resource.TestCheckResourceAttrPair("maas_boot_resources.test", "boot_source_selections.0", "maas_boot_source_selection.mantic", "id"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -70,9 +68,20 @@ func testAccMAASBootResourcesCheckExists(rn string, bootReources *BootResources)
 			resourceMap[res.Name] = struct{}{}
 		}
 
+		// shenanigans! can't seem to access the selections and then key on top, so we treat it as a single key
+		count := rs.Primary.Attributes["boot_source_selections.#"]
+		selectionCount, err := strconv.Atoi(count)
+		if err != nil {
+			return err
+		}
+		if selectionCount < 1 {
+			return fmt.Errorf("Boot Resource does not contain any selections!")
+		}
+
 		var selectionSet []int
-		for _, sel := range strings.Split(rs.Primary.Attributes["boot_source_selection"], ",") {
-			selection_id, err := strconv.Atoi(sel)
+		for i := 0; i < selectionCount; i++ {
+			this_id := rs.Primary.Attributes[fmt.Sprintf("boot_source_selections.%d", i)]
+			selection_id, err := strconv.Atoi(this_id)
 			if err != nil {
 				return err
 			}
@@ -140,14 +149,21 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 		}
 		boot_source_id := bootsource[0].ID
 
-		// an empty string means no selections present
-		existing_selections := rs.Primary.Attributes["boot_source_selections"]
-		if existing_selections == "" {
-			continue
+		// Same shenanigans as above
+		count := rs.Primary.Attributes["boot_source_selections.#"]
+		
+		selectionCount, err := strconv.Atoi(count)
+		if err != nil {
+			return err
+		}
+		if selectionCount < 1 {
+			return fmt.Errorf("Boot Resource does not contain any selections!")
 		}
 
-		for _, selection := range strings.Split(existing_selections, ",") {
-			selection_id, err := strconv.Atoi(selection)
+		for i := 0; i < selectionCount; i++ {
+			this_id := rs.Primary.Attributes[fmt.Sprintf("boot_source_selections.%d", i)]
+			fmt.Printf("this id: %v", this_id)
+			selection_id, err := strconv.Atoi(this_id)
 			if err != nil {
 				return err
 			}
