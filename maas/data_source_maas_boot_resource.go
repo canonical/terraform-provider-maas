@@ -67,7 +67,7 @@ func dataSourceMaasBootResourcesRead(ctx context.Context, d *schema.ResourceData
 
 	err := awaitImportComplete(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Could not await image importing: %v", err)
 	}
 
 	resources, err := getBootResources(client, "synced")

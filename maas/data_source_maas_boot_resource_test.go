@@ -1,16 +1,19 @@
 package maas_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
+	"time"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -66,6 +69,9 @@ data "maas_boot_resources" "test" {
 func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+	if err := awaitImportComplete(conn); err != nil {
+		return fmt.Errorf("Could not await image importing: %v", err)
+	}
 
 	// loop through the resources in state
 	for _, rs := range s.RootModule().Resources {
@@ -74,7 +80,6 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 		}
 
 		response, err := conn.BootResources.Get(&entity.BootResourcesReadParams{Type: "synced"})
-		fmt.Printf("\nDS: RS: %#v", response)
 		if err != nil {
 			return fmt.Errorf("error getting synced boot resource: %s", err)
 		}
@@ -82,7 +87,6 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 		for _, res := range response {
 			resourceMap[res.Name] = struct{}{}
 		}
-		fmt.Printf("\nDS: RSm: %#v", resourceMap)
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		bootsource, err := conn.BootSources.Get()
@@ -91,8 +95,7 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 		}
 		boot_source_id := bootsource[0].ID
 
-		// Same shenanigans as above
-		fmt.Printf("\nDS: BR: %#v", rs.Primary.Attributes)
+		// we need to read each resource seperately
 		count := rs.Primary.Attributes["boot_resources.#"]
 		selectionCount, err := strconv.Atoi(count)
 		if err != nil {
@@ -114,17 +117,14 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 			}
 			os, release := parts[0], parts[1]
 
-			bootsourceselection, err := findBootSourceSelection(conn, boot_source_id, os, release)
-			if err != nil {
+			if bootsourceselection, err := findBootSourceSelection(conn, boot_source_id, os, release); err != nil {
 				// 404 means the resource was deleted already
 				if !strings.Contains(err.Error(), "404 Not Found") {
 					continue
 				}
 				// anything else is an error
 				return fmt.Errorf("error finding selection '%v': %v", this_name, err)
-			}
-
-			if bootsourceselection != nil {
+			} else if bootsourceselection != nil {
 				return fmt.Errorf("boot source selection (%s) was unexpectedly found on deleted resource", this_name)
 			}
 		}
@@ -134,14 +134,34 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 	return nil
 }
 
-func findBootSourceSelection(client *client.Client, boot_source int, os string, release string) (*entity.BootSourceSelection, error) {
-	bootsourceselections, err := client.BootSourceSelections.Get(boot_source)
-	if err != nil {
-		return nil, err
+func awaitImportComplete(client *client.Client) error {
+	if err := client.BootResources.Import(); err != nil {
+		return err
 	}
-	for _, d := range bootsourceselections {
-		if d.OS == os && d.Release == release {
-			return &d, nil
+	timeout := 40 * time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	result := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		if importing, err := client.BootResources.IsImporting(); err != nil {
+			return retry.NonRetryableError(err)
+		} else if importing {
+			return retry.RetryableError(fmt.Errorf("boot resources still importing, waiting... "))
+		}
+		return nil
+	})
+	// wait for everything to take effect
+	time.Sleep(10 * time.Second)
+	return result
+}
+
+func findBootSourceSelection(client *client.Client, boot_source int, os string, release string) (*entity.BootSourceSelection, error) {
+	if bootsourceselections, err := client.BootSourceSelections.Get(boot_source); err != nil {
+		return nil, err
+	} else {
+		for _, d := range bootsourceselections {
+			if d.OS == os && d.Release == release {
+				return &d, nil
+			}
 		}
 	}
 	return nil, nil

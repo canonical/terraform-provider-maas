@@ -272,27 +272,23 @@ func getBootResources(client *client.Client, synctype string) ([]entity.BootReso
 }
 
 func awaitImportComplete(client *client.Client) error {
-	err := client.BootResources.Import()
-	if err != nil {
+	if err := client.BootResources.Import(); err != nil {
 		return err
 	}
-
 	timeout := 40 * time.Minute
-
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-
-	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
-		importing, err := client.BootResources.IsImporting()
-		if err != nil {
+	result := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		if importing, err := client.BootResources.IsImporting(); err != nil {
 			return retry.NonRetryableError(err)
-		}
-
-		if importing {
+		} else if importing {
 			return retry.RetryableError(fmt.Errorf("boot resources still importing, waiting... "))
 		}
 		return nil
 	})
+	// wait for everything to take effect
+	time.Sleep(10 * time.Second)
+	return result
 }
 
 func unique(values []int) []int {
