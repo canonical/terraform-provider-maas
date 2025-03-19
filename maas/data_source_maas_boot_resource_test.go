@@ -2,10 +2,16 @@ package maas_test
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDataSourceMaasBootResources_basic(t *testing.T) {
@@ -35,18 +41,18 @@ func TestAccDataSourceMaasBootResources_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASBootResourcesDestroy,
+		CheckDestroy: testAccCheckDataSourceMaasBootResourcesDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootReources(os, release, arches, subarches, labels),
+				Config: testAccDataSourceMaasBootResources(os, release, arches, subarches, labels),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootReources(os string, release string, arches []string, subarches []string, labels []string) string {
+func testAccDataSourceMaasBootResources(os string, release string, arches []string, subarches []string, labels []string) string {
 	return fmt.Sprintf(`
 %s
 
@@ -55,4 +61,88 @@ data "maas_boot_resources" "test" {
 	release = maas_boot_source_selection.test.release
 }
 `, testAccMAASBootSourceSelection(os, release, arches, subarches, labels))
+}
+
+func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
+	// retrieve the connection established in Provider configuration
+	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
+	// loop through the resources in state
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "maas_boot_resources" {
+			continue
+		}
+
+		response, err := conn.BootResources.Get(&entity.BootResourcesReadParams{Type: "synced"})
+		fmt.Printf("\nDS: RS: %#v", response)
+		if err != nil {
+			return fmt.Errorf("error getting synced boot resource: %s", err)
+		}
+		resourceMap := make(map[string]struct{})
+		for _, res := range response {
+			resourceMap[res.Name] = struct{}{}
+		}
+		fmt.Printf("\nDS: RSm: %#v", resourceMap)
+
+		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+		bootsource, err := conn.BootSources.Get()
+		if err != nil {
+			return fmt.Errorf("error fetching boot sources: %v", err)
+		}
+		boot_source_id := bootsource[0].ID
+
+		// Same shenanigans as above
+		fmt.Printf("\nDS: BR: %#v", rs.Primary.Attributes)
+		count := rs.Primary.Attributes["boot_resources.#"]
+		selectionCount, err := strconv.Atoi(count)
+		if err != nil {
+			return fmt.Errorf("Could not convert %v to integer: %v", count, err)
+		}
+		if selectionCount < 1 {
+			return fmt.Errorf("Boot Resource does not contain any selections!")
+		}
+
+		for i := 0; i < selectionCount; i++ {
+			this_name := rs.Primary.Attributes[fmt.Sprintf("boot_resources.%d.name", i)]
+			if _, exists := resourceMap[this_name]; exists {
+				return fmt.Errorf("Boot Resource still exists for %s", this_name)
+			}
+
+			parts := strings.SplitN(this_name, "/", 2)
+			if len(parts) < 2 {
+				return fmt.Errorf("Invalid resource name: %s", this_name)
+			}
+			os, release := parts[0], parts[1]
+
+			bootsourceselection, err := findBootSourceSelection(conn, boot_source_id, os, release)
+			if err != nil {
+				// 404 means the resource was deleted already
+				if !strings.Contains(err.Error(), "404 Not Found") {
+					continue
+				}
+				// anything else is an error
+				return fmt.Errorf("error finding selection '%v': %v", this_name, err)
+			}
+
+			if bootsourceselection != nil {
+				return fmt.Errorf("boot source selection (%s) was unexpectedly found on deleted resource", this_name)
+			}
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func findBootSourceSelection(client *client.Client, boot_source int, os string, release string) (*entity.BootSourceSelection, error) {
+	bootsourceselections, err := client.BootSourceSelections.Get(boot_source)
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range bootsourceselections {
+		if d.OS == os && d.Release == release {
+			return &d, nil
+		}
+	}
+	return nil, nil
 }
