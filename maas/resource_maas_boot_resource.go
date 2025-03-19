@@ -286,8 +286,13 @@ func awaitImportComplete(client *client.Client) error {
 		}
 		return nil
 	})
-	// wait for everything to take effect
-	time.Sleep(10 * time.Second)
+	// add a small delay to ensure the resources are fully updated
+	if err := retry.RetryContext(ctx, 10*time.Second, func() *retry.RetryError {
+		return nil
+	}); err != nil {
+		return fmt.Errorf("error after waiting 10 seconds: %s", err)
+	}
+
 	return result
 }
 
