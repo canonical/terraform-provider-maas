@@ -43,12 +43,12 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 
 	err := awaitImportComplete(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Could not await image importing: %v", err)
 	}
 
 	resources, err := getBootResources(client, "synced")
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error fetching synced boot resources: %v", err)
 	}
 	resourceMap := make(map[string]struct{})
 	for _, res := range resources {
@@ -61,14 +61,14 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 	bootsource, err := getBootSource(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error fetching boot source: %v", err)
 	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	for _, bootselection := range bootselections {
 		bootselection, err := getBootSourceSelection(client, bootsource.ID, bootselection.(int))
 		if err != nil {
-			return diag.FromErr(err)
+			return diag.Errorf("error fetching boot selection %v: %s", bootselection, err)
 		}
 
 		// check the selection has it's resource created
@@ -85,16 +85,16 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 
 	err := awaitImportComplete(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Could not await image importing: %v", err)
 	}
 
 	resources, err := getBootResources(client, "synced")
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error fetching synced boot resources: %v", err)
 	}
 	bootsource, err := getBootSource(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error fetching boot source: %v", err)
 	}
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
@@ -127,7 +127,7 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 
 		selection, err := getBootSourceSelectionByRelease(client, bootsource.ID, os, release)
 		if err != nil {
-			return diag.FromErr(err)
+			return diag.Errorf("error fetching boot selection '%v/%v': %v", os, release, err)
 		}
 		if selection == nil {
 			log.Printf("[DEBUG] No selection found in MAAS for %s %s\n", os, release)
@@ -159,12 +159,12 @@ func resourceBootResourcesUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	err := awaitImportComplete(client)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Could not await image importing: %v", err)
 	}
 
 	resources, err := getBootResources(client, "synced")
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error fetching synced boot resources: %v", err)
 	}
 	resourceMap := make(map[string]struct{})
 	for _, res := range resources {
@@ -180,7 +180,7 @@ func resourceBootResourcesUpdate(ctx context.Context, d *schema.ResourceData, me
 	for _, selection := range selections {
 		bootselection, err := getBootSourceSelection(client, bootsource.ID, selection)
 		if err != nil {
-			return diag.FromErr(err)
+			return diag.Errorf("error fetching boot selection %v: %s", bootselection, err)
 		}
 
 		if _, exists := resourceMap[fmt.Sprintf("%s/%s", bootselection.OS, bootselection.Release)]; !exists {
@@ -231,7 +231,7 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 
 	resources, err := getBootResources(client, "synced")
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error fetching synced boot resources: %v", err)
 	}
 	for _, resource := range resources {
 		parts := strings.SplitN(resource.Name, "/", 2)
@@ -248,7 +248,7 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 				continue
 			}
 			// anything else is an error
-			return diag.Errorf("error finding selection '%v%v': %v", os, release, err)
+			return diag.Errorf("error finding selection '%v/%v': %v", os, release, err)
 		}
 
 		if _, exists := resourceMap[bootsourceselection.ID]; exists {

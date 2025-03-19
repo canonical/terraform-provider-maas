@@ -55,13 +55,13 @@ func testAccMAASBootResourcesCheckExists(rn string, bootReources *BootResources)
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		bootsource, err := conn.BootSources.Get()
 		if err != nil {
-			return err
+			return fmt.Errorf("error fetching boot sources: %v", err)
 		}
 		boot_source_id := bootsource[0].ID
 
 		gotBootResources, err := conn.BootResources.Get(&entity.BootResourcesReadParams{Type: "synced"})
 		if err != nil {
-			return fmt.Errorf("error getting boot resource: %s", err)
+			return fmt.Errorf("error fetching synced boot resources: %s", err)
 		}
 		resourceMap := make(map[string]struct{})
 		for _, res := range gotBootResources {
@@ -72,7 +72,7 @@ func testAccMAASBootResourcesCheckExists(rn string, bootReources *BootResources)
 		count := rs.Primary.Attributes["boot_source_selections.#"]
 		selectionCount, err := strconv.Atoi(count)
 		if err != nil {
-			return err
+			return fmt.Errorf("Could not convert %v to integer: %v", count, err)
 		}
 		if selectionCount < 1 {
 			return fmt.Errorf("Boot Resource does not contain any selections!")
@@ -83,12 +83,12 @@ func testAccMAASBootResourcesCheckExists(rn string, bootReources *BootResources)
 			this_id := rs.Primary.Attributes[fmt.Sprintf("boot_source_selections.%d", i)]
 			selection_id, err := strconv.Atoi(this_id)
 			if err != nil {
-				return err
+				return fmt.Errorf("Could not convert %v to integer: %v", this_id, err)
 			}
 
 			selection, err := conn.BootSourceSelection.Get(boot_source_id, selection_id)
 			if err != nil {
-				return err
+				return fmt.Errorf("error fetching boot selection %d: %s", selection_id, err)
 			}
 			if _, exists := resourceMap[fmt.Sprintf("%s/%s", selection.OS, selection.Release)]; !exists {
 				return fmt.Errorf("Boot Resource missing for %s/%s", selection.OS, selection.Release)
@@ -135,7 +135,7 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 
 		response, err := conn.BootResources.Get(&entity.BootResourcesReadParams{Type: "synced"})
 		if err != nil {
-			return err
+			return fmt.Errorf("error getting synced boot resource: %s", err)
 		}
 		resourceMap := make(map[string]struct{})
 		for _, res := range response {
@@ -145,16 +145,15 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		bootsource, err := conn.BootSources.Get()
 		if err != nil {
-			return err
+			return fmt.Errorf("error fetching boot sources: %v", err)
 		}
 		boot_source_id := bootsource[0].ID
 
 		// Same shenanigans as above
 		count := rs.Primary.Attributes["boot_source_selections.#"]
-		
 		selectionCount, err := strconv.Atoi(count)
 		if err != nil {
-			return err
+			return fmt.Errorf("Could not convert %v to integer: %v", count, err)
 		}
 		if selectionCount < 1 {
 			return fmt.Errorf("Boot Resource does not contain any selections!")
@@ -162,14 +161,13 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 
 		for i := 0; i < selectionCount; i++ {
 			this_id := rs.Primary.Attributes[fmt.Sprintf("boot_source_selections.%d", i)]
-			fmt.Printf("this id: %v", this_id)
 			selection_id, err := strconv.Atoi(this_id)
 			if err != nil {
-				return err
+				return fmt.Errorf("Could not convert %v to integer: %v", this_id, err)
 			}
 			bootselection, err := conn.BootSourceSelection.Get(boot_source_id, selection_id)
 			if err != nil {
-				return err
+				return fmt.Errorf("error fetching boot selection %d: %s", selection_id, err)
 			}
 			if _, exists := resourceMap[fmt.Sprintf("%s/%s", bootselection.OS, bootselection.Release)]; exists {
 				return fmt.Errorf("Boot Resource still exists for %s/%s", bootselection.OS, bootselection.Release)
