@@ -79,6 +79,14 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 			continue
 		}
 
+		// fetch the boot source
+		bootsource, err := conn.BootSources.Get()
+		if err != nil {
+			return fmt.Errorf("error fetching boot sources: %v", err)
+		}
+		boot_source_id := bootsource[0].ID
+
+		// fetch all the synced resources
 		response, err := conn.BootResources.Get(&entity.BootResourcesReadParams{Type: "synced"})
 		if err != nil {
 			return fmt.Errorf("error getting synced boot resource: %s", err)
@@ -87,13 +95,6 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 		for _, res := range response {
 			resourceMap[res.Name] = struct{}{}
 		}
-
-		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-		bootsource, err := conn.BootSources.Get()
-		if err != nil {
-			return fmt.Errorf("error fetching boot sources: %v", err)
-		}
-		boot_source_id := bootsource[0].ID
 
 		// we need to read each resource seperately
 		count := rs.Primary.Attributes["boot_resources.#"]
@@ -105,6 +106,7 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 			return fmt.Errorf("Boot Resource does not contain any selections!")
 		}
 
+		// check each resource has been deleted
 		for i := 0; i < selectionCount; i++ {
 			this_name := rs.Primary.Attributes[fmt.Sprintf("boot_resources.%d.name", i)]
 			if _, exists := resourceMap[this_name]; exists {
@@ -141,6 +143,7 @@ func awaitImportComplete(client *client.Client) error {
 	timeout := 40 * time.Minute
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+	// wait for the import to complete
 	result := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
 		if importing, err := client.BootResources.IsImporting(); err != nil {
 			return retry.NonRetryableError(err)
