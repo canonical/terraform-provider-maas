@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMAASBootResources() *schema.Resource {
+func ResourceMaasBootResources() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS bootresources.",
 		CreateContext: resourceBootResourcesCreate,
