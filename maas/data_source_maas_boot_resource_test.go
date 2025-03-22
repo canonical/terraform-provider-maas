@@ -60,7 +60,7 @@ data "maas_boot_resources" "test" {
 	os      = maas_boot_source_selection.test.os
 	release = maas_boot_source_selection.test.release
 }
-`, testAccMAASBootSourceSelection(os, release, arches, subarches, labels))
+`, testAccMaasBootSourceSelection(os, release, arches, subarches, labels))
 }
 
 func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {

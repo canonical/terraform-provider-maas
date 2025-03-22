@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMAASBootSourceSelection() *schema.Resource {
+func resourceMaasBootSourceSelection() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage a MAAS boot source selection.",
 		CreateContext: resourceBootSourceSelectionCreate,

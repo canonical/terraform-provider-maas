@@ -24,7 +24,7 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASBootSourceDestroy,
+		CheckDestroy: testAccCheckMaasBootSourceDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
@@ -39,5 +39,5 @@ func testAccDataSourceMaasBootSource(url string, keyring_path string) string {
 	return fmt.Sprintf(`
 %s
 
-data "maas_boot_source" "test" {}`, testAccMAASBootSource(url, keyring_path))
+data "maas_boot_source" "test" {}`, testAccMaasBootSource(url, keyring_path))
 }
