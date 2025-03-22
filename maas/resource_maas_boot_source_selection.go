@@ -149,8 +149,7 @@ func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData
 func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	err := awaitImportComplete(client)
-	if err != nil {
+	if err := awaitImportComplete(client); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -181,17 +180,24 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	err := awaitImportComplete(client)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return diag.FromErr(client.BootSourceSelection.Delete(d.Get("boot_source").(int), id))
+	if err := client.BootSourceSelection.Delete(d.Get("boot_source").(int), id); err != nil {
+		// 404 means the resource was deleted already
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		}
+		return diag.FromErr(err)
+	}
+
+	if err := awaitImportComplete(client); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
 }
 
 func getBootSourceSelection(client *client.Client, boot_source int, id int) (*entity.BootSourceSelection, error) {

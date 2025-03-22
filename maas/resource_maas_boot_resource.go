@@ -56,6 +56,7 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	bootselections := d.Get("boot_source_selections").(*schema.Set).List()
+
 	if len(bootselections) == 0 {
 		return diag.Errorf("At least one boot source selection must be added to the boot resources")
 	}
@@ -63,8 +64,10 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.Errorf("error fetching boot source: %v", err)
 	}
+	d.Set("boot_source", bootsource.ID)
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
+	var selectionSet []int
 	for _, bootselection := range bootselections {
 		bootselection, err := getBootSourceSelection(client, bootsource.ID, bootselection.(int))
 		if err != nil {
@@ -75,6 +78,10 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 		if _, exists := resourceMap[fmt.Sprintf("%s/%s", bootselection.OS, bootselection.Release)]; !exists {
 			return diag.Errorf("Boot Resource missing for %s/%s", bootselection.OS, bootselection.Release)
 		}
+		selectionSet = append(selectionSet, bootselection.ID)
+	}
+	if err := d.Set("boot_source_selections", unique(selectionSet)); err != nil {
+		return diag.Errorf("Failed to set boot_source_selections: %v", err)
 	}
 
 	return resourceBootResourcesRead(ctx, d, meta)
@@ -88,6 +95,19 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("Could not await image importing: %v", err)
 	}
 
+	selections := d.Get("boot_source_selections").(*schema.Set).List()
+	if selections == nil {
+		return diag.Errorf("boot_source_selection is missing from Resources state")
+	}
+	selectionMap := make(map[int]struct{})
+	for _, sel := range selections {
+		if id, ok := sel.(int); ok {
+			selectionMap[id] = struct{}{}
+		} else {
+			log.Printf("[DEBUG] Invalid selection ID found in state: %v", sel)
+		}
+	}
+
 	resources, err := getBootResources(client, "synced")
 	if err != nil {
 		return diag.Errorf("error fetching synced boot resources: %v", err)
@@ -95,20 +115,6 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.Errorf("error fetching boot source: %v", err)
-	}
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
-
-	selections := d.Get("boot_source_selections")
-	if selections == nil {
-		return diag.Errorf("boot_source_selection is missing from Resources state")
-	}
-	selectionMap := make(map[int]struct{})
-	for _, sel := range selections.(*schema.Set).List() {
-		if id, ok := sel.(int); ok {
-			selectionMap[id] = struct{}{}
-		} else {
-			log.Printf("[DEBUG] Invalid selection ID found in state: %v", sel)
-		}
 	}
 
 	// TODO: This seems unclean, is there a smarter way to get the selection IDs?
@@ -132,11 +138,11 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 		if selection == nil {
 			log.Printf("[DEBUG] No selection found in MAAS for %s %s\n", os, release)
 		}
-		if _, exists := selectionMap[res.ID]; exists {
+		if _, exists := selectionMap[selection.ID]; !exists {
+			log.Printf("[DEBUG] %s %s found in MAAS but not attached to resource\n", os, release)
+		} else {
 			selectionSet = append(selectionSet, selection.ID)
 			log.Printf("[DEBUG] %s %s found in MAAS attached to resource\n", os, release)
-		} else {
-			log.Printf("[DEBUG] %s %s found in MAAS but not attached to resource\n", os, release)
 		}
 	}
 
@@ -145,8 +151,10 @@ func resourceBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta
 		"boot_source_selections": unique(selectionSet),
 	}
 
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
+
 	if err := setTerraformState(d, tfState); err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Could not apply terraform state: %v", err)
 	}
 
 	return nil
@@ -240,11 +248,16 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 		}
 		os, release := parts[0], parts[1]
 
+		if strings.Contains(os, "efi") || strings.Contains(os, "pxe") || strings.Contains(os, "grub") {
+			continue
+		}
+
 		// the selection should be deleted
 		bootsourceselection, err := findBootSourceSelection(client, bootsource.ID, os, release)
 		if err != nil {
+			fmt.Printf("error finding: %#v: %v", err, strings.Contains(err.Error(), "404 Not Found"))
 			// 404 means the resource was deleted already
-			if !strings.Contains(err.Error(), "404 Not Found") {
+			if strings.Contains(err.Error(), "404 Not Found") {
 				continue
 			}
 			// anything else is an error
@@ -256,7 +269,12 @@ func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	return resourceBootResourcesRead(ctx, d, meta)
+	err = awaitImportComplete(client)
+	if err != nil {
+		return diag.Errorf("Could not await image importing: %v", err)
+	}
+
+	return nil
 }
 
 func getBootResources(client *client.Client, synctype string) ([]entity.BootResource, error) {
@@ -304,11 +322,9 @@ func unique(values []int) []int {
 	}
 
 	// convert from mapping to slice, with pre-alloc of memory
-	output := make([]int, len(foundValues))
-	i := 0
+	output := make([]int, 0, len(foundValues))
 	for k := range foundValues {
-		output[i] = k
-		i++
+		output = append(output, k)
 	}
 	return output
 }
