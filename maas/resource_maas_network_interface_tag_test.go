@@ -64,6 +64,17 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 				ResourceName:      "maas_network_interface_tag.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["maas_network_interface_tag.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", "maas_network_interface_tag.test")
+					}
+
+					if rs.Primary.ID == "" {
+						return "", fmt.Errorf("resource id not set")
+					}
+					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["device"], rs.Primary.Attributes["interface_id"]), nil
+				},
 			},
 		},
 	})
