@@ -29,8 +29,8 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 	hostname := acctest.RandomWithPrefix("tf")
 	macAddress := testutils.RandomMAC()
 	tagName := acctest.RandomWithPrefix("tag")
-	tagName2 := acctest.RandomWithPrefix("tag2")
-	tagName3 := acctest.RandomWithPrefix("tag3")
+	tagName2 := acctest.RandomWithPrefix("tag")
+	tagName3 := acctest.RandomWithPrefix("tag")
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
@@ -72,14 +72,14 @@ func testAccMaasNetworkInterfaceTagConfig(hostname, macAddress string, tagNames 
 resource "maas_device" "test" {
   hostname = %q
   network_interfaces {
-	mac_address = %q 
+    mac_address = %q
   }
 }
 
 resource "maas_network_interface_tag" "test" {
-  device = maas_device.test.id
+  device       = maas_device.test.id
   interface_id = [for iface in maas_device.test.network_interfaces : iface.id if iface.mac_address == %q][0]
-  tags = %s
+  tags         = %s
 }
 	`, hostname, macAddress, macAddress, fmt.Sprintf("[\"%s\"]", strings.Join(tagNames, "\", \"")))
 }

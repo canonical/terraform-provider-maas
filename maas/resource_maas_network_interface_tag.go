@@ -110,7 +110,9 @@ func resourceNetworkInterfaceTagCreate(ctx context.Context, d *schema.ResourceDa
 
 	// Add tags that are in the desired set. AddTag will not add duplicates.
 	for _, tag := range desiredTags {
-		client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+		if !slices.Contains(existingInterface.Tags, tag) {
+			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+		}
 	}
 
 	// Create the resource ID in state. A unique resource for every interface.
