@@ -2,14 +2,16 @@ package maas_test
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
+
+	"terraform-provider-maas/maas"
+	"terraform-provider-maas/maas/testutils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"terraform-provider-maas/maas"
-	"terraform-provider-maas/maas/testutils"
 )
 
 func TestSplitTagStateId(t *testing.T) {
@@ -41,7 +43,7 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 			{
 				Config: testAccMaasNetworkInterfaceTagConfig(hostname, macAddress, tagName, tagName2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasNetworkInterfaceTagExists("maas_network_interface_tag.test"),
+					testAccCheckMaasNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName, tagName2),
 					resource.TestCheckResourceAttr("maas_network_interface_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName2),
@@ -51,7 +53,7 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 			{
 				Config: testAccMaasNetworkInterfaceTagConfig(hostname, macAddress, tagName2, tagName3),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasNetworkInterfaceTagExists("maas_network_interface_tag.test"),
+					testAccCheckMaasNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName2, tagName3),
 					resource.TestCheckResourceAttr("maas_network_interface_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName2),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName3),
@@ -84,17 +86,19 @@ resource "maas_network_interface_tag" "test" {
 	`, hostname, macAddress, macAddress, fmt.Sprintf("[\"%s\"]", strings.Join(tagNames, "\", \"")))
 }
 
-func testAccCheckMaasNetworkInterfaceTagExists(resourceName string) resource.TestCheckFunc {
+func testAccCheckMaasNetworkInterfaceTagExists(resourceName string, tagNames ...string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("Not found: %s", resourceName)
 		}
+		// Get the system and interface ID from the state ID
 		systemId, interfaceId, err := maas.SplitTagStateId(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
+		// Get the existing interface
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		response, err := conn.NetworkInterface.Get(systemId, interfaceId)
 		if err != nil {
@@ -103,6 +107,14 @@ func testAccCheckMaasNetworkInterfaceTagExists(resourceName string) resource.Tes
 		if response == nil {
 			return fmt.Errorf("MAAS Network Interface (%s) not found.", rs.Primary.ID)
 		}
+
+		// Check the tags exist
+		for _, tag := range tagNames {
+			if !slices.Contains(response.Tags, tag) {
+				return fmt.Errorf("MAAS Network Interface (%s) tags (%s) do not match expected tags: %s", rs.Primary.ID, response.Tags, tagNames)
+			}
+		}
+
 		return nil
 	}
 }
