@@ -152,7 +152,7 @@ func testAccCheckMaasNetworkInterfaceDestroy(s *terraform.State) error {
 				return fmt.Errorf("MAAS Network Interface (%s) still exists.", rs.Primary.ID)
 			}
 		}
-		// If the error is a 404, the interface is destroyed as expected
+		// If the error is not a 404, the interface has not been destroyed as it should have been
 		if !strings.Contains(err.Error(), "404 Not Found") {
 			return err
 		}
