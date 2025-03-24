@@ -167,9 +167,11 @@ func resourceNetworkInterfaceTagUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 	}
 
-	// Add tags that are in the specified set. AddTag will not add duplicates.
+	// Add tags that are in the specified set.
 	for _, tag := range desiredTags {
-		client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+		if !slices.Contains(existingTags, tag) {
+			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+		}
 	}
 	return resourceNetworkInterfaceTagRead(ctx, d, meta)
 }
