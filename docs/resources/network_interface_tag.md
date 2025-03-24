@@ -3,19 +3,19 @@
 page_title: "maas_network_interface_tag Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage tags as strings on a network interface that is not managed by Terraform. It is highly recommended to not use this resource to manage tags on network interfaces that are already managed by Terraform, as this will cause conflicts and will overwrite the tags already set. Use the nested tags attribute on resources such as maas_network_interface_physical if you need to to do this.
+  Provides a resource to manage tags as strings on a network interface.
 ---
 
 # maas_network_interface_tag (Resource)
 
-Provides a resource to manage tags as strings on a network interface that is not managed by Terraform. It is highly recommended to not use this resource to manage tags on network interfaces that are already managed by Terraform, as this will cause conflicts and will overwrite the tags already set. Use the nested `tags` attribute on resources such as `maas_network_interface_physical` if you need to to do this.
+Provides a resource to manage tags as strings on a network interface.
 
 ## Example Usage
 
 ```terraform
 resource "maas_network_interface_tag" "test" {
   machine      = "abc123"
-  interface_id = "12"
+  interface_id = 12
   tags = [
     "tag1",
     "tag2",
@@ -24,7 +24,7 @@ resource "maas_network_interface_tag" "test" {
 
 resource "maas_network_interface_tag" "test2" {
   device       = "cheerful-owl"
-  interface_id = "13"
+  interface_id = 13
   tags = [
     "tag3",
     "tag4",
@@ -33,7 +33,7 @@ resource "maas_network_interface_tag" "test2" {
 
 resource "maas_network_interface_tag" "test3" {
   device       = "def456"
-  interface_id = "14"
+  interface_id = 14
   tags = [
     "tag3",
     "tag4",
@@ -64,5 +64,5 @@ Import is supported using the following syntax:
 
 ```shell
 # A network interface tag can be imported using the machine or device system id and the network interface id. e.g.
-$ terraform import maas_network_interface_tag.test abc123/12
+$ terraform import maas_network_interface_tag.test abc123:12
 ```
