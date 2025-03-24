@@ -15,7 +15,7 @@ import (
 )
 
 func TestSplitTagStateId(t *testing.T) {
-	expectedSystemId := "acb123"
+	expectedSystemId := "abc123"
 	expectedInterfaceId := 12
 	stateId := fmt.Sprintf("%s:%d", expectedSystemId, expectedInterfaceId)
 	systemId, interfaceId, err := maas.SplitTagStateId(stateId)
