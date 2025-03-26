@@ -14,7 +14,7 @@ Provides a resource to manage tags as strings on a block device.
 
 ```terraform
 resource "maas_block_device_tag" "test" {
-  machine      = "abc123"
+  machine         = "abc123"
   block_device_id = 12
   tags = [
     "tag1",
@@ -23,7 +23,7 @@ resource "maas_block_device_tag" "test" {
 }
 
 resource "maas_block_device_tag" "test2" {
-  machine       = "amazed-kiwi"
+  machine         = "amazed-kiwi"
   block_device_id = 13
   tags = [
     "tag3",
@@ -51,5 +51,5 @@ Import is supported using the following syntax:
 
 ```shell
 # A block device tag can be imported using the machine system id and the block device id. e.g.
-$ terraform import maas_block_device_tag.test abc123:12
+$ terraform import maas_block_device_tag.test abc123/12
 ```
