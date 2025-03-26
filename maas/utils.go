@@ -150,7 +150,7 @@ func getMachineOrDeviceTypeFromSystemID(client *client.Client, systemID string) 
 		return "device", nil
 	}
 
-	if !strings.Contains(err.Error(), "404 Not Found") {
+	if !strings.Contains(err.Error(), fmt.Sprintf("device (%s) was not found", systemID)) {
 		return "", fmt.Errorf("error getting device for system ID (%s): %w", systemID, err)
 	}
 
@@ -159,7 +159,7 @@ func getMachineOrDeviceTypeFromSystemID(client *client.Client, systemID string) 
 		return "machine", nil
 	}
 
-	if !strings.Contains(err.Error(), "404 Not Found") {
+	if !strings.Contains(err.Error(), fmt.Sprintf("machine (%s) was not found", systemID)) {
 		return "", fmt.Errorf("error getting machine for system ID (%s): %w", systemID, err)
 	}
 

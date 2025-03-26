@@ -27,6 +27,7 @@ func resourceMaasDevice() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
+
 		Schema: map[string]*schema.Schema{
 			"description": {
 				Type:        schema.TypeString,

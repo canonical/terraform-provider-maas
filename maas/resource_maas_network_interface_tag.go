@@ -13,7 +13,7 @@ import (
 
 func resourceMaasNetworkInterfaceTag() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage tags as strings on a network interface that is not managed by Terraform. It is highly recommended to not use this resource to manage tags on network interfaces that are already managed by Terraform, as this will cause conflicts and will overwrite the tags already set. Use the nested `tags` attribute on resources such as `maas_network_interface_physical` if you need to to do this.",
+		Description:   "Provides a resource to manage tags as strings on a network interface.",
 		CreateContext: resourceNetworkInterfaceTagCreate,
 		ReadContext:   resourceNetworkInterfaceTagRead,
 		UpdateContext: resourceNetworkInterfaceTagUpdate,
@@ -110,7 +110,9 @@ func resourceNetworkInterfaceTagCreate(ctx context.Context, d *schema.ResourceDa
 
 	// Add tags that are in the desired set. AddTag will not add duplicates.
 	for _, tag := range desiredTags {
-		client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+		if !slices.Contains(existingInterface.Tags, tag) {
+			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+		}
 	}
 
 	// Create the resource ID in state. A unique resource for every interface.
@@ -126,7 +128,8 @@ func resourceNetworkInterfaceTagRead(ctx context.Context, d *schema.ResourceData
 	systemId, interfaceId, err := SplitTagStateId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
-	} // Get the existing interface
+	}
+	// Get the existing interface
 	existingInterface, err := client.NetworkInterface.Get(systemId, interfaceId)
 	if err != nil {
 		return diag.FromErr(err)
@@ -165,9 +168,11 @@ func resourceNetworkInterfaceTagUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 	}
 
-	// Add tags that are in the specified set. AddTag will not add duplicates.
+	// Add tags that are in the specified set
 	for _, tag := range desiredTags {
-		client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+		if !slices.Contains(existingTags, tag) {
+			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+		}
 	}
 	return resourceNetworkInterfaceTagRead(ctx, d, meta)
 }
