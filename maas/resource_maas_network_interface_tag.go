@@ -104,14 +104,20 @@ func resourceNetworkInterfaceTagCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	for _, tag := range existingInterface.Tags {
 		if !slices.Contains(desiredTags, tag) {
-			client.NetworkInterface.RemoveTag(systemId, interfaceId, tag)
+			_, err := client.NetworkInterface.RemoveTag(systemId, interfaceId, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
 	// Add tags that are in the desired set. AddTag will not add duplicates.
 	for _, tag := range desiredTags {
 		if !slices.Contains(existingInterface.Tags, tag) {
-			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+			_, err := client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -164,14 +170,20 @@ func resourceNetworkInterfaceTagUpdate(ctx context.Context, d *schema.ResourceDa
 	// Remove tags that are not in the specified set
 	for _, tag := range existingTags {
 		if !slices.Contains(desiredTags, tag) {
-			client.NetworkInterface.RemoveTag(systemId, interfaceId, tag)
+			_, err := client.NetworkInterface.RemoveTag(systemId, interfaceId, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
 	// Add tags that are in the specified set
 	for _, tag := range desiredTags {
 		if !slices.Contains(existingTags, tag) {
-			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+			_, err := client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 	return resourceNetworkInterfaceTagRead(ctx, d, meta)
