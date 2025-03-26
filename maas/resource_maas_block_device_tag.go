@@ -28,7 +28,7 @@ func resourceMaasBlockDeviceTag() *schema.Resource {
 					return nil, err
 				}
 
-				d.SetId(fmt.Sprintf("%v:%v", blockDevice.SystemID, blockDevice.ID))
+				d.SetId(fmt.Sprintf("%v/%v", blockDevice.SystemID, blockDevice.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -92,7 +92,7 @@ func resourceBlockDeviceTagCreate(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	d.SetId(fmt.Sprintf("%v:%v", machine.SystemID, blockDevice.ID))
+	d.SetId(fmt.Sprintf("%v/%v", machine.SystemID, blockDevice.ID))
 
 	return nil
 }
