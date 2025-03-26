@@ -47,7 +47,7 @@ func resourceMaasNetworkInterfaceTag() *schema.Resource {
 					}
 				}
 				// Set the resource ID
-				d.SetId(fmt.Sprintf("%v:%v", existingInterface.SystemID, existingInterface.ID))
+				d.SetId(fmt.Sprintf("%v/%v", existingInterface.SystemID, existingInterface.ID))
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -104,19 +104,25 @@ func resourceNetworkInterfaceTagCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	for _, tag := range existingInterface.Tags {
 		if !slices.Contains(desiredTags, tag) {
-			client.NetworkInterface.RemoveTag(systemId, interfaceId, tag)
+			_, err := client.NetworkInterface.RemoveTag(systemId, interfaceId, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
 	// Add tags that are in the desired set. AddTag will not add duplicates.
 	for _, tag := range desiredTags {
 		if !slices.Contains(existingInterface.Tags, tag) {
-			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+			_, err := client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
 	// Create the resource ID in state. A unique resource for every interface.
-	d.SetId(fmt.Sprintf("%v:%v", systemId, interfaceId))
+	d.SetId(fmt.Sprintf("%v/%v", systemId, interfaceId))
 
 	// Read the resource to update state
 	return resourceNetworkInterfaceTagRead(ctx, d, meta)
@@ -164,14 +170,20 @@ func resourceNetworkInterfaceTagUpdate(ctx context.Context, d *schema.ResourceDa
 	// Remove tags that are not in the specified set
 	for _, tag := range existingTags {
 		if !slices.Contains(desiredTags, tag) {
-			client.NetworkInterface.RemoveTag(systemId, interfaceId, tag)
+			_, err := client.NetworkInterface.RemoveTag(systemId, interfaceId, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
 	// Add tags that are in the specified set
 	for _, tag := range desiredTags {
 		if !slices.Contains(existingTags, tag) {
-			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+			_, err := client.NetworkInterface.AddTag(systemId, interfaceId, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 	return resourceNetworkInterfaceTagRead(ctx, d, meta)
@@ -197,7 +209,7 @@ func resourceNetworkInterfaceTagDelete(ctx context.Context, d *schema.ResourceDa
 
 // Split the state ID of a tag in the format system_id:interface_id into its component ids, where system_id is the system ID of the machine or device, and interface_id is the ID of the network interface.
 func SplitTagStateId(stateId string) (string, int, error) {
-	splitId := strings.SplitN(stateId, ":", 2)
+	splitId := strings.SplitN(stateId, "/", 2)
 	if len(splitId) != 2 {
 		return "", 0, fmt.Errorf("invalid resource ID: %s", stateId)
 	}

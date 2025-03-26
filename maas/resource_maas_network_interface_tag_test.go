@@ -17,7 +17,7 @@ import (
 func TestSplitTagStateId(t *testing.T) {
 	expectedSystemId := "abc123"
 	expectedInterfaceId := 12
-	stateId := fmt.Sprintf("%s:%d", expectedSystemId, expectedInterfaceId)
+	stateId := fmt.Sprintf("%s/%d", expectedSystemId, expectedInterfaceId)
 	systemId, interfaceId, err := maas.SplitTagStateId(stateId)
 	if err != nil {
 		t.Fatalf("Error splitting state ID: %s", err)
@@ -73,7 +73,7 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 					if rs.Primary.ID == "" {
 						return "", fmt.Errorf("resource id not set")
 					}
-					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["device"], rs.Primary.Attributes["interface_id"]), nil
+					return fmt.Sprintf("%s/%s", rs.Primary.Attributes["device"], rs.Primary.Attributes["interface_id"]), nil
 				},
 			},
 		},
