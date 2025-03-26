@@ -86,9 +86,9 @@ resource "maas_block_device" "test" {
 
 resource "maas_block_device_tag" "test" {
   block_device_id = maas_block_device.test.id
-  machine = maas_block_device.test.machine
-  tags = %s
-  }
+  machine         = maas_block_device.test.machine
+  tags            = %s
+}
 	`, hostname, name, fmt.Sprintf("[\"%s\"]", strings.Join(tagNames, "\", \"")))
 }
 
