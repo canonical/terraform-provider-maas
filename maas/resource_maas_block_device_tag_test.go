@@ -3,14 +3,16 @@ package maas_test
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"terraform-provider-maas/maas"
 	"testing"
 
+	"terraform-provider-maas/maas/testutils"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"terraform-provider-maas/maas/testutils"
 )
 
 func TestAccBlockDeviceTag_basic(t *testing.T) {
@@ -18,8 +20,8 @@ func TestAccBlockDeviceTag_basic(t *testing.T) {
 
 	blockDeviceName := acctest.RandomWithPrefix("tf")
 	tagName := acctest.RandomWithPrefix("tag")
-	tagName2 := acctest.RandomWithPrefix("tag2")
-	tagName3 := acctest.RandomWithPrefix("tag3")
+	tagName2 := acctest.RandomWithPrefix("tag")
+	tagName3 := acctest.RandomWithPrefix("tag")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
@@ -31,7 +33,7 @@ func TestAccBlockDeviceTag_basic(t *testing.T) {
 			{
 				Config: testAccBlockDeviceTagConfig(machine, blockDeviceName, tagName, tagName2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasBlockDeviceTagExists("maas_block_device_tag.test"),
+					testAccCheckMaasBlockDeviceTagExists("maas_block_device_tag.test", tagName, tagName2),
 					resource.TestCheckResourceAttr("maas_block_device_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName),
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName2),
@@ -41,7 +43,7 @@ func TestAccBlockDeviceTag_basic(t *testing.T) {
 			{
 				Config: testAccBlockDeviceTagConfig(machine, blockDeviceName, tagName2, tagName3),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasBlockDeviceTagExists("maas_block_device_tag.test"),
+					testAccCheckMaasBlockDeviceTagExists("maas_block_device_tag.test", tagName2, tagName3),
 					resource.TestCheckResourceAttr("maas_block_device_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName2),
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName3),
@@ -52,6 +54,17 @@ func TestAccBlockDeviceTag_basic(t *testing.T) {
 				ResourceName:      "maas_block_device_tag.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["maas_block_device_tag.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: maas_block_device_tag.test")
+					}
+
+					if rs.Primary.ID == "" {
+						return "", fmt.Errorf("resource id not set")
+					}
+					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["machine"], rs.Primary.Attributes["block_device_id"]), nil
+				},
 			},
 		},
 	})
@@ -79,7 +92,7 @@ resource "maas_block_device_tag" "test" {
 	`, hostname, name, fmt.Sprintf("[\"%s\"]", strings.Join(tagNames, "\", \"")))
 }
 
-func testAccCheckMaasBlockDeviceTagExists(resourceName string) resource.TestCheckFunc {
+func testAccCheckMaasBlockDeviceTagExists(resourceName string, tagNames ...string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
@@ -99,6 +112,13 @@ func testAccCheckMaasBlockDeviceTagExists(resourceName string) resource.TestChec
 		// Check the block device is the one expected
 		if blockDevice.ID != blockDeviceId {
 			return fmt.Errorf("MAAS Block Device (%v) ID mismatch: expected %v, got %v.", blockDevice.ID, blockDeviceId, blockDevice.ID)
+		}
+
+		// Check the tags exist
+		for _, tag := range tagNames {
+			if !slices.Contains(blockDevice.Tags, tag) {
+				return fmt.Errorf("MAAS Block Device (%d) tags (%s) do not match expected tags: %s", blockDevice.ID, blockDevice.Tags, tagNames)
+			}
 		}
 
 		return nil
