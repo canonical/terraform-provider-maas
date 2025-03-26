@@ -128,7 +128,8 @@ func resourceNetworkInterfaceTagRead(ctx context.Context, d *schema.ResourceData
 	systemId, interfaceId, err := SplitTagStateId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
-	} // Get the existing interface
+	}
+	// Get the existing interface
 	existingInterface, err := client.NetworkInterface.Get(systemId, interfaceId)
 	if err != nil {
 		return diag.FromErr(err)
@@ -167,7 +168,7 @@ func resourceNetworkInterfaceTagUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 	}
 
-	// Add tags that are in the specified set.
+	// Add tags that are in the specified set
 	for _, tag := range desiredTags {
 		if !slices.Contains(existingTags, tag) {
 			client.NetworkInterface.AddTag(systemId, interfaceId, tag)
