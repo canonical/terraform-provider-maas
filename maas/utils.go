@@ -141,3 +141,27 @@ func getMachineOrDeviceSystemID(client *client.Client, d *schema.ResourceData) (
 	}
 	return "", fmt.Errorf("either `machine` or `device` is required")
 }
+
+// Get the type of the relevant entity from the system ID, by checking if the device or machine exists in MAAS.
+// This gets all devices, then all machines, so is not efficient and should be used sparingly.
+func getMachineOrDeviceTypeFromSystemID(client *client.Client, systemID string) (string, error) {
+	device, err := getDevice(client, systemID)
+	if err == nil && device != nil {
+		return "device", nil
+	}
+
+	if !strings.Contains(err.Error(), fmt.Sprintf("device (%s) was not found", systemID)) {
+		return "", fmt.Errorf("error getting device for system ID (%s): %w", systemID, err)
+	}
+
+	machine, err := getMachine(client, systemID)
+	if err == nil && machine != nil {
+		return "machine", nil
+	}
+
+	if !strings.Contains(err.Error(), fmt.Sprintf("machine (%s) was not found", systemID)) {
+		return "", fmt.Errorf("error getting machine for system ID (%s): %w", systemID, err)
+	}
+
+	return "", fmt.Errorf("system ID (%s) was not found as either a device or machine", systemID)
+}

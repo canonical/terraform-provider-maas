@@ -73,6 +73,7 @@ func Provider() *schema.Provider {
 			"maas_space":                      resourceMaasSpace(),
 			"maas_block_device":               resourceMaasBlockDevice(),
 			"maas_tag":                        resourceMaasTag(),
+			"maas_network_interface_tag":      resourceMaasNetworkInterfaceTag(),
 			"maas_user":                       resourceMaasUser(),
 			"maas_resource_pool":              resourceMaasResourcePool(),
 			"maas_zone":                       resourceMaasZone(),
