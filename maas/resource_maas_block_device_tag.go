@@ -11,7 +11,7 @@ import (
 
 func resourceMaasBlockDeviceTag() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage tags as strings on a block device that is not managed by Terraform. It is highly recommended to not use this resource to manage tags on block devices that are already managed by Terraform, as this will cause conflicts and will overwrite the tags already set. Use the nested `tags` attribute on the resource `maas_block_device` if you need to to do this.",
+		Description:   "Provides a resource to manage tags as strings on a block device.",
 		CreateContext: resourceBlockDeviceTagCreate,
 		ReadContext:   resourceBlockDeviceTagRead,
 		UpdateContext: resourceBlockDeviceTagUpdate,
