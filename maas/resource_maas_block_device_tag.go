@@ -57,12 +57,14 @@ func resourceMaasBlockDeviceTag() *schema.Resource {
 
 func resourceBlockDeviceTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-
-	machine, err := getMachine(client, d.Get("machine").(string))
+	machineId := d.Get("machine").(string)
+	machine, err := getMachine(client, machineId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	blockDeviceId := d.Get("block_device_id").(int)
+
+	// Get the block device
 	blockDevice, err := getBlockDevice(client, machine.SystemID, fmt.Sprintf("%v", blockDeviceId))
 	if err != nil {
 		return diag.FromErr(err)
@@ -82,9 +84,11 @@ func resourceBlockDeviceTagCreate(ctx context.Context, d *schema.ResourceData, m
 
 	// Add new tags
 	for _, tag := range desiredTags {
-		_, err := client.BlockDevice.AddTag(machine.SystemID, blockDevice.ID, tag)
-		if err != nil {
-			return diag.FromErr(err)
+		if !slices.Contains(existingTags, tag) {
+			_, err := client.BlockDevice.AddTag(machine.SystemID, blockDevice.ID, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -143,9 +147,11 @@ func resourceBlockDeviceTagUpdate(ctx context.Context, d *schema.ResourceData, m
 
 	// Add new tags
 	for _, tag := range desiredTags {
-		_, err := client.BlockDevice.AddTag(blockDevice.SystemID, blockDevice.ID, tag)
-		if err != nil {
-			return diag.FromErr(err)
+		if !slices.Contains(existingTags, tag) {
+			_, err := client.BlockDevice.AddTag(blockDevice.SystemID, blockDevice.ID, tag)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 	return resourceBlockDeviceTagRead(ctx, d, meta)
@@ -165,5 +171,6 @@ func resourceBlockDeviceTagDelete(ctx context.Context, d *schema.ResourceData, m
 			return diag.FromErr(err)
 		}
 	}
+	d.SetId("")
 	return nil
 }
