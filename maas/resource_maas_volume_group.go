@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 
+	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -18,6 +20,9 @@ func resourceMaasVolumeGroup() *schema.Resource {
 		ReadContext:   resourceMaasVolumeGroupRead,
 		UpdateContext: resourceMaasVolumeGroupUpdate,
 		DeleteContext: resourceMaasVolumeGroupDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: resourceMaasVolumeGroupImport,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"available_size": {
@@ -61,6 +66,44 @@ func resourceMaasVolumeGroup() *schema.Resource {
 	}
 }
 
+func resourceMaasVolumeGroupImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	idParts := strings.Split(d.Id(), ":")
+
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE_ID:VOLUME_GROUP_ID", d.Id())
+	}
+
+	client := meta.(*ClientConfig).Client
+	machine, err := getMachine(client, idParts[0])
+	if err != nil {
+		return nil, err
+	}
+
+	volumeGroup, err := getVolumeGroup(client, machine.SystemID, idParts[1])
+	if err != nil {
+		return nil, err
+	}
+
+	blockDevices := findVolumeGroupBlockDevices(volumeGroup)
+
+	tfState := map[string]interface{}{
+		"block_devices":  blockDevices,
+		"machine":        volumeGroup.SystemID,
+		"name":           volumeGroup.Name,
+		"size":           volumeGroup.Size,
+		"used_size":      volumeGroup.UsedSize,
+		"available_size": volumeGroup.AvailableSize,
+		"uuid":           volumeGroup.UUID,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
+		return nil, err
+	}
+
+	d.SetId(fmt.Sprintf("%v", volumeGroup.ID))
+
+	return []*schema.ResourceData{d}, nil
+}
+
 func resourceMaasVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
@@ -100,26 +143,9 @@ func resourceMaasVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	var blockDevices []string
-	for _, device := range volumeGroup.Devices.([]interface{}) {
-		thisDevice := device.(map[string]interface{})
+	blockDevices := findVolumeGroupBlockDevices(volumeGroup)
 
-		var deviceId string
-
-		// partitions list a device id of the parent block device
-		if did, ok := thisDevice["device_id"]; ok {
-			deviceId = fmt.Sprintf("%v", did)
-		} else if id, ok := thisDevice["id"]; ok {
-			deviceId = fmt.Sprintf("%v", id)
-		} else {
-			continue
-		}
-
-		blockDevices = append(blockDevices, deviceId)
-	}
-	slices.Sort(blockDevices)
-
-	tfstate := map[string]interface{}{
+	tfState := map[string]interface{}{
 		"block_devices":  blockDevices,
 		"machine":        volumeGroup.SystemID,
 		"name":           volumeGroup.Name,
@@ -129,7 +155,7 @@ func resourceMaasVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 		"uuid":           volumeGroup.UUID,
 	}
 
-	if err := setTerraformState(d, tfstate); err != nil {
+	if err := setTerraformState(d, tfState); err != nil {
 		return diag.Errorf("Could not set volume group state: %v", err)
 	}
 
@@ -203,4 +229,42 @@ func resourceMaasVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	return nil
+}
+
+func findVolumeGroupBlockDevices(volumeGroup *entity.VolumeGroup) []string {
+	var blockDevices []string
+	for _, device := range volumeGroup.Devices.([]interface{}) {
+		thisDevice := device.(map[string]interface{})
+
+		var deviceId string
+
+		// partitions list a device id of the parent block device
+		if did, ok := thisDevice["device_id"]; ok {
+			deviceId = fmt.Sprintf("%v", did)
+		} else if id, ok := thisDevice["id"]; ok {
+			deviceId = fmt.Sprintf("%v", id)
+		} else {
+			continue
+		}
+
+		blockDevices = append(blockDevices, deviceId)
+	}
+	slices.Sort(blockDevices)
+	return blockDevices
+}
+
+func getVolumeGroup(client *client.Client, machineID string, identifier string) (*entity.VolumeGroup, error) {
+	volumegroups, err := client.VolumeGroups.Get(machineID)
+	if err != nil {
+		return nil, err
+	}
+	if volumegroups == nil {
+		return nil, fmt.Errorf("volume group %v was not found on machine %v", identifier, machineID)
+	}
+	for _, vg := range volumegroups {
+		if fmt.Sprintf("%v", vg.ID) == identifier || vg.Name == identifier {
+			return &vg, nil
+		}
+	}
+	return nil, nil
 }

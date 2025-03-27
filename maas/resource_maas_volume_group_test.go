@@ -51,6 +51,23 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 					resource.TestCheckTypeSetElemAttrPair("maas_volume_group.test", "block_devices.*", "maas_block_device.bd2", "id"),
 				)...),
 			},
+			// Test import
+			{
+				ResourceName:      "maas_volume_group.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["maas_volume_group.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", "maas_volume_group.test")
+					}
+
+					if rs.Primary.ID == "" {
+						return "", fmt.Errorf("resource id not set")
+					}
+					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["machine"], rs.Primary.Attributes["id"]), nil
+				},
+			},
 		},
 	})
 }
