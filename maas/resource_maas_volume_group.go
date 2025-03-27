@@ -13,7 +13,7 @@ import (
 
 func resourceMaasVolumeGroup() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage MAAS Volume Groups.",
+		Description:   "Provides a resource to manage MAAS Volume Groups, and construct them from partion-less block devices.",
 		CreateContext: resourceMaasVolumeGroupCreate,
 		ReadContext:   resourceMaasVolumeGroupRead,
 		UpdateContext: resourceMaasVolumeGroupUpdate,
@@ -29,7 +29,7 @@ func resourceMaasVolumeGroup() *schema.Resource {
 				Type:        schema.TypeList,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "The list of block device names to be included in this volume group.",
+				Description: "The list of block device ids to be included in this volume group.",
 			},
 			"machine": {
 				Type:        schema.TypeString,
@@ -68,10 +68,9 @@ func resourceMaasVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	volumeGroupParams := entity.VolumeGroupCreateParams{
 		Name:         d.Get("name").(string),
-		BlockDevices: d.Get("block_devices").([]string),
+		BlockDevices: convertSliceToStringSlice(d.Get("block_devices").([]interface{})),
 	}
 
 	volumeGroup, err := client.VolumeGroups.Create(machine.SystemID, &volumeGroupParams)
@@ -79,7 +78,7 @@ func resourceMaasVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Could not create volume group: %v", err)
 	}
 
-	d.SetId((fmt.Sprintf("%v", volumeGroup.ID)))
+	d.SetId(fmt.Sprintf("%v", volumeGroup.ID))
 
 	return resourceMaasVolumeGroupRead(ctx, d, meta)
 }
@@ -102,9 +101,23 @@ func resourceMaasVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	var blockDevices []string
-	for _, blockDevice := range volumeGroup.LogicalVolumes {
-		blockDevices = append(blockDevices, blockDevice.Name)
+	for _, device := range volumeGroup.Devices.([]interface{}) {
+		thisDevice := device.(map[string]interface{})
+
+		var deviceId string
+
+		// partitions list a device id of the parent block device
+		if did, ok := thisDevice["device_id"]; ok {
+			deviceId = fmt.Sprintf("%v", did)
+		} else if id, ok := thisDevice["id"]; ok {
+			deviceId = fmt.Sprintf("%v", id)
+		} else {
+			continue
+		}
+
+		blockDevices = append(blockDevices, deviceId)
 	}
+	slices.Sort(blockDevices)
 
 	tfstate := map[string]interface{}{
 		"block_devices":  blockDevices,
@@ -115,6 +128,7 @@ func resourceMaasVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 		"available_size": volumeGroup.AvailableSize,
 		"uuid":           volumeGroup.UUID,
 	}
+
 	if err := setTerraformState(d, tfstate); err != nil {
 		return diag.Errorf("Could not set volume group state: %v", err)
 	}
@@ -165,7 +179,7 @@ func resourceMaasVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	d.SetId((fmt.Sprintf("%v", volumeGroup.ID)))
+	d.SetId(fmt.Sprintf("%v", volumeGroup.ID))
 
 	return resourceMaasVolumeGroupRead(ctx, d, meta)
 }

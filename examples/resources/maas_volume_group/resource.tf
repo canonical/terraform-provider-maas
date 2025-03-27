@@ -6,23 +6,10 @@ resource "maas_block_device" "vdb" {
   tags = [
     "ssd",
   ]
-
-  partitions {
-    size_gigabytes = 10
-    fs_type        = "ext4"
-    label          = "media"
-    mount_point    = "/media"
-  }
-
-  partitions {
-    size_gigabytes = 15
-    fs_type        = "ext4"
-    mount_point    = "/storage"
-  }
 }
 
 resource "maas_volume_group" "vg1" {
   name          = "volume group 1"
   machine       = maas_machine.virsh_vm2.id
-  block_devices = [vdb.name]
+  block_devices = [maas_block_device.vdb.id]
 }

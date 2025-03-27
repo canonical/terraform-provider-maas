@@ -3,12 +3,12 @@
 page_title: "maas_volume_group Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage MAAS Volume Groups.
+  Provides a resource to manage MAAS Volume Groups, and construct them from partion-less block devices.
 ---
 
 # maas_volume_group (Resource)
 
-Provides a resource to manage MAAS Volume Groups.
+Provides a resource to manage MAAS Volume Groups, and construct them from partion-less block devices.
 
 ## Example Usage
 
@@ -21,25 +21,12 @@ resource "maas_block_device" "vdb" {
   tags = [
     "ssd",
   ]
-
-  partitions {
-    size_gigabytes = 10
-    fs_type        = "ext4"
-    label          = "media"
-    mount_point    = "/media"
-  }
-
-  partitions {
-    size_gigabytes = 15
-    fs_type        = "ext4"
-    mount_point    = "/storage"
-  }
 }
 
 resource "maas_volume_group" "vg1" {
   name          = "volume group 1"
   machine       = maas_machine.virsh_vm2.id
-  block_devices = [vdb.name]
+  block_devices = [maas_block_device.vdb.id]
 }
 ```
 
@@ -48,7 +35,7 @@ resource "maas_volume_group" "vg1" {
 
 ### Required
 
-- `block_devices` (List of String) The list of block device names to be included in this volume group.
+- `block_devices` (List of String) The list of block device ids to be included in this volume group.
 - `machine` (String) The machine identifier (system ID, hostname, or FQDN) that owns the volume group.
 - `name` (String) The name for this volume group
 
