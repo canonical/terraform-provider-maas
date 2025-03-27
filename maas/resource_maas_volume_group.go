@@ -150,11 +150,12 @@ func resourceMaasVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	var addBlockDevices []string
 	var removeBlockDevices []string
-	if d.HasChange("block_Devices") {
+
+	if d.HasChange("block_devices") {
 		oldBlockDevices, newBlockDevices := d.GetChange("block_devices")
 
-		oldDeviceList := oldBlockDevices.([]string)
-		newDeviceList := newBlockDevices.([]string)
+		oldDeviceList := convertToStringSlice(oldBlockDevices)
+		newDeviceList := convertToStringSlice(newBlockDevices)
 
 		for _, device := range newDeviceList {
 			if !slices.Contains(oldDeviceList, device) {

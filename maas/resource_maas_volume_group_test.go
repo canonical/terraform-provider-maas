@@ -20,12 +20,9 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 	name := "test volume group"
 
-	checks := []resource.TestCheckFunc{
+	baseChecks := []resource.TestCheckFunc{
 		testAccCheckMaasVolumeGroupExists("maas_volume_group.test", &volumeGroup),
 		resource.TestCheckResourceAttr("maas_volume_group.test", "name", name),
-		resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "2"),
-		resource.TestCheckResourceAttrPair("maas_volume_group.test", "block_devices.0", "maas_block_device.bd1", "id"),
-		resource.TestCheckResourceAttrPair("maas_volume_group.test", "block_devices.1", "maas_block_device.bd2", "id"),
 		resource.TestCheckResourceAttrPair("maas_volume_group.test", "machine", "data.maas_machine.machine", "id"),
 	}
 
@@ -35,15 +32,30 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 		CheckDestroy: testAccCheckMaasVolumeGroupDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
+			// Test initial creation
 			{
-				Config: testAccMaasVolumeGroup(machine, name),
-				Check:  resource.ComposeTestCheckFunc(checks...),
+				Config: testAccMaasVolumeGroup(machine, name, []string{"maas_block_device.bd1.id"}),
+				Check: resource.ComposeTestCheckFunc(append(baseChecks,
+					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "1"),
+					resource.TestCheckResourceAttrPair("maas_volume_group.test", "block_devices.0", "maas_block_device.bd1", "id"),
+				)...),
+			},
+			// Test the update function
+			{
+				Config: testAccMaasVolumeGroup(machine, name, []string{"maas_block_device.bd1.id", "maas_block_device.bd2.id"}),
+				Check: resource.ComposeTestCheckFunc(append(baseChecks,
+					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "2"),
+					// volume_group.block_devices is sorted, but there is no guarantee as to which
+					// block device gets which id, so we need to test as an unordered collection
+					resource.TestCheckTypeSetElemAttrPair("maas_volume_group.test", "block_devices.*", "maas_block_device.bd1", "id"),
+					resource.TestCheckTypeSetElemAttrPair("maas_volume_group.test", "block_devices.*", "maas_block_device.bd2", "id"),
+				)...),
 			},
 		},
 	})
 }
 
-func testAccMaasVolumeGroup(machine string, name string) string {
+func testAccMaasVolumeGroup(machine string, name string, blockDevices []string) string {
 	return fmt.Sprintf(`
 
 data "maas_machine" "machine" {
@@ -69,12 +81,10 @@ resource "maas_block_device" "bd2" {
 resource "maas_volume_group" "test" {
  	machine       = data.maas_machine.machine.id
 	name          = "%s"
-	block_devices = [maas_block_device.bd1.id, maas_block_device.bd2.id]
-
-	depends_on = [maas_block_device.bd1, maas_block_device.bd2]
+	block_devices = [%s]
 }
 
-`, machine, name)
+`, machine, name, strings.Join(blockDevices, ", "))
 }
 
 func testAccCheckMaasVolumeGroupExists(rn string, volumeGroup *entity.VolumeGroup) resource.TestCheckFunc {
