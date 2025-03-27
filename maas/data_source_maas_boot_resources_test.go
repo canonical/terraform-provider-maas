@@ -8,7 +8,6 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
-	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -57,8 +56,8 @@ func testAccDataSourceMaasBootResources(os string, release string, arches []stri
 %s
 
 data "maas_boot_resources" "test" {
-	os      = maas_boot_source_selection.test.os
-	release = maas_boot_source_selection.test.release
+  os      = maas_boot_source_selection.test.os
+  release = maas_boot_source_selection.test.release
 }
 `, testAccMaasBootSourceSelection(os, release, arches, subarches, labels))
 }
@@ -128,17 +127,4 @@ func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func findBootSourceSelection(client *client.Client, boot_source int, os string, release string) (*entity.BootSourceSelection, error) {
-	if bootsourceselections, err := client.BootSourceSelections.Get(boot_source); err != nil {
-		return nil, err
-	} else {
-		for _, d := range bootsourceselections {
-			if d.OS == os && d.Release == release {
-				return &d, nil
-			}
-		}
-	}
-	return nil, nil
 }

@@ -40,11 +40,6 @@ func dataSourceMaasBootResources() *schema.Resource {
 							Computed:    true,
 							Description: "The subarches for this resource.",
 						},
-						"type": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The Synced type for this resource",
-						},
 					},
 				},
 			},
@@ -84,7 +79,6 @@ func dataSourceMaasBootResourcesRead(ctx context.Context, d *schema.ResourceData
 	for _, res := range resources {
 		if res.Name == fmt.Sprintf("%s/%s", d.Get("os"), d.Get("release")) {
 			this_resource := map[string]interface{}{
-				"type":          res.Type,
 				"name":          res.Name,
 				"architecture":  res.Architecture,
 				"last_deployed": res.LastDeployed,

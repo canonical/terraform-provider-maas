@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 	"time"
 
@@ -69,12 +70,16 @@ func resourceBootResourcesCreate(ctx context.Context, d *schema.ResourceData, me
 
 	var selectionSet []int
 	for _, bootselection := range bootselections {
+		if slices.Contains(selectionSet, bootselection.(int)) {
+			log.Printf("[DEBUG] selection %v already discovered: %+v\n", bootselection.(int), selectionSet)
+		}
+
 		bootselection, err := getBootSourceSelection(client, bootsource.ID, bootselection.(int))
 		if err != nil {
 			return diag.Errorf("error fetching boot selection %v: %s", bootselection, err)
 		}
 
-		// check the selection has it's resource created
+		// check the selection has its resource created
 		if _, exists := resourceMap[fmt.Sprintf("%s/%s", bootselection.OS, bootselection.Release)]; !exists {
 			return diag.Errorf("Boot Resource missing for %s/%s", bootselection.OS, bootselection.Release)
 		}
@@ -200,79 +205,15 @@ func resourceBootResourcesUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceBootResourcesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	// if you delete a resource in terraform, we ensure the selections contained are also deleted
 	client := meta.(*ClientConfig).Client
 
+	// we trigger an image import to clean up any hanging resources
 	err := awaitImportComplete(client)
 	if err != nil {
 		return diag.Errorf("Could not await image importing: %v", err)
 	}
 
-	bootsource, err := getBootSource(client)
-	if err != nil {
-		return diag.Errorf("Could not fetch boot source: %v", err)
-	}
-
-	// delete the selections attached to this resource
-
-	bootselections := d.Get("boot_source_selections").(*schema.Set).List()
-
-	resourceMap := make(map[int]struct{})
-	for _, bootselection := range bootselections {
-		resourceMap[bootselection.(int)] = struct{}{}
-	}
-	for _, bootselection := range bootselections {
-		err := client.BootSourceSelection.Delete(bootsource.ID, bootselection.(int))
-		if err != nil {
-			// 400 if the selection is the default
-			if !strings.Contains(err.Error(), "operating system used in ephemeral environments") {
-				continue
-			}
-
-			return diag.Errorf("Could not delete selection '%v': %v", bootselection.(int), err)
-		}
-	}
-	err = awaitImportComplete(client)
-	if err != nil {
-		return diag.Errorf("Could not await image importing: %v", err)
-	}
-
-	resources, err := getBootResources(client, "synced")
-	if err != nil {
-		return diag.Errorf("error fetching synced boot resources: %v", err)
-	}
-	for _, resource := range resources {
-		parts := strings.SplitN(resource.Name, "/", 2)
-		if len(parts) < 2 {
-			return diag.Errorf("Invalid resource name: %s", resource.Name)
-		}
-		os, release := parts[0], parts[1]
-
-		if strings.Contains(os, "efi") || strings.Contains(os, "pxe") || strings.Contains(os, "grub") {
-			continue
-		}
-
-		// the selection should be deleted
-		bootsourceselection, err := findBootSourceSelection(client, bootsource.ID, os, release)
-		if err != nil {
-			fmt.Printf("error finding: %#v: %v", err, strings.Contains(err.Error(), "404 Not Found"))
-			// 404 means the resource was deleted already
-			if strings.Contains(err.Error(), "404 Not Found") {
-				continue
-			}
-			// anything else is an error
-			return diag.Errorf("error finding selection '%v/%v': %v", os, release, err)
-		}
-
-		if _, exists := resourceMap[bootsourceselection.ID]; exists {
-			return diag.Errorf("boot source selection (%s %s) was unexpectedly found on deleted resource", os, release)
-		}
-	}
-
-	err = awaitImportComplete(client)
-	if err != nil {
-		return diag.Errorf("Could not await image importing: %v", err)
-	}
+	d.SetId("")
 
 	return nil
 }

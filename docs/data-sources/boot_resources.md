@@ -41,4 +41,3 @@ Read-Only:
 - `last_deployed` (String)
 - `name` (String)
 - `subarches` (String)
-- `type` (String)
