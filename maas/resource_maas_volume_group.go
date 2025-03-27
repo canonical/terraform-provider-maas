@@ -70,7 +70,7 @@ func resourceMaasVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, 
 	}
 	volumeGroupParams := entity.VolumeGroupCreateParams{
 		Name:         d.Get("name").(string),
-		BlockDevices: convertSliceToStringSlice(d.Get("block_devices").([]interface{})),
+		BlockDevices: convertToStringSlice(d.Get("block_devices").([]interface{})),
 	}
 
 	volumeGroup, err := client.VolumeGroups.Create(machine.SystemID, &volumeGroupParams)

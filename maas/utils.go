@@ -42,16 +42,6 @@ func convertToStringSlice(field any) []string {
 
 	return result
 }
-func convertSliceToStringSlice(field []interface{}) []string {
-	if field == nil {
-		return nil
-	}
-	result := make([]string, len(field))
-	for i, value := range field {
-		result[i] = value.(string)
-	}
-	return result
-}
 
 func isElementIPAddress(i any, p cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
