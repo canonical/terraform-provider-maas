@@ -111,14 +111,13 @@ func resourceBlockDeviceTagRead(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	// Set the attributes in state
-	if err := d.Set("tags", blockDevice.Tags); err != nil {
-		return diag.FromErr(err)
+	tfstate := map[string]interface{}{
+		"tags":            blockDevice.Tags,
+		"machine":         blockDevice.SystemID,
+		"block_device_id": blockDevice.ID,
 	}
-	if err := d.Set("machine", blockDevice.SystemID); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("block_device_id", blockDevice.ID); err != nil {
-		return diag.FromErr(err)
+	if err := setTerraformState(d, tfstate); err != nil {
+		return diag.FromErr(fmt.Errorf("could not set block device properties: %v", err))
 	}
 	return nil
 }
