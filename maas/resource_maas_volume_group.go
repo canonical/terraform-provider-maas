@@ -67,10 +67,10 @@ func resourceMaasVolumeGroup() *schema.Resource {
 }
 
 func resourceMaasVolumeGroupImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	idParts := strings.Split(d.Id(), ":")
+	idParts := strings.Split(d.Id(), "/")
 
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE_ID:VOLUME_GROUP_ID", d.Id())
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE_ID/VOLUME_GROUP_ID", d.Id())
 	}
 
 	client := meta.(*ClientConfig).Client
@@ -79,23 +79,11 @@ func resourceMaasVolumeGroupImport(ctx context.Context, d *schema.ResourceData, 
 		return nil, err
 	}
 
+	// we have a dependency on the specific machine in the read function
+	d.Set("machine", machine.SystemID)
+
 	volumeGroup, err := getVolumeGroup(client, machine.SystemID, idParts[1])
 	if err != nil {
-		return nil, err
-	}
-
-	blockDevices := findVolumeGroupBlockDevices(volumeGroup)
-
-	tfState := map[string]interface{}{
-		"block_devices":  blockDevices,
-		"machine":        volumeGroup.SystemID,
-		"name":           volumeGroup.Name,
-		"size":           volumeGroup.Size,
-		"used_size":      volumeGroup.UsedSize,
-		"available_size": volumeGroup.AvailableSize,
-		"uuid":           volumeGroup.UUID,
-	}
-	if err := setTerraformState(d, tfState); err != nil {
 		return nil, err
 	}
 

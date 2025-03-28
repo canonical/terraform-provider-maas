@@ -65,7 +65,7 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 					if rs.Primary.ID == "" {
 						return "", fmt.Errorf("resource id not set")
 					}
-					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["machine"], rs.Primary.Attributes["id"]), nil
+					return fmt.Sprintf("%s/%s", rs.Primary.Attributes["machine"], rs.Primary.Attributes["id"]), nil
 				},
 			},
 		},
@@ -76,7 +76,7 @@ func testAccMaasVolumeGroup(machine string, name string, blockDevices []string) 
 	return fmt.Sprintf(`
 
 data "maas_machine" "machine" {
-  hostname = "%s"
+  hostname = %q
 }
 
 resource "maas_block_device" "bd1" {
@@ -97,7 +97,7 @@ resource "maas_block_device" "bd2" {
 
 resource "maas_volume_group" "test" {
  	machine       = data.maas_machine.machine.id
-	name          = "%s"
+	name          = %q
 	block_devices = [%s]
 }
 
