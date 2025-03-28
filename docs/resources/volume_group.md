@@ -35,7 +35,7 @@ resource "maas_volume_group" "vg1" {
 
 ### Required
 
-- `block_devices` (List of String) The list of block device ids to be included in this volume group.
+- `block_devices` (Set of String) The list of block device ids to be included in this volume group.
 - `machine` (String) The machine identifier (system ID, hostname, or FQDN) that owns the volume group.
 - `name` (String) The name for this volume group
 

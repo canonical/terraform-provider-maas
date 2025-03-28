@@ -31,7 +31,7 @@ func resourceMaasVolumeGroup() *schema.Resource {
 				Description: "The volume group available size (B).",
 			},
 			"block_devices": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Description: "The list of block device ids to be included in this volume group.",
@@ -111,9 +111,11 @@ func resourceMaasVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	block_devices := d.Get("block_devices").(*schema.Set).List()
+
 	volumeGroupParams := entity.VolumeGroupCreateParams{
 		Name:         d.Get("name").(string),
-		BlockDevices: convertToStringSlice(d.Get("block_devices").([]interface{})),
+		BlockDevices: convertToStringSlice(block_devices),
 	}
 
 	volumeGroup, err := client.VolumeGroups.Create(machine.SystemID, &volumeGroupParams)
@@ -180,8 +182,8 @@ func resourceMaasVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 	if d.HasChange("block_devices") {
 		oldBlockDevices, newBlockDevices := d.GetChange("block_devices")
 
-		oldDeviceList := convertToStringSlice(oldBlockDevices)
-		newDeviceList := convertToStringSlice(newBlockDevices)
+		oldDeviceList := convertToStringSlice(oldBlockDevices.(*schema.Set).List())
+		newDeviceList := convertToStringSlice(newBlockDevices.(*schema.Set).List())
 
 		for _, device := range newDeviceList {
 			if !slices.Contains(oldDeviceList, device) {
@@ -249,7 +251,6 @@ func findVolumeGroupBlockDevices(volumeGroup *entity.VolumeGroup) []string {
 
 		blockDevices = append(blockDevices, deviceId)
 	}
-	slices.Sort(blockDevices)
 	return blockDevices
 }
 
