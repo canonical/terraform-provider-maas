@@ -96,9 +96,9 @@ resource "maas_block_device" "bd2" {
 }
 
 resource "maas_volume_group" "test" {
- 	machine       = data.maas_machine.machine.id
-	name          = %q
-	block_devices = [%s]
+  machine       = data.maas_machine.machine.id
+  name          = %q
+  block_devices = [%s]
 }
 
 `, machine, name, strings.Join(blockDevices, ", "))
