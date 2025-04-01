@@ -47,6 +47,14 @@ lint-go:
 .PHONY: lint-tf
 lint-tf: tfproviderlint tfproviderlintx
 
+.PHONY: lint-golangci
+lint-golangci:
+	golangci-lint run $(if $(LINT_AUTOFIX),--fix,) ./...
+
+.PHONY: lint-golangci-fix
+lint-golangci-fix: LINT_AUTOFIX=true
+lint-golangci-fix: lint-golangci
+
 test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=$(TEST_PARALLELISM)
 
