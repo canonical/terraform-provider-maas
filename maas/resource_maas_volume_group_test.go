@@ -36,6 +36,7 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 			{
 				Config: testAccMaasVolumeGroup(machine, name, []string{"maas_block_device.bd1.id"}),
 				Check: resource.ComposeTestCheckFunc(append(baseChecks,
+					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "19"),
 					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "1"),
 					resource.TestCheckResourceAttrPair("maas_volume_group.test", "block_devices.0", "maas_block_device.bd1", "id"),
 				)...),
@@ -44,6 +45,7 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 			{
 				Config: testAccMaasVolumeGroup(machine, name, []string{"maas_block_device.bd1.id", "maas_block_device.bd2.id"}),
 				Check: resource.ComposeTestCheckFunc(append(baseChecks,
+					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "69"),
 					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "2"),
 					// volume_group.block_devices is sorted, but there is no guarantee as to which
 					// block device gets which id, so we need to test as an unordered collection

@@ -41,10 +41,8 @@ resource "maas_volume_group" "vg1" {
 
 ### Read-Only
 
-- `available_size` (Number) The volume group available size (B).
 - `id` (String) The ID of this resource.
-- `size` (Number) The volume group size (B).
-- `used_size` (Number) The volume group used size (B).
+- `size_gigabytes` (Number) The volume group size (GiB).
 - `uuid` (String) Volume group UUID.
 
 ## Import
@@ -53,5 +51,5 @@ Import is supported using the following syntax:
 
 ```shell
 # Volume groups can be imported with the machine identifier (system ID, hostname, or FQDN) and the volume group identifier (ID or name). e.g.
-$ terraform import maas_block_device.vdb machine-06/vg1
+$ terraform import maas_volume_group.vg1 machine-06/vg1
 ```

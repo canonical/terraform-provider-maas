@@ -25,11 +25,6 @@ func resourceMaasVolumeGroup() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"available_size": {
-				Type:        schema.TypeInt,
-				Computed:    true,
-				Description: "The volume group available size (B).",
-			},
 			"block_devices": {
 				Type:        schema.TypeSet,
 				Required:    true,
@@ -47,15 +42,10 @@ func resourceMaasVolumeGroup() *schema.Resource {
 				Required:    true,
 				Description: "The name for this volume group",
 			},
-			"size": {
+			"size_gigabytes": {
 				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "The volume group size (B).",
-			},
-			"used_size": {
-				Type:        schema.TypeInt,
-				Computed:    true,
-				Description: "The volume group used size (B).",
+				Description: "The volume group size (GiB).",
 			},
 			"uuid": {
 				Type:        schema.TypeString,
@@ -139,9 +129,7 @@ func resourceMaasVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 		"block_devices":  blockDevices,
 		"machine":        volumeGroup.SystemID,
 		"name":           volumeGroup.Name,
-		"size":           volumeGroup.Size,
-		"used_size":      volumeGroup.UsedSize,
-		"available_size": volumeGroup.AvailableSize,
+		"size_gigabytes": int64(volumeGroup.Size / (1024 * 1024 * 1024)),
 		"uuid":           volumeGroup.UUID,
 	}
 
@@ -228,11 +216,31 @@ func findVolumeGroupBlockDevices(volumeGroup *entity.VolumeGroup) []string {
 
 		var deviceId string
 
-		// partitions list a device id of the parent block device
+		// We specifically want the list of blockdevices assigned to this volume group,
+		// but some of the attached devices are a partition. We instead search for the
+		// existence of `device_id` which exists only on partitions, and is the id of
+		// the parent block device on the partition data:
+		// {
+		// 	bootable:false
+		// 	device_id:218
+		// 	filesystem: {...}
+		// 	id:238
+		// 	path:...
+		// 	resource_uri:...
+		// 	size:...
+		// 	system_id:...
+		// 	tags:[]
+		// 	type:partition
+		// 	used_for:...
+		// 	uuid:...
+		// }
+		// for block devices we can directly reference the `id`:
 		if did, ok := thisDevice["device_id"]; ok {
 			deviceId = fmt.Sprintf("%v", did)
+			fmt.Printf("\nPAR: %+v", thisDevice)
 		} else if id, ok := thisDevice["id"]; ok {
 			deviceId = fmt.Sprintf("%v", id)
+			fmt.Printf("\nBD:  %+v", thisDevice)
 		} else {
 			continue
 		}
