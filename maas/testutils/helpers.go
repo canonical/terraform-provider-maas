@@ -26,8 +26,8 @@ func RandomMAC() string {
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5])
 }
 
-// GenerateRandomCidr generates a random CIDR of the form 10.x.y.0/24, where x and y are random numbers in the usable range of 50 to 255
-func GenerateRandomCidr() string {
+// GenerateRandomCIDR generates a random CIDR of the form 10.x.y.0/24, where x and y are random numbers in the usable range of 50 to 255
+func GenerateRandomCIDR() string {
 	// Create and log a seed if required for test reproducibility
 	seed := time.Now().UnixNano()
 	mrand.New(mrand.NewSource(seed)) //nolint:gosec // used for testing only, no need for real randomness
@@ -41,8 +41,8 @@ func GenerateRandomCidr() string {
 	return cidr
 }
 
-// GetNetworkPrefixFromCidr returns the network prefix from a CIDR. For example 10.77.77.0/24 would return 10.77.77
-func GetNetworkPrefixFromCidr(cidr string) string {
+// GetNetworkPrefixFromCIDR returns the network prefix from a CIDR. For example 10.77.77.0/24 would return 10.77.77
+func GetNetworkPrefixFromCIDR(cidr string) string {
 	return strings.Join(strings.Split(cidr, ".")[:3], ".")
 }
 

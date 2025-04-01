@@ -27,7 +27,7 @@ func TestAccDataSourceMAASBootSource_basic(t *testing.T) {
 		}),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "created"),
 		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_data", ""),
-		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyringFilename", keyringPath),
+		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_filename", keyringPath),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "updated"),
 	}
 

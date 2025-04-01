@@ -19,7 +19,7 @@ func TestGenerateRandomNumberInRange(t *testing.T) {
 	}
 }
 
-func TestGetNetworkPrefixFromCidr(t *testing.T) {
+func TestGetNetworkPrefixFromCIDR(t *testing.T) {
 	tests := []struct {
 		input  string
 		output string
@@ -29,15 +29,15 @@ func TestGetNetworkPrefixFromCidr(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		prefix := GetNetworkPrefixFromCidr(test.input)
+		prefix := GetNetworkPrefixFromCIDR(test.input)
 		if prefix != test.output {
 			t.Errorf("Prefix should be %s, got %s", test.output, prefix)
 		}
 	}
 }
 
-func TestGenerateRandomCidr(t *testing.T) {
-	cidr := GenerateRandomCidr()
+func TestGenerateRandomCIDR(t *testing.T) {
+	cidr := GenerateRandomCIDR()
 
 	parts := strings.Split(cidr, ".")
 	if len(parts) != 4 {

@@ -25,7 +25,7 @@ func TestAccResourceMAASBootSource_basic(t *testing.T) {
 	checks := []resource.TestCheckFunc{
 		testAccMAASBootSourceCheckExists("maas_boot_source.test", &bootsource),
 		resource.TestCheckResourceAttr("maas_boot_source.test", "url", url),
-		resource.TestCheckResourceAttr("maas_boot_source.test", "keyringFilename", snapKeyring),
+		resource.TestCheckResourceAttr("maas_boot_source.test", "keyring_filename", snapKeyring),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{

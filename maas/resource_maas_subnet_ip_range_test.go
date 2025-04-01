@@ -22,12 +22,12 @@ func TestAccResourceMaasSubnetIPRange_basic(t *testing.T) {
 	ipRangeAttrName := "maas_subnet_ip_range.test_ip_range"
 	rangeType := "reserved"
 	comment := "test-comment"
-	cidr := testutils.GenerateRandomCidr()
-	gateway := testutils.GetNetworkPrefixFromCidr(cidr) + ".1"
-	ipStart := testutils.GetNetworkPrefixFromCidr(cidr) + ".2"
-	ipEnd := testutils.GetNetworkPrefixFromCidr(cidr) + ".50"
-	ipStartMod := testutils.GetNetworkPrefixFromCidr(cidr) + ".2"
-	ipEndMod := testutils.GetNetworkPrefixFromCidr(cidr) + ".49"
+	cidr := testutils.GenerateRandomCIDR()
+	gateway := testutils.GetNetworkPrefixFromCIDR(cidr) + ".1"
+	ipStart := testutils.GetNetworkPrefixFromCIDR(cidr) + ".2"
+	ipEnd := testutils.GetNetworkPrefixFromCIDR(cidr) + ".50"
+	ipStartMod := testutils.GetNetworkPrefixFromCIDR(cidr) + ".2"
+	ipEndMod := testutils.GetNetworkPrefixFromCIDR(cidr) + ".49"
 	commentMod := "a-different-comment"
 
 	// Check functions
