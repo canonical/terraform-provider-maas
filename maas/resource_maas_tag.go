@@ -243,16 +243,7 @@ func untagOtherMachines(client *client.Client, tagName string, taggedMachineIDs 
 	otherMachines := []string{}
 
 	for _, m := range machines {
-		found := false
-
-		for _, id := range taggedMachineIDs {
-			if m.SystemID == id {
-				found = true
-				break
-			}
-		}
-
-		if found {
+		if slices.Contains(taggedMachineIDs, m.SystemID) {
 			continue
 		}
 
