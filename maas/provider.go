@@ -88,6 +88,7 @@ func Provider() *schema.Provider {
 			"maas_machine":                    dataSourceMaasMachine(),
 			"maas_network_interface_physical": dataSourceMaasNetworkInterfacePhysical(),
 			"maas_device":                     dataSourceMaasDevice(),
+			"maas_devices":                    dataSourceMaasDevices(),
 			"maas_resource_pool":              dataSourceMaasResourcePool(),
 			"maas_rack_controller":            dataSourceMaasRackController(),
 			"maas_zone":                       dataSourceMaasZone(),
