@@ -18,6 +18,7 @@ import (
 
 func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 	var dnsRecord entity.DNSResource
+
 	recordName := acctest.RandomWithPrefix("tf")
 	resourceName := "test"
 	testIPAddress := "8.8.8.8"
@@ -47,6 +48,7 @@ func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 // Test that two DNS records with the same IP address can be created and destroyed.
 func TestAccResourceMAASDNSRecord_sameIPAddress(t *testing.T) {
 	var dnsRecord entity.DNSResource
+
 	recordName1 := acctest.RandomWithPrefix("tf-1")
 	recordName2 := acctest.RandomWithPrefix("tf-2")
 	resourceName1 := "test_aaaa_1"
@@ -61,7 +63,7 @@ func TestAccResourceMAASDNSRecord_sameIPAddress(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: getDNSRecordConfigSameIPA_AAAA(testDomain, resourceName1, resourceName2, recordName1, recordName2, testIPAddress),
+				Config: getDNSRecordConfigSameIPAAAA(testDomain, resourceName1, resourceName2, recordName1, recordName2, testIPAddress),
 				Check: resource.ComposeTestCheckFunc(
 					testAccMAASDNSRecordCheckExists("maas_dns_record."+resourceName1, &dnsRecord),
 					testAccMAASDNSRecordCheckExists("maas_dns_record."+resourceName2, &dnsRecord),
@@ -79,7 +81,7 @@ func TestAccResourceMAASDNSRecord_sameIPAddress(t *testing.T) {
 	})
 }
 
-func getDNSRecordConfigSameIPA_AAAA(domain string, resourceName1 string, resourceName2 string, recordName1 string, recordName2 string, ipAddress string) string {
+func getDNSRecordConfigSameIPAAAA(domain string, resourceName1 string, resourceName2 string, recordName1 string, recordName2 string, ipAddress string) string {
 	return fmt.Sprintf(`
 	resource "maas_dns_domain" "test" {
 	  name = %q
@@ -127,10 +129,12 @@ func testAccMAASDNSRecordCheckExists(rn string, dnsRecord *entity.DNSResource) r
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
+
 		gotDNSRecord, err := conn.DNSResource.Get(id)
 		if err != nil {
 			return fmt.Errorf("error getting dns record: %s", err)
@@ -145,6 +149,7 @@ func testAccMAASDNSRecordCheckExists(rn string, dnsRecord *entity.DNSResource) r
 func testAccMAASDNSRecordCheckDestroy(ipAddress string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		for _, rs := range s.RootModule().Resources {
 			// Skip if the resource is not a dns record
 			if rs.Type != "maas_dns_record" {
@@ -176,9 +181,11 @@ func testAccMAASDNSRecordCheckDestroy(ipAddress string) resource.TestCheckFunc {
 		if err != nil {
 			return fmt.Errorf("error checking if ip address is released: %s", err)
 		}
+
 		if ipAllocated {
 			return fmt.Errorf("ip address is not released: %s", ipAddress)
 		}
+
 		return nil
 	}
 }
@@ -186,6 +193,7 @@ func testAccMAASDNSRecordCheckDestroy(ipAddress string) resource.TestCheckFunc {
 // Check if a particular IP address is allocated in MAAS
 func isIPAddressAllocated(conn *client.Client, ipAddress string) (bool, error) {
 	params := &entity.IPAddressesParams{IP: ipAddress}
+
 	maasIPAddress, err := conn.IPAddresses.Get(params)
 	if err != nil {
 		// Unexpected error

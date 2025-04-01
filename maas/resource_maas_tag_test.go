@@ -17,8 +17,8 @@ import (
 )
 
 func TestAccResourceMaasTag_basic(t *testing.T) {
-
 	var tag entity.Tag
+
 	comment := "Test comment"
 	name := acctest.RandomWithPrefix("tf-tag-")
 	machines := os.Getenv("TF_ACC_TAG_MACHINES")
@@ -72,6 +72,7 @@ func testAccMaasTagCheckExists(rn string, tag *entity.Tag) resource.TestCheckFun
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		gotTag, err := conn.Tag.Get(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting tag: %s", err)

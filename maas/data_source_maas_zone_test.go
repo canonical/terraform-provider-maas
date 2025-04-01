@@ -11,8 +11,8 @@ import (
 )
 
 func TestAccDataSourceMaasZone_basic(t *testing.T) {
-
 	var zone entity.Zone
+
 	description := "Test description"
 	name := acctest.RandomWithPrefix("tf-zone-")
 

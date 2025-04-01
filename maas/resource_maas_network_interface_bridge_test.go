@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfaceBridge(name string, machine string, mac_address string, mac_address_phys string, mtu int) string {
+func testAccMaasNetworkInterfaceBridge(name string, machine string, macAddress string, macAddressPhys string, mtu int) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
 	name = "tf-fabric-bridge"
@@ -50,16 +50,16 @@ resource "maas_network_interface_bridge" "test" {
 	tags        = ["tag1", "tag2"]
 	vlan        = data.maas_vlan.default.id
   }
-`, machine, mac_address_phys, name, mac_address, mtu)
+`, machine, macAddressPhys, name, macAddress, mtu)
 }
 
 func TestAccResourceMaasNetworkInterfaceBridge_basic(t *testing.T) {
-
 	var networkInterfaceBridge entity.NetworkInterface
+
 	name := fmt.Sprintf("tf-nic-br-%d", acctest.RandIntRange(0, 9))
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
-	mac_address := testutils.RandomMAC()
-	mac_address_phys := testutils.RandomMAC()
+	macAddress := testutils.RandomMAC()
+	macAddressPhys := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
 		testAccMaasNetworkInterfaceBridgeCheckExists("maas_network_interface_bridge.test", &networkInterfaceBridge),
@@ -68,7 +68,7 @@ func TestAccResourceMaasNetworkInterfaceBridge_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_fd", "42"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_stp", "true"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_type", "standard"),
-		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mac_address", mac_address),
+		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "macAddress", macAddress),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "parent", "ethbr"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "tags.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "tags.0", "tag1"),
@@ -83,13 +83,13 @@ func TestAccResourceMaasNetworkInterfaceBridge_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceBridge(name, machine, mac_address, mac_address_phys, 1500),
+				Config: testAccMaasNetworkInterfaceBridge(name, machine, macAddress, macAddressPhys, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMaasNetworkInterfaceBridge(name, machine, mac_address, mac_address_phys, 9000),
+				Config: testAccMaasNetworkInterfaceBridge(name, machine, macAddress, macAddressPhys, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mtu", "9000"))...),
 			},
@@ -126,10 +126,12 @@ func testAccMaasNetworkInterfaceBridgeCheckExists(rn string, networkInterfaceBri
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
+
 		gotNetworkInterfaceBridge, err := conn.NetworkInterface.Get(rs.Primary.Attributes["machine"], id)
 		if err != nil {
 			return fmt.Errorf("error getting network interface bridge: %s", err)
@@ -157,6 +159,7 @@ func testAccCheckMaasNetworkInterfaceBridgeDestroy(s *terraform.State) error {
 		if err != nil {
 			return err
 		}
+
 		response, err := conn.NetworkInterface.Get(rs.Primary.Attributes["machine"], id)
 		if err == nil {
 			if response != nil && response.ID == id {

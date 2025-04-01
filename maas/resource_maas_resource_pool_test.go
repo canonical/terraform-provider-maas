@@ -15,8 +15,8 @@ import (
 )
 
 func TestAccResourceMaasResourcePool_basic(t *testing.T) {
-
 	var resourcePool entity.ResourcePool
+
 	description := "Test description"
 	name := acctest.RandomWithPrefix("tf-resource-pool-")
 
@@ -75,10 +75,12 @@ func testAccMaasResourcePoolCheckExists(rn string, resourcePool *entity.Resource
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
+
 		gotResourcePool, err := conn.ResourcePool.Get(id)
 		if err != nil {
 			return fmt.Errorf("error getting resource pool: %s", err)
@@ -115,6 +117,7 @@ func testAccCheckMaasResourcePoolDestroy(s *terraform.State) error {
 		if err != nil {
 			return err
 		}
+
 		response, err := conn.ResourcePool.Get(id)
 		if err == nil {
 			if response != nil && response.ID == id {

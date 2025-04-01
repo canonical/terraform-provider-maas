@@ -11,8 +11,8 @@ import (
 )
 
 func TestAccDataSourceMaasResourcePool_basic(t *testing.T) {
-
 	var resourcePool entity.ResourcePool
+
 	description := "Test description"
 	name := acctest.RandomWithPrefix("tf-resource-pool-")
 

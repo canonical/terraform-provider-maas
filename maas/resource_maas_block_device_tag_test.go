@@ -98,20 +98,22 @@ func testAccCheckMaasBlockDeviceTagExists(resourceName string, tagNames ...strin
 		if !ok {
 			return fmt.Errorf("Not found: %s", resourceName)
 		}
-		systemId, blockDeviceId, err := maas.SplitTagStateId(rs.Primary.ID)
+
+		systemID, blockDeviceID, err := maas.SplitTagStateID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-		blockDevice, err := conn.BlockDevice.Get(systemId, blockDeviceId)
+
+		blockDevice, err := conn.BlockDevice.Get(systemID, blockDeviceID)
 		if err != nil {
 			return err
 		}
 
 		// Check the block device is the one expected
-		if blockDevice.ID != blockDeviceId {
-			return fmt.Errorf("MAAS Block Device (%v) ID mismatch: expected %v, got %v.", blockDevice.ID, blockDeviceId, blockDevice.ID)
+		if blockDevice.ID != blockDeviceID {
+			return fmt.Errorf("MAAS Block Device (%v) ID mismatch: expected %v, got %v.", blockDevice.ID, blockDeviceID, blockDevice.ID)
 		}
 
 		// Check the tags exist
@@ -135,15 +137,15 @@ func testAccCheckMaasBlockDeviceTagDestroy(s *terraform.State) error {
 		}
 
 		// Retrieve the system and block device ID from the state ID
-		systemId, blockDeviceId, err := maas.SplitTagStateId(rs.Primary.ID)
+		systemID, blockDeviceID, err := maas.SplitTagStateID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		// Check the block device doesn't exist
-		response, err := conn.BlockDevice.Get(systemId, blockDeviceId)
+		response, err := conn.BlockDevice.Get(systemID, blockDeviceID)
 		if err == nil {
-			if response != nil && response.ID == blockDeviceId {
+			if response != nil && response.ID == blockDeviceID {
 				return fmt.Errorf("MAAS Block Device (%s) still exists.", rs.Primary.ID)
 			}
 		}
@@ -152,5 +154,6 @@ func testAccCheckMaasBlockDeviceTagDestroy(s *terraform.State) error {
 			return err
 		}
 	}
+
 	return nil
 }

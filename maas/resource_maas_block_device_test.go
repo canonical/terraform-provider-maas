@@ -76,7 +76,6 @@ resource "maas_block_device" "test" {
 }
 
 func TestAccResourceMaasBlockDevice_basic(t *testing.T) {
-
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 
 	checks := []resource.TestCheckFunc{

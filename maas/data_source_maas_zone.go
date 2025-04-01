@@ -28,14 +28,16 @@ func dataSourceMaasZone() *schema.Resource {
 	}
 }
 
-func dataSourceZoneRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceZoneRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	zone, err := getZone(client, d.Get("name").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", zone.ID))
+
 	tfstate := map[string]interface{}{
 		"name":        zone.Name,
 		"description": zone.Description,

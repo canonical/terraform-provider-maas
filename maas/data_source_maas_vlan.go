@@ -48,17 +48,19 @@ func dataSourceMaasVlan() *schema.Resource {
 	}
 }
 
-func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	vlan, err := getVlan(client, fabric.ID, d.Get("vlan").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	tfState := map[string]interface{}{
 		"id":      fmt.Sprintf("%v", vlan.ID),
 		"mtu":     vlan.MTU,

@@ -3,8 +3,6 @@ package maas_test
 import (
 	"terraform-provider-maas/maas"
 	"testing"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestProvider(t *testing.T) {
@@ -14,5 +12,5 @@ func TestProvider(t *testing.T) {
 }
 
 func TestProvider_impl(t *testing.T) {
-	var _ *schema.Provider = maas.Provider()
+	var _ = maas.Provider()
 }

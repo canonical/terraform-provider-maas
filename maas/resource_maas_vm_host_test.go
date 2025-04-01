@@ -47,30 +47,38 @@ func TestAccMAASVMHost_DeployParams(t *testing.T) {
 func checkMaasVMHostExists(t *testing.T, resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		t.Log("Checking if VM host exists...")
+
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("resource not found: %s", resourceName)
 		}
+
 		systemID := rs.Primary.Attributes["machine"]
 		client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 		var defaultDistroSeries string
+
 		defaultDistroSeriesbytes, err := client.MAASServer.Get("default_distro_series")
 		if err != nil {
 			t.Fatalf("Failed to get default Distro Series from client: %s", err)
 		}
+
 		err = json.Unmarshal(defaultDistroSeriesbytes, &defaultDistroSeries)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal defaultDistroSeriesbytes: %s", err)
 		}
+
 		machine, err := client.Machine.Get(systemID)
 		if err != nil {
 			return err
 		}
+
 		if machine.DistroSeries != defaultDistroSeries {
 			return fmt.Errorf("Distro series not the expected default: %s, expected: %s", machine.DistroSeries, defaultDistroSeries)
 		}
+
 		t.Log("VM host exists!")
+
 		return nil
 	}
 }

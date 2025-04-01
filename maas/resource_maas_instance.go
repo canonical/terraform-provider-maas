@@ -19,7 +19,7 @@ func resourceMaasInstance() *schema.Resource {
 		ReadContext:   resourceInstanceRead,
 		DeleteContext: resourceInstanceDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				machine, err := getMachine(client, d.Id())
@@ -218,7 +218,7 @@ func resourceMaasInstance() *schema.Resource {
 	}
 }
 
-func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Allocate MAAS machine
@@ -252,7 +252,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta in
 	return resourceInstanceRead(ctx, d, meta)
 }
 
-func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get MAAS machine
@@ -265,6 +265,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 	for i, ip := range machine.IPAddresses {
 		ipAddresses[i] = ip.String()
 	}
+
 	tfState := map[string]interface{}{
 		"fqdn":         machine.FQDN,
 		"hostname":     machine.Hostname,
@@ -282,7 +283,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta inte
 	return nil
 }
 
-func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Release MAAS machine
@@ -305,6 +306,7 @@ func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocatePa
 		allocateParamsData := p.([]interface{})
 		if allocateParamsData[0] != nil {
 			allocateParams := allocateParamsData[0].(map[string]interface{})
+
 			return &entity.MachineAllocateParams{
 				CPUCount: allocateParams["min_cpu_count"].(int),
 				Mem:      int64(allocateParams["min_memory"].(int)),
@@ -316,6 +318,7 @@ func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocatePa
 			}
 		}
 	}
+
 	return &entity.MachineAllocateParams{}
 }
 
@@ -324,6 +327,7 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 		deployParamsData := p.([]interface{})
 		if deployParamsData[0] != nil {
 			deployParams := deployParamsData[0].(map[string]interface{})
+
 			return &entity.MachineDeployParams{
 				DistroSeries:    deployParams["distro_series"].(string),
 				EnableHwSync:    deployParams["enable_hw_sync"].(bool),
@@ -333,6 +337,7 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 			}
 		}
 	}
+
 	return &entity.MachineDeployParams{}
 }
 
@@ -341,6 +346,7 @@ func configureInstanceNetworkInterfaces(client *client.Client, d *schema.Resourc
 		n := networkInterface.(map[string]interface{})
 		// Find the machine network interface
 		name := n["name"].(string)
+
 		nic, err := getNetworkInterface(client, machine.SystemID, name)
 		if err != nil {
 			return err
@@ -348,15 +354,17 @@ func configureInstanceNetworkInterfaces(client *client.Client, d *schema.Resourc
 		// Validate the given network configs
 		subnetCIDR := n["subnet_cidr"].(string)
 		ipAddress := n["ip_address"].(string)
+
 		if subnetCIDR == "" {
 			if ipAddress != "" {
 				return fmt.Errorf("network interface (%s): 'subnet_cidr' is required when 'ip_address' is set", name)
 			}
 			// Clear existing network interface links
 			// This will leave the network interface disconnected
-			if _, err := client.NetworkInterface.Disconnect(machine.SystemID, nic.ID); err != nil {
+			if _, err = client.NetworkInterface.Disconnect(machine.SystemID, nic.ID); err != nil {
 				return err
 			}
+
 			continue
 		}
 		// Find the subnet
@@ -365,7 +373,7 @@ func configureInstanceNetworkInterfaces(client *client.Client, d *schema.Resourc
 			return err
 		}
 		// Clear existing network interface links
-		if _, err := client.NetworkInterface.Disconnect(machine.SystemID, nic.ID); err != nil {
+		if _, err = client.NetworkInterface.Disconnect(machine.SystemID, nic.ID); err != nil {
 			return err
 		}
 		// Create new network interface link
@@ -373,6 +381,7 @@ func configureInstanceNetworkInterfaces(client *client.Client, d *schema.Resourc
 		if ipAddress != "" {
 			mode = "STATIC"
 		}
+
 		params := entity.NetworkInterfaceLinkParams{
 			Mode:      mode,
 			Subnet:    subnet.ID,
@@ -382,5 +391,6 @@ func configureInstanceNetworkInterfaces(client *client.Client, d *schema.Resourc
 			return err
 		}
 	}
+
 	return nil
 }

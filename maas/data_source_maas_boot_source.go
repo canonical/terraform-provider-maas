@@ -43,13 +43,14 @@ func dataSourceMaasBootSource() *schema.Resource {
 	}
 }
 
-func dataSourceMaasBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMaasBootSourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	tfState := map[string]interface{}{

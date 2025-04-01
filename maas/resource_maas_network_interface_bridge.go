@@ -95,7 +95,7 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 	}
 }
 
-func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -109,6 +109,7 @@ func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Resourc
 	}
 
 	params := getNetworkInterfaceBridgeParams(d, parentID)
+
 	networkInterface, err := client.NetworkInterfaces.CreateBridge(machine.SystemID, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -119,7 +120,7 @@ func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Resourc
 	return resourceNetworkInterfaceBridgeRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -147,12 +148,15 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 	} else {
 		d.Set("accept_ra", false)
 	}
+
 	if _, ok := p["bridge_fd"]; ok {
 		d.Set("bridge_fd", int64(p["bridge_fd"].(float64)))
 	}
+
 	if _, ok := p["bridge_stp"]; ok {
 		d.Set("bridge_stp", p["bridge_stp"].(bool))
 	}
+
 	if _, ok := p["bridge_type"]; ok {
 		d.Set("bridge_type", p["bridge_type"].(string))
 	}
@@ -172,7 +176,7 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -191,6 +195,7 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 	}
 
 	params := getNetworkInterfaceBridgeUpdateParams(d, parentID)
+
 	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -199,17 +204,19 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 	return resourceNetworkInterfaceBridgeRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}

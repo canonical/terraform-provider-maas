@@ -28,7 +28,7 @@ func dataSourceMaasResourcePool() *schema.Resource {
 	}
 }
 
-func dataSourceResourcePoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceResourcePoolRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	resourcePool, err := getResourcePool(client, d.Get("name").(string))

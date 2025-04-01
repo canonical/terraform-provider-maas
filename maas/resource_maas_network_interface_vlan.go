@@ -76,7 +76,7 @@ func resourceMaasNetworkInterfaceVlan() *schema.Resource {
 	}
 }
 
-func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -88,16 +88,19 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	vlan, err := getVlan(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	params := getNetworkInterfaceVlanParams(d, parentID, vlan.ID)
+
 	networkInterface, err := client.NetworkInterfaces.CreateVLAN(machine.SystemID, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -106,10 +109,9 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
 	return resourceNetworkInterfaceVlanRead(ctx, d, meta)
-
 }
 
-func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -144,6 +146,7 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 	if _, ok := d.GetOk("fabric"); !ok {
 		tfState["fabric"] = strconv.Itoa(networkInterface.VLAN.FabricID)
 	}
+
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
@@ -151,7 +154,7 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -180,6 +183,7 @@ func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	params := getNetworkInterfaceVlanUpdateParams(d, parentID, vlan.ID)
+
 	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -187,17 +191,19 @@ func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceD
 
 	return resourceNetworkInterfaceVlanRead(ctx, d, meta)
 }
-func resourceNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}

@@ -59,6 +59,7 @@ func TestConvertToStringSlice(t *testing.T) {
 			out := convertToStringSlice(testCase.in)
 			outType := reflect.TypeOf(out).Kind()
 			assert.Equal(t, reflect.Slice, outType, fmt.Sprintf("convertToStringSlice(%s) has type %s, expected %s", testCase.in, outType, reflect.Slice))
+
 			for i := range out {
 				elemType := reflect.TypeOf(out[i]).Kind()
 				assert.Equal(t, reflect.String, elemType, fmt.Sprintf("convertToStringSlice(%s)[%v] has type %s, expected %s", testCase.in, i, elemType, reflect.String))

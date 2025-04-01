@@ -19,7 +19,7 @@ func resourceMaasVMHostMachine() *schema.Resource {
 		UpdateContext: resourceVMHostMachineUpdate,
 		DeleteContext: resourceVMHostMachineDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				machine, err := getMachine(client, d.Id())
@@ -154,7 +154,7 @@ func resourceMaasVMHostMachine() *schema.Resource {
 	}
 }
 
-func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Find VM host
@@ -168,6 +168,7 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	machine, err := client.VMHost.Compose(vmHost.ID, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -186,7 +187,7 @@ func resourceVMHostMachineCreate(ctx context.Context, d *schema.ResourceData, me
 	return resourceVMHostMachineUpdate(ctx, d, meta)
 }
 
-func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get VM host machine
@@ -209,7 +210,7 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta
 	return nil
 }
 
-func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Update VM host machine
@@ -220,7 +221,7 @@ func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, me
 	return resourceVMHostMachineRead(ctx, d, meta)
 }
 
-func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Delete VM host machine
@@ -237,6 +238,7 @@ func getVMHostMachineParams(d *schema.ResourceData) (*entity.VMHostMachineParams
 	if err != nil {
 		return nil, err
 	}
+
 	params := entity.VMHostMachineParams{
 		Hostname:    d.Get("hostname").(string),
 		Cores:       d.Get("cores").(int),
@@ -245,6 +247,7 @@ func getVMHostMachineParams(d *schema.ResourceData) (*entity.VMHostMachineParams
 		Interfaces:  networkInterfaces,
 		Storage:     getVMHostMachineStorageDisks(d.Get("storage_disks").([]interface{})),
 	}
+
 	return &params, nil
 }
 
@@ -259,41 +262,53 @@ func getVMHostMachineUpdateParams(d *schema.ResourceData) *entity.MachineParams 
 
 func getVMHostMachineNetworkInterfaces(networkInterfaces []interface{}) (string, error) {
 	vmHostNetworkInterfaces := []string{}
+
 	for _, networkInterface := range networkInterfaces {
 		n := networkInterface.(map[string]interface{})
 		vlan := n["vlan"].(string)
 		subnet := n["subnet_cidr"].(string)
 		ip := n["ip_address"].(string)
+
 		if vlan == "" && subnet == "" && ip == "" {
 			return "", fmt.Errorf("at least one of the network interface properties (vlan, subnet_cidr, ip_address) is required")
 		}
+
 		properties := []string{}
 		if fabric := n["fabric"].(string); fabric != "" {
 			properties = append(properties, fmt.Sprintf("fabric=%s", fabric))
 		}
+
 		if vlan != "" {
 			properties = append(properties, fmt.Sprintf("vlan=%s", vlan))
 		}
+
 		if subnet != "" {
 			properties = append(properties, fmt.Sprintf("subnet_cidr=%s", subnet))
 		}
+
 		if ip != "" {
 			properties = append(properties, fmt.Sprintf("ip=%s", ip))
 		}
+
 		vmHostNetworkInterfaces = append(vmHostNetworkInterfaces, fmt.Sprintf("%s:%s", n["name"].(string), strings.Join(properties, ",")))
 	}
+
 	return strings.Join(vmHostNetworkInterfaces, ";"), nil
 }
 
 func getVMHostMachineStorageDisks(storageDisks []interface{}) string {
 	vmHostStorageDisks := []string{}
+
 	for i, storageDisk := range storageDisks {
 		d := storageDisk.(map[string]interface{})
 		disk := fmt.Sprintf("disk%d:%d", i, int64(d["size_gigabytes"].(int)))
+
 		if pool := d["pool"].(string); pool != "" {
 			disk = fmt.Sprintf("%s(%s)", disk, pool)
 		}
+
 		vmHostStorageDisks = append(vmHostStorageDisks, disk)
 	}
+
 	return strings.Join(vmHostStorageDisks, ",")
 }

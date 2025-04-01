@@ -20,12 +20,14 @@ func testResourceMaasMachineInstanceStateDataV1() map[string]interface{} {
 	flattenedV0, _ := structure.FlattenJsonToString(map[string]interface{}{
 		"power_user": "ubuntu",
 	})
+
 	return map[string]interface{}{"power_parameters": flattenedV0}
 }
 
 func TestResourceMaasMachineInstanceStateUpgradeV0(t *testing.T) {
 	ctx := context.Background()
 	expected := testResourceMaasMachineInstanceStateDataV1()
+
 	actual, err := resourceMaasMachineStateUpgradeV0(ctx, testResourceMaasMachineInstanceStateDataV0(), nil)
 	if err != nil {
 		t.Fatalf("error migrating state: %s", err)

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfaceLink(machine string, cidr string, gateway string, ip string, mac_address string) string {
+func testAccMaasNetworkInterfaceLink(machine string, cidr string, gateway string, ip string, macAddress string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = "%s"
@@ -70,7 +70,7 @@ resource "maas_network_interface_link" "test" {
   ip_address        = "%s"
   default_gateway   = true
 }
-`, machine, mac_address, cidr, gateway, ip)
+`, machine, macAddress, cidr, gateway, ip)
 }
 
 func testAccMaasNetworkInterfaceLinkDevice(macAddress string, randomName string, cidr string, gateway string, ip string) string {
@@ -132,11 +132,10 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 }
 
 func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
-
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	cidr := "30.30.30.0/24"
 	gateway := "30.30.30.1"
-	mac_address := testutils.RandomMAC()
+	macAddress := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
 		testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.test", "machine"),
@@ -154,13 +153,13 @@ func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.2", mac_address),
+				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.2", macAddress),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_link.test", "ip_address", "30.30.30.2"))...),
 			},
 			// Test update
 			{
-				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.3", mac_address),
+				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.3", macAddress),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_link.test", "ip_address", "30.30.30.3"))...),
 			},
@@ -180,10 +179,12 @@ func testAccMaasNetworkInterfaceLinkCheckExists(rn string, nodeType string) reso
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
+
 		networkInterfaceID, err := strconv.Atoi(rs.Primary.Attributes["network_interface"])
 		if err != nil {
 			return err

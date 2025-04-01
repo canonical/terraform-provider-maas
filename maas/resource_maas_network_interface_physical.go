@@ -20,7 +20,7 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 		UpdateContext: resourceNetworkInterfacePhysicalUpdate,
 		DeleteContext: resourceNetworkInterfacePhysicalDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), "/")
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE/NETWORK_INTERFACE", d.Id())
@@ -85,25 +85,29 @@ func resourceMaasNetworkInterfacePhysical() *schema.Resource {
 	}
 }
 
-func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	networkInterface, err := findNetworkInterfacePhysical(client, machine.SystemID, d.Get("mac_address").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if networkInterface == nil {
 		networkInterface, err = client.NetworkInterfaces.CreatePhysical(machine.SystemID, getNetworkInterfacePhysicalParams(d))
 	} else {
 		networkInterface, err = client.NetworkInterface.Update(machine.SystemID, networkInterface.ID, getNetworkInterfaceUpdateParams(d))
 	}
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
 	tfState := map[string]interface{}{
@@ -120,17 +124,19 @@ func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.Resou
 	return nil
 }
 
-func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	networkInterface, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
 		return diag.FromErr(err)
@@ -150,17 +156,19 @@ func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	networkInterface, err := client.NetworkInterface.Update(machine.SystemID, id, getNetworkInterfaceUpdateParams(d))
 	if err != nil {
 		return diag.FromErr(err)
@@ -180,17 +188,19 @@ func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.Resou
 	return nil
 }
 
-func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -223,15 +233,18 @@ func findNetworkInterfacePhysical(client *client.Client, machineSystemID string,
 	if err != nil {
 		return nil, err
 	}
+
 	for _, n := range networkInterfaces {
 		if n.Type != "physical" {
 			continue
 		}
+
 		if n.MACAddress == identifier || n.Name == identifier || strconv.Itoa(n.ID) == identifier {
 			return &n, nil
 		}
 	}
-	return nil, nil
+
+	return nil, err
 }
 
 func getNetworkInterfacePhysical(client *client.Client, machineSystemID string, identifier string) (*entity.NetworkInterface, error) {
@@ -239,8 +252,10 @@ func getNetworkInterfacePhysical(client *client.Client, machineSystemID string, 
 	if err != nil {
 		return nil, err
 	}
+
 	if n != nil {
 		return n, nil
 	}
+
 	return nil, fmt.Errorf("physical network interface (%s) was not found on machine (%s)", identifier, machineSystemID)
 }

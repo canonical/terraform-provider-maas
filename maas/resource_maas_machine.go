@@ -32,7 +32,7 @@ func resourceMaasMachine() *schema.Resource {
 			},
 		},
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				machine, err := getMachine(client, d.Id())
@@ -152,7 +152,7 @@ func resourceMaasMachine() *schema.Resource {
 	}
 }
 
-func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Create MAAS machine
@@ -160,6 +160,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta int
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	machine, err := client.Machines.Create(getMachineParams(d), powerParams)
 	if err != nil {
 		return diag.FromErr(err)
@@ -178,7 +179,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta int
 	return resourceMachineUpdate(ctx, d, meta)
 }
 
-func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get machine
@@ -204,6 +205,7 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta inter
 	for i, networkInterface := range machine.InterfaceSet {
 		networkInterfaces[i] = networkInterface.MACAddress
 	}
+
 	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
 		return diag.FromErr(err)
 	}
@@ -211,7 +213,7 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta inter
 	return nil
 }
 
-func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Update machine
@@ -219,10 +221,12 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	powerParams, err := getMachinePowerParams(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if _, err := client.Machine.Update(machine.SystemID, getMachineParams(d), powerParams); err != nil {
 		return diag.FromErr(err)
 	}
@@ -230,7 +234,7 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	return resourceMachineRead(ctx, d, meta)
 }
 
-func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Delete machine
@@ -241,16 +245,19 @@ func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, meta int
 	return nil
 }
 
-func getMachinePowerParams(d *schema.ResourceData) (powerParams map[string]interface{}, err error) {
-	powerParams = make(map[string]interface{})
+func getMachinePowerParams(d *schema.ResourceData) (map[string]interface{}, error) {
+	powerParams := make(map[string]interface{})
 	powerParamsString := d.Get("power_parameters").(string)
+
 	params, err := structure.ExpandJsonFromString(powerParamsString)
 	if err != nil {
 		return powerParams, err
 	}
+
 	for k, v := range params {
 		powerParams[fmt.Sprintf("power_parameters_%s", k)] = v
 	}
+
 	return powerParams, nil
 }
 
@@ -268,13 +275,15 @@ func getMachineParams(d *schema.ResourceData) *entity.MachineParams {
 	}
 }
 
-func getMachineStatusFunc(client *client.Client, systemId string) retry.StateRefreshFunc {
+func getMachineStatusFunc(client *client.Client, systemID string) retry.StateRefreshFunc {
 	return func() (interface{}, string, error) {
-		machine, err := client.Machine.Get(systemId)
+		machine, err := client.Machine.Get(systemID)
 		if err != nil {
 			return nil, "", err
 		}
-		log.Printf("[DEBUG] Machine (%s) status: %s\n", systemId, machine.StatusName)
+
+		log.Printf("[DEBUG] Machine (%s) status: %s\n", systemID, machine.StatusName)
+
 		return machine, machine.StatusName, nil
 	}
 }
@@ -289,10 +298,12 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 		Delay:      10 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}
+
 	result, err := stateConf.WaitForStateContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return result.(*entity.Machine), nil
 }
 
@@ -301,10 +312,12 @@ func getMachine(client *client.Client, identifier string) (*entity.Machine, erro
 	if err != nil {
 		return nil, err
 	}
+
 	for _, m := range machines {
 		if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier || m.BootInterface.MACAddress == identifier {
 			return &m, nil
 		}
 	}
+
 	return nil, fmt.Errorf("machine (%s) not found", identifier)
 }

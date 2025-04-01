@@ -17,6 +17,7 @@ import (
 
 func TestAccResourceMaasZone_basic(t *testing.T) {
 	var zone entity.Zone
+
 	name := acctest.RandomWithPrefix("tf-zone-")
 	description := "Test description"
 
@@ -73,6 +74,7 @@ func testAccMaasZoneCheckExists(rn string, zone *entity.Zone) resource.TestCheck
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		gotZone, err := getZone(conn, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting zone: %s", err)
@@ -129,10 +131,12 @@ func getZone(client *client.Client, identifier string) (*entity.Zone, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	for _, z := range zones {
 		if fmt.Sprintf("%v", z.ID) == identifier || z.Name == identifier {
 			return &z, nil
 		}
 	}
+
 	return nil, fmt.Errorf("404 Not Found: %v", identifier)
 }

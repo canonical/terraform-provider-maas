@@ -14,16 +14,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestSplitTagStateId(t *testing.T) {
-	expectedSystemId := "abc123"
-	expectedInterfaceId := 12
-	stateId := fmt.Sprintf("%s/%d", expectedSystemId, expectedInterfaceId)
-	systemId, interfaceId, err := maas.SplitTagStateId(stateId)
+func TestSplitTagStateID(t *testing.T) {
+	expectedSystemID := "abc123"
+	expectedInterfaceID := 12
+	stateID := fmt.Sprintf("%s/%d", expectedSystemID, expectedInterfaceID)
+	systemID, interfaceID, err := maas.SplitTagStateID(stateID)
+
 	if err != nil {
 		t.Fatalf("Error splitting state ID: %s", err)
 	}
-	if systemId != expectedSystemId || interfaceId != expectedInterfaceId {
-		t.Fatalf("Expected system ID %s and interface ID %d, got system ID %s and interface ID %d", expectedSystemId, expectedInterfaceId, systemId, interfaceId)
+
+	if systemID != expectedSystemID || interfaceID != expectedInterfaceID {
+		t.Fatalf("Expected system ID %s and interface ID %d, got system ID %s and interface ID %d", expectedSystemID, expectedInterfaceID, systemID, interfaceID)
 	}
 }
 
@@ -104,17 +106,19 @@ func testAccCheckMaasNetworkInterfaceTagExists(resourceName string, tagNames ...
 			return fmt.Errorf("Not found: %s", resourceName)
 		}
 		// Get the system and interface ID from the state ID
-		systemId, interfaceId, err := maas.SplitTagStateId(rs.Primary.ID)
+		systemID, interfaceID, err := maas.SplitTagStateID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		// Get the existing interface
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-		response, err := conn.NetworkInterface.Get(systemId, interfaceId)
+
+		response, err := conn.NetworkInterface.Get(systemID, interfaceID)
 		if err != nil {
 			return err
 		}
+
 		if response == nil {
 			return fmt.Errorf("MAAS Network Interface (%s) not found.", rs.Primary.ID)
 		}
@@ -140,15 +144,15 @@ func testAccCheckMaasNetworkInterfaceDestroy(s *terraform.State) error {
 		}
 
 		// Retrieve the system and interface ID from the state ID
-		systemId, interfaceId, err := maas.SplitTagStateId(rs.Primary.ID)
+		systemID, interfaceID, err := maas.SplitTagStateID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		// Check the interface doesn't exist
-		response, err := conn.NetworkInterface.Get(systemId, interfaceId)
+		response, err := conn.NetworkInterface.Get(systemID, interfaceID)
 		if err == nil {
-			if response != nil && response.ID == interfaceId {
+			if response != nil && response.ID == interfaceID {
 				return fmt.Errorf("MAAS Network Interface (%s) still exists.", rs.Primary.ID)
 			}
 		}
@@ -157,5 +161,6 @@ func testAccCheckMaasNetworkInterfaceDestroy(s *terraform.State) error {
 			return err
 		}
 	}
+
 	return nil
 }

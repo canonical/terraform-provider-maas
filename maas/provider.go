@@ -68,8 +68,8 @@ func Provider() *schema.Provider {
 			"maas_vlan":                       resourceMaasVlan(),
 			"maas_subnet":                     resourceMaasSubnet(),
 			"maas_subnet_ip_range":            resourceMaasSubnetIPRange(),
-			"maas_dns_domain":                 resourceMaasDnsDomain(),
-			"maas_dns_record":                 resourceMaasDnsRecord(),
+			"maas_dns_domain":                 resourceMaasDNSDomain(),
+			"maas_dns_record":                 resourceMaasDNSRecord(),
 			"maas_space":                      resourceMaasSpace(),
 			"maas_block_device":               resourceMaasBlockDevice(),
 			"maas_block_device_tag":           resourceMaasBlockDeviceTag(),
@@ -106,14 +106,16 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	if apiKey == "" {
 		return nil, diag.FromErr(fmt.Errorf("MAAS API key cannot be empty"))
 	}
+
 	apiURL := d.Get("api_url").(string)
 	if apiURL == "" {
 		return nil, diag.FromErr(fmt.Errorf("MAAS API URL cannot be empty"))
 	}
+
 	config := Config{
 		APIKey:                apiKey,
 		APIURL:                apiURL,
-		ApiVersion:            d.Get("api_version").(string),
+		APIVersion:            d.Get("api_version").(string),
 		TLSCACertPath:         d.Get("tls_ca_cert_path").(string),
 		TLSInsecureSkipVerify: d.Get("tls_insecure_skip_verify").(bool),
 	}
@@ -128,6 +130,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 			Summary:  "Unable to create MAAS client",
 			Detail:   fmt.Sprintf("Unable to create authenticated MAAS client: %s", err),
 		})
+
 		return nil, diags
 	}
 

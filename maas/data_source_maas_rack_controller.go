@@ -52,10 +52,11 @@ func dataSourceMaasRackController() *schema.Resource {
 	}
 }
 
-func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	hostname := d.Get("hostname").(string)
+
 	rackControllers, err := client.RackControllers.Get(
 		&entity.RackControllersGetParams{
 			Hostname: []string{hostname},
@@ -63,9 +64,11 @@ func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, met
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if len(rackControllers) == 0 {
 		return diag.Errorf("rack controller (%s) was not found", hostname)
 	}
+
 	d.SetId(rackControllers[0].SystemID)
 
 	d.Set("description", rackControllers[0].Description)
@@ -78,6 +81,7 @@ func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, met
 			"status": service.Status,
 		}
 	}
+
 	if err := d.Set("services", services); err != nil {
 		return diag.FromErr(err)
 	}
