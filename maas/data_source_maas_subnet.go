@@ -84,7 +84,7 @@ func dataSourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta any)
 		dnsServers[i] = ip.String()
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"id":          fmt.Sprintf("%v", subnet.ID),
 		"fabric":      subnet.VLAN.Fabric,
 		"vid":         subnet.VLAN.VID,

@@ -61,7 +61,7 @@ func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"id":      fmt.Sprintf("%v", vlan.ID),
 		"mtu":     vlan.MTU,
 		"dhcp_on": vlan.DHCPOn,

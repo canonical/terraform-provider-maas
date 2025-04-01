@@ -38,7 +38,7 @@ func dataSourceZoneRead(ctx context.Context, d *schema.ResourceData, meta any) d
 
 	d.SetId(fmt.Sprintf("%v", zone.ID))
 
-	tfstate := map[string]interface{}{
+	tfstate := map[string]any{
 		"name":        zone.Name,
 		"description": zone.Description,
 	}

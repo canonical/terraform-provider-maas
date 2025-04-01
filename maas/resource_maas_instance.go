@@ -266,7 +266,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 		ipAddresses[i] = ip.String()
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"fqdn":         machine.FQDN,
 		"hostname":     machine.Hostname,
 		"zone":         machine.Zone.Name,
@@ -303,9 +303,9 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta an
 
 func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocateParams {
 	if p, ok := d.GetOk("allocate_params"); ok {
-		allocateParamsData := p.([]interface{})
+		allocateParamsData := p.([]any)
 		if allocateParamsData[0] != nil {
-			allocateParams := allocateParamsData[0].(map[string]interface{})
+			allocateParams := allocateParamsData[0].(map[string]any)
 
 			return &entity.MachineAllocateParams{
 				CPUCount: allocateParams["min_cpu_count"].(int),
@@ -324,9 +324,9 @@ func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocatePa
 
 func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams {
 	if p, ok := d.GetOk("deploy_params"); ok {
-		deployParamsData := p.([]interface{})
+		deployParamsData := p.([]any)
 		if deployParamsData[0] != nil {
-			deployParams := deployParamsData[0].(map[string]interface{})
+			deployParams := deployParamsData[0].(map[string]any)
 
 			return &entity.MachineDeployParams{
 				DistroSeries:    deployParams["distro_series"].(string),
@@ -343,7 +343,7 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 
 func configureInstanceNetworkInterfaces(client *client.Client, d *schema.ResourceData, machine *entity.Machine) error {
 	for _, networkInterface := range d.Get("network_interfaces").(*schema.Set).List() {
-		n := networkInterface.(map[string]interface{})
+		n := networkInterface.(map[string]any)
 		// Find the machine network interface
 		name := n["name"].(string)
 

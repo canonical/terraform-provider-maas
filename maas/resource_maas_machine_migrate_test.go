@@ -8,20 +8,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
 
-func testResourceMaasMachineInstanceStateDataV0() map[string]interface{} {
-	return map[string]interface{}{
-		"power_parameters": map[string]interface{}{
+func testResourceMaasMachineInstanceStateDataV0() map[string]any {
+	return map[string]any{
+		"power_parameters": map[string]any{
 			"power_user": "ubuntu",
 		},
 	}
 }
 
-func testResourceMaasMachineInstanceStateDataV1() map[string]interface{} {
-	flattenedV0, _ := structure.FlattenJsonToString(map[string]interface{}{
+func testResourceMaasMachineInstanceStateDataV1() map[string]any {
+	flattenedV0, _ := structure.FlattenJsonToString(map[string]any{
 		"power_user": "ubuntu",
 	})
 
-	return map[string]interface{}{"power_parameters": flattenedV0}
+	return map[string]any{"power_parameters": flattenedV0}
 }
 
 func TestResourceMaasMachineInstanceStateUpgradeV0(t *testing.T) {

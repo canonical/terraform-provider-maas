@@ -116,7 +116,7 @@ func resourceBlockDeviceTagRead(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	// Set the attributes in state
-	tfstate := map[string]interface{}{
+	tfstate := map[string]any{
 		"tags":            blockDevice.Tags,
 		"machine":         blockDevice.SystemID,
 		"block_device_id": blockDevice.ID,

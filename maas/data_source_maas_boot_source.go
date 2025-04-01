@@ -53,7 +53,7 @@ func dataSourceMaasBootSourceRead(ctx context.Context, d *schema.ResourceData, m
 
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"created":          bootsource.Created,
 		"keyring_data":     bootsource.KeyringData,
 		"keyring_filename": bootsource.KeyringFilename,

@@ -38,7 +38,7 @@ func resourceMaasVMHost() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":   fmt.Sprintf("%v", vmHost.ID),
 					"type": vmHost.Type,
 				}
@@ -252,7 +252,7 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 	}
 
 	// Set Terraform state
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"name":                          vmHost.Name,
 		"zone":                          vmHost.Zone.Name,
 		"pool":                          vmHost.Pool.Name,
@@ -413,9 +413,9 @@ func getVMHostDeployParams(d *schema.ResourceData, vmHostType string) (*entity.M
 
 	// Set deploy params if given
 	if p, ok := d.GetOk("deploy_params"); ok {
-		deployParamsData := p.([]interface{})
+		deployParamsData := p.([]any)
 		if deployParamsData[0] != nil {
-			params := deployParamsData[0].(map[string]interface{})
+			params := deployParamsData[0].(map[string]any)
 			deployParams.DistroSeries = params["distro_series"].(string)
 			deployParams.EnableHwSync = params["enable_hw_sync"].(bool)
 			deployParams.HWEKernel = params["hwe_kernel"].(string)

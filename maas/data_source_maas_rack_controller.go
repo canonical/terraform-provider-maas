@@ -74,9 +74,9 @@ func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, met
 	d.Set("description", rackControllers[0].Description)
 	d.Set("version", rackControllers[0].Description)
 
-	services := make([]map[string]interface{}, len(rackControllers[0].ServiceSet))
+	services := make([]map[string]any, len(rackControllers[0].ServiceSet))
 	for i, service := range rackControllers[0].ServiceSet {
-		services[i] = map[string]interface{}{
+		services[i] = map[string]any{
 			"name":   service.Name,
 			"status": service.Status,
 		}

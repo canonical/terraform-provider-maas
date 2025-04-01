@@ -28,12 +28,12 @@ func isBase64Encoded(data []byte) bool {
 	return err == nil
 }
 
-func convertToStringSlice(field interface{}) []string {
+func convertToStringSlice(field any) []string {
 	if field == nil {
 		return nil
 	}
 
-	fieldSlice := field.([]interface{})
+	fieldSlice := field.([]any)
 	result := make([]string, len(fieldSlice))
 
 	for i, value := range fieldSlice {
@@ -43,7 +43,7 @@ func convertToStringSlice(field interface{}) []string {
 	return result
 }
 
-func isElementIPAddress(i interface{}, p cty.Path) diag.Diagnostics {
+func isElementIPAddress(i any, p cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	attr := p[len(p)-1].(cty.IndexStep)
@@ -75,7 +75,7 @@ func isElementIPAddress(i interface{}, p cty.Path) diag.Diagnostics {
 	return diags
 }
 
-func isEmailAddress(i interface{}, p cty.Path) diag.Diagnostics {
+func isEmailAddress(i any, p cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	attr := p[len(p)-1].(cty.GetAttrStep)
@@ -115,7 +115,7 @@ func getNetworkInterface(client *client.Client, machineSystemID string, identifi
 	return nil, fmt.Errorf("network interface (%s) was not found on machine (%s)", identifier, machineSystemID)
 }
 
-func setTerraformState(d *schema.ResourceData, tfState map[string]interface{}) error {
+func setTerraformState(d *schema.ResourceData, tfState map[string]any) error {
 	if val, ok := tfState["id"]; ok {
 		d.SetId(val.(string))
 		delete(tfState, "id")

@@ -101,7 +101,7 @@ type ClientConfig struct {
 	InstallationMethod string
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	apiKey := d.Get("api_key").(string)
 	if apiKey == "" {
 		return nil, diag.FromErr(fmt.Errorf("MAAS API key cannot be empty"))

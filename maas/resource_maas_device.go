@@ -98,11 +98,11 @@ func resourceMaasDevice() *schema.Resource {
 	}
 }
 
-func expandNetworkInterfacesItems(items []interface{}) []string {
+func expandNetworkInterfacesItems(items []any) []string {
 	networkInterfacesItems := make([]string, 0)
 
 	for _, item := range items {
-		itemMap := item.(map[string]interface{})
+		itemMap := item.(map[string]any)
 		networkInterfacesItems = append(networkInterfacesItems, itemMap["mac_address"].(string))
 	}
 
@@ -147,8 +147,8 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta any)
 		newInterfaces := d.Get("network_interfaces").(*schema.Set).List()
 		for _, newIface := range newInterfaces {
 			client.NetworkInterfaces.CreatePhysical(d.Id(), &entity.NetworkInterfacePhysicalParams{
-				MACAddress: newIface.(map[string]interface{})["mac_address"].(string),
-				Name:       newIface.(map[string]interface{})["name"].(string),
+				MACAddress: newIface.(map[string]any)["mac_address"].(string),
+				Name:       newIface.(map[string]any)["name"].(string),
 			})
 		}
 	}
@@ -202,9 +202,9 @@ func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	networkInterfaces := make([]map[string]interface{}, len(device.InterfaceSet))
+	networkInterfaces := make([]map[string]any, len(device.InterfaceSet))
 	for i, networkInterface := range device.InterfaceSet {
-		networkInterfaces[i] = map[string]interface{}{
+		networkInterfaces[i] = map[string]any{
 			"id":          networkInterface.ID,
 			"mac_address": networkInterface.MACAddress,
 			"name":        networkInterface.Name,

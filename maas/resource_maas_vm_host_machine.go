@@ -29,7 +29,7 @@ func resourceMaasVMHostMachine() *schema.Resource {
 				if machine.VMHost.ID == 0 || machine.VMHost.Name == "" || machine.VMHost.ResourceURI == "" {
 					return nil, fmt.Errorf("machine (%s) is not a VM host machine", d.Id())
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":      machine.SystemID,
 					"vm_host": fmt.Sprintf("%v", machine.VMHost.ID),
 					"cores":   machine.CPUCount,
@@ -197,7 +197,7 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	// Set Terraform state
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"hostname": machine.Hostname,
 		"domain":   machine.Domain.Name,
 		"zone":     machine.Zone.Name,
@@ -214,7 +214,7 @@ func resourceVMHostMachineUpdate(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*ClientConfig).Client
 
 	// Update VM host machine
-	if _, err := client.Machine.Update(d.Id(), getVMHostMachineUpdateParams(d), map[string]interface{}{}); err != nil {
+	if _, err := client.Machine.Update(d.Id(), getVMHostMachineUpdateParams(d), map[string]any{}); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -234,7 +234,7 @@ func resourceVMHostMachineDelete(ctx context.Context, d *schema.ResourceData, me
 }
 
 func getVMHostMachineParams(d *schema.ResourceData) (*entity.VMHostMachineParams, error) {
-	networkInterfaces, err := getVMHostMachineNetworkInterfaces(d.Get("network_interfaces").([]interface{}))
+	networkInterfaces, err := getVMHostMachineNetworkInterfaces(d.Get("network_interfaces").([]any))
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func getVMHostMachineParams(d *schema.ResourceData) (*entity.VMHostMachineParams
 		PinnedCores: d.Get("pinned_cores").(int),
 		Memory:      int64(d.Get("memory").(int)),
 		Interfaces:  networkInterfaces,
-		Storage:     getVMHostMachineStorageDisks(d.Get("storage_disks").([]interface{})),
+		Storage:     getVMHostMachineStorageDisks(d.Get("storage_disks").([]any)),
 	}
 
 	return &params, nil
@@ -260,11 +260,11 @@ func getVMHostMachineUpdateParams(d *schema.ResourceData) *entity.MachineParams 
 	}
 }
 
-func getVMHostMachineNetworkInterfaces(networkInterfaces []interface{}) (string, error) {
+func getVMHostMachineNetworkInterfaces(networkInterfaces []any) (string, error) {
 	vmHostNetworkInterfaces := []string{}
 
 	for _, networkInterface := range networkInterfaces {
-		n := networkInterface.(map[string]interface{})
+		n := networkInterface.(map[string]any)
 		vlan := n["vlan"].(string)
 		subnet := n["subnet_cidr"].(string)
 		ip := n["ip_address"].(string)
@@ -296,11 +296,11 @@ func getVMHostMachineNetworkInterfaces(networkInterfaces []interface{}) (string,
 	return strings.Join(vmHostNetworkInterfaces, ";"), nil
 }
 
-func getVMHostMachineStorageDisks(storageDisks []interface{}) string {
+func getVMHostMachineStorageDisks(storageDisks []any) string {
 	vmHostStorageDisks := []string{}
 
 	for i, storageDisk := range storageDisks {
-		d := storageDisk.(map[string]interface{})
+		d := storageDisk.(map[string]any)
 		disk := fmt.Sprintf("disk%d:%d", i, int64(d["size_gigabytes"].(int)))
 
 		if pool := d["pool"].(string); pool != "" {

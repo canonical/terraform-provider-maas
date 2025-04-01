@@ -108,9 +108,9 @@ func dataSourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta any)
 		return diag.FromErr(err)
 	}
 
-	networkInterfaces := make([]map[string]interface{}, len(device.InterfaceSet))
+	networkInterfaces := make([]map[string]any, len(device.InterfaceSet))
 	for i, networkInterface := range device.InterfaceSet {
-		networkInterfaces[i] = map[string]interface{}{
+		networkInterfaces[i] = map[string]any{
 			"id":          networkInterface.ID,
 			"mac_address": networkInterface.MACAddress,
 			"name":        networkInterface.Name,

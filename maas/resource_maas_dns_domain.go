@@ -26,7 +26,7 @@ func resourceMaasDNSDomain() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":            fmt.Sprintf("%v", domain.ID),
 					"name":          domain.Name,
 					"ttl":           domain.TTL,

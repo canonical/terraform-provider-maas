@@ -34,7 +34,7 @@ func resourceMaasVlan() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":     fmt.Sprintf("%v", vlan.ID),
 					"fabric": fmt.Sprintf("%v", fabric.ID),
 					"vid":    vlan.VID,
@@ -118,7 +118,7 @@ func resourceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"mtu":     vlan.MTU,
 		"dhcp_on": vlan.DHCPOn,
 		"name":    vlan.Name,

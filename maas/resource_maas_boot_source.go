@@ -86,7 +86,7 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta an
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"created":          bootsource.Created,
 		"keyring_data":     bootsource.KeyringData,
 		"keyring_filename": bootsource.KeyringFilename,

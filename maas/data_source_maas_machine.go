@@ -93,7 +93,7 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"id":               machine.SystemID,
 		"architecture":     machine.Architecture,
 		"min_hwe_kernel":   machine.MinHWEKernel,

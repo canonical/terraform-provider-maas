@@ -129,14 +129,14 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	p := networkInterface.Params.(map[string]interface{})
+	p := networkInterface.Params.(map[string]any)
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
 	} else {
 		d.Set("accept_ra", false)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"mtu":    networkInterface.EffectiveMTU,
 		"name":   networkInterface.Name,
 		"parent": networkInterface.Parents[0],
@@ -231,7 +231,7 @@ func getNetworkInterfaceVlanUpdateParams(d *schema.ResourceData, parentID int, v
 	}
 }
 
-func resourceNetworkInterfaceVlanImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceNetworkInterfaceVlanImport(d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:VLAN_INTERFACE_ID", d.Id())

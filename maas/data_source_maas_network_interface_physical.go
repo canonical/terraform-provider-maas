@@ -59,7 +59,7 @@ func dataSourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"id":          fmt.Sprintf("%v", n.ID),
 		"mac_address": n.MACAddress,
 		"machine":     d.Get("machine").(string),

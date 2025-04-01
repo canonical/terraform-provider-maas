@@ -34,7 +34,7 @@ func resourceMaasTag() *schema.Resource {
 				for i, machine := range machines {
 					machinesSystemIDs[i] = machine.SystemID
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":       tag.Name,
 					"name":     tag.Name,
 					"machines": machinesSystemIDs,

@@ -166,7 +166,7 @@ func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	p := networkInterface.Params.(map[string]interface{})
+	p := networkInterface.Params.(map[string]any)
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
 	} else {
@@ -201,7 +201,7 @@ func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceDat
 		d.Set("bond_xmit_hash_policy", p["bond_xmit_hash_policy"].(string))
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
 		"name":        networkInterface.Name,
@@ -302,7 +302,7 @@ func getNetworkInterfaceBondUpdateParams(d *schema.ResourceData, parentIDs []int
 	}
 }
 
-func findBondParentsID(client *client.Client, machineSystemID string, parents []interface{}) ([]int, error) {
+func findBondParentsID(client *client.Client, machineSystemID string, parents []any) ([]int, error) {
 	var result []int
 
 	for _, p := range parents {
@@ -323,7 +323,7 @@ func findBondParentsID(client *client.Client, machineSystemID string, parents []
 	return result, nil
 }
 
-func resourceNetworkInterfaceBondImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceNetworkInterfaceBondImport(d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BOND_INTERFACE_ID", d.Id())

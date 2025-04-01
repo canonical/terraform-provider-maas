@@ -47,7 +47,7 @@ func resourceMaasMachine() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":               machine.SystemID,
 					"power_type":       machine.PowerType,
 					"power_parameters": powerParamsString,
@@ -116,7 +116,7 @@ func resourceMaasMachine() *schema.Resource {
 					}
 					return reflect.DeepEqual(oldMap, newMap)
 				},
-				StateFunc: func(v interface{}) string {
+				StateFunc: func(v any) string {
 					json, _ := structure.NormalizeJsonString(v)
 					return json
 				},
@@ -189,7 +189,7 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 	}
 
 	// Set Terraform state
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"architecture":   machine.Architecture,
 		"min_hwe_kernel": machine.MinHWEKernel,
 		"hostname":       machine.Hostname,
@@ -245,8 +245,8 @@ func resourceMachineDelete(ctx context.Context, d *schema.ResourceData, meta any
 	return nil
 }
 
-func getMachinePowerParams(d *schema.ResourceData) (map[string]interface{}, error) {
-	powerParams := make(map[string]interface{})
+func getMachinePowerParams(d *schema.ResourceData) (map[string]any, error) {
+	powerParams := make(map[string]any)
 	powerParamsString := d.Get("power_parameters").(string)
 
 	params, err := structure.ExpandJsonFromString(powerParamsString)
@@ -276,7 +276,7 @@ func getMachineParams(d *schema.ResourceData) *entity.MachineParams {
 }
 
 func getMachineStatusFunc(client *client.Client, systemID string) retry.StateRefreshFunc {
-	return func() (interface{}, string, error) {
+	return func() (any, string, error) {
 		machine, err := client.Machine.Get(systemID)
 		if err != nil {
 			return nil, "", err

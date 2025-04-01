@@ -38,7 +38,7 @@ func resourceMaasDNSRecord() *schema.Resource {
 				client := meta.(*ClientConfig).Client
 
 				resourceIdentifier := idParts[1]
-				var tfState map[string]interface{}
+				var tfState map[string]any
 				if resourceType == "A/AAAA" {
 					dnsRecord, err := getDNSResource(client, resourceIdentifier)
 					if err != nil {
@@ -48,7 +48,7 @@ func resourceMaasDNSRecord() *schema.Resource {
 					for _, ipAddress := range dnsRecord.IPAddresses {
 						ips = append(ips, ipAddress.IP.String())
 					}
-					tfState = map[string]interface{}{
+					tfState = map[string]any{
 						"id":   fmt.Sprintf("%v", dnsRecord.ID),
 						"type": resourceType,
 						"data": strings.Join(ips, " "),
@@ -60,7 +60,7 @@ func resourceMaasDNSRecord() *schema.Resource {
 					if err != nil {
 						return nil, err
 					}
-					tfState = map[string]interface{}{
+					tfState = map[string]any{
 						"id":   fmt.Sprintf("%v", dnsRecord.ID),
 						"type": dnsRecord.RRType,
 						"data": dnsRecord.RRData,

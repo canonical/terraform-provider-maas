@@ -26,7 +26,7 @@ func resourceMaasSpace() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":   fmt.Sprintf("%v", space.ID),
 					"name": space.Name,
 				}

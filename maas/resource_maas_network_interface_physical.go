@@ -110,7 +110,7 @@ func resourceNetworkInterfacePhysicalCreate(ctx context.Context, d *schema.Resou
 
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
 		"name":        networkInterface.Name,
@@ -142,7 +142,7 @@ func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
 		"name":        networkInterface.Name,
@@ -174,7 +174,7 @@ func resourceNetworkInterfacePhysicalUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
 		"name":        networkInterface.Name,

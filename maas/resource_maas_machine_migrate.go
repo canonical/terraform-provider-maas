@@ -69,9 +69,9 @@ func resourceMaasMachineResourceV0() *schema.Resource {
 	}
 }
 
-func resourceMaasMachineStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta any) (map[string]interface{}, error) {
+func resourceMaasMachineStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	// Convert power_parameters from map[string]string to a serialized JSON string.
-	oldPowerParametersRaw := rawState["power_parameters"].(map[string]interface{})
+	oldPowerParametersRaw := rawState["power_parameters"].(map[string]any)
 
 	flattenedOldPowerParameters, err := structure.FlattenJsonToString(oldPowerParametersRaw)
 	if err != nil {

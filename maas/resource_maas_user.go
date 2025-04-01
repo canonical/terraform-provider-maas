@@ -24,7 +24,7 @@ func resourceMaasUser() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":       user.UserName,
 					"name":     user.UserName,
 					"email":    user.Email,

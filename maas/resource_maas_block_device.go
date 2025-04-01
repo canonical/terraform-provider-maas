@@ -36,7 +36,7 @@ func resourceMaasBlockDevice() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":             fmt.Sprintf("%v", blockDevice.ID),
 					"machine":        machine.SystemID,
 					"name":           blockDevice.Name,
@@ -223,7 +223,7 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta a
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"partitions": getBlockDevicePartitionsTFState(blockDevice),
 		"model":      blockDevice.Model,
 		"serial":     blockDevice.Serial,
@@ -361,8 +361,8 @@ func setBlockDeviceTags(client *client.Client, d *schema.ResourceData, blockDevi
 	return nil
 }
 
-func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[string]interface{} {
-	partitions := make([]map[string]interface{}, len(blockDevice.Partitions))
+func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[string]any {
+	partitions := make([]map[string]any, len(blockDevice.Partitions))
 
 	// Order by database ID since MAAS is returning the partitions in no particular order.
 	// MAAS is always maintaining a continuous sequence of numbers for partition indexes.
@@ -387,7 +387,7 @@ func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[stri
 	})
 
 	for i, p := range blockDevice.Partitions {
-		part := map[string]interface{}{
+		part := map[string]any{
 			"size_gigabytes": int(p.Size / (1024 * 1024 * 1024)),
 			"bootable":       p.Bootable,
 			"tags":           p.Tags,
@@ -415,9 +415,9 @@ func updateBlockDevicePartitions(client *client.Client, d *schema.ResourceData, 
 		}
 	}
 	// Create new partitions given by the user
-	partitions := p.([]interface{})
+	partitions := p.([]any)
 	for _, part := range partitions {
-		partition := part.(map[string]interface{})
+		partition := part.(map[string]any)
 		partitionParams := entity.BlockDevicePartitionParams{
 			Size:     int64(partition["size_gigabytes"].(int)) * 1024 * 1024 * 1024,
 			Bootable: partition["bootable"].(bool),

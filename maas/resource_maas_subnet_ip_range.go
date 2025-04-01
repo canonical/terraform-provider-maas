@@ -45,7 +45,7 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 						return nil, err
 					}
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":       fmt.Sprintf("%v", ipRange.ID),
 					"subnet":   fmt.Sprintf("%v", ipRange.Subnet.ID),
 					"type":     ipRange.Type,
@@ -124,7 +124,7 @@ func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"comment":  ipRange.Comment,
 		"type":     ipRange.Type,
 		"start_ip": ipRange.StartIP.String(),

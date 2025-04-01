@@ -27,7 +27,7 @@ func resourceMaasSubnet() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":          fmt.Sprintf("%v", subnet.ID),
 					"cidr":        subnet.CIDR,
 					"name":        subnet.Name,
@@ -179,7 +179,7 @@ func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		dnsServers[i] = ip.String()
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"gateway_ip":  gatewayIP,
 		"dns_servers": dnsServers,
 	}
@@ -251,7 +251,7 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 	}
 	// Create the new IP ranges on this subnet
 	for _, i := range p.(*schema.Set).List() {
-		ipr := i.(map[string]interface{})
+		ipr := i.(map[string]any)
 
 		params := entity.IPRangeParams{
 			Subnet:  fmt.Sprintf("%v", subnetID),
