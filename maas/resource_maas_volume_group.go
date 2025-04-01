@@ -237,10 +237,8 @@ func findVolumeGroupBlockDevices(volumeGroup *entity.VolumeGroup) []string {
 		// for block devices we can directly reference the `id`:
 		if did, ok := thisDevice["device_id"]; ok {
 			deviceId = fmt.Sprintf("%v", did)
-			fmt.Printf("\nPAR: %+v", thisDevice)
 		} else if id, ok := thisDevice["id"]; ok {
 			deviceId = fmt.Sprintf("%v", id)
-			fmt.Printf("\nBD:  %+v", thisDevice)
 		} else {
 			continue
 		}
