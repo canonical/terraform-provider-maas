@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasNetworkInterfaceBridge() *schema.Resource {
+func resourceMAASNetworkInterfaceBridge() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network Bridges.",
 		CreateContext: resourceNetworkInterfaceBridgeCreate,

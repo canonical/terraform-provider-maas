@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasBlockDevice() *schema.Resource {
+func resourceMAASBlockDevice() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS machines' block devices.",
 		CreateContext: resourceBlockDeviceCreate,

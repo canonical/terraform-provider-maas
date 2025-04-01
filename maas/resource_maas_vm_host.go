@@ -23,7 +23,7 @@ var (
 	}
 )
 
-func resourceMaasVMHost() *schema.Resource {
+func resourceMAASVMHost() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS VM hosts.",
 		CreateContext: resourceVMHostCreate,

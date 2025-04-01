@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfaceLink(machine string, cidr string, gateway string, ip string, macAddress string) string {
+func testAccMAASNetworkInterfaceLink(machine string, cidr string, gateway string, ip string, macAddress string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = "%s"
@@ -73,7 +73,7 @@ resource "maas_network_interface_link" "test" {
 `, machine, macAddress, cidr, gateway, ip)
 }
 
-func testAccMaasNetworkInterfaceLinkDevice(macAddress string, randomName string, cidr string, gateway string, ip string) string {
+func testAccMAASNetworkInterfaceLinkDevice(macAddress string, randomName string, cidr string, gateway string, ip string) string {
 	return fmt.Sprintf(`
 resource "maas_device" "test" {
   hostname    = %q
@@ -104,7 +104,7 @@ resource "maas_network_interface_link" "first" {
 `, randomName, macAddress, randomName, cidr, randomName, gateway, ip)
 }
 
-func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
+func TestAccResourceMAASNetworkInterfaceLink_device(t *testing.T) {
 	macAddress := testutils.RandomMAC()
 	randomName := acctest.RandomWithPrefix("tf-test")
 	cidr := testutils.GenerateRandomCIDR()
@@ -118,9 +118,9 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceLinkDevice(macAddress, randomName, cidr, gateway, ipAddress),
+				Config: testAccMAASNetworkInterfaceLinkDevice(macAddress, randomName, cidr, gateway, ipAddress),
 				Check: resource.ComposeTestCheckFunc(
-					testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.first", "device"),
+					testAccMAASNetworkInterfaceLinkCheckExists("maas_network_interface_link.first", "device"),
 					resource.TestCheckResourceAttr("maas_network_interface_link.first", "ip_address", ipAddress),
 					resource.TestCheckResourceAttr("maas_network_interface_link.first", "mode", "STATIC"),
 					resource.TestCheckResourceAttr("maas_network_interface_link.first", "subnet", cidr),
@@ -131,14 +131,14 @@ func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 	})
 }
 
-func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
+func TestAccResourceMAASNetworkInterfaceLink_basic(t *testing.T) {
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	cidr := "30.30.30.0/24"
 	gateway := "30.30.30.1"
 	macAddress := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasNetworkInterfaceLinkCheckExists("maas_network_interface_link.test", "machine"),
+		testAccMAASNetworkInterfaceLinkCheckExists("maas_network_interface_link.test", "machine"),
 		resource.TestCheckResourceAttr("maas_network_interface_link.test", "subnet", cidr),
 		resource.TestCheckResourceAttr("maas_network_interface_link.test", "mode", "STATIC"),
 		resource.TestCheckResourceAttr("maas_network_interface_link.test", "default_gateway", "true"),
@@ -153,13 +153,13 @@ func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.2", macAddress),
+				Config: testAccMAASNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.2", macAddress),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_link.test", "ip_address", "30.30.30.2"))...),
 			},
 			// Test update
 			{
-				Config: testAccMaasNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.3", macAddress),
+				Config: testAccMAASNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.3", macAddress),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_link.test", "ip_address", "30.30.30.3"))...),
 			},
@@ -167,7 +167,7 @@ func TestAccResourceMaasNetworkInterfaceLink_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasNetworkInterfaceLinkCheckExists(rn string, nodeType string) resource.TestCheckFunc {
+func testAccMAASNetworkInterfaceLinkCheckExists(rn string, nodeType string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {

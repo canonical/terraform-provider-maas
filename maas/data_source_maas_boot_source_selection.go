@@ -10,9 +10,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasBootSourceSelection() *schema.Resource {
+func dataSourceMAASBootSourceSelection() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceMaasBootSourceSelectionRead,
+		ReadContext: dataSourceMAASBootSourceSelectionRead,
 		Description: "Provides a resource to fetch a MAAS boot source selection.",
 
 		Schema: map[string]*schema.Schema{
@@ -53,7 +53,7 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 	}
 }
 
-func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func dataSourceMAASBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	bootSourceSelection, err := getBootSourceSelectionByRelease(client, d.Get("boot_source").(int), d.Get("os").(string), d.Get("release").(string))

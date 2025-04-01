@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasVMHostMachine() *schema.Resource {
+func resourceMAASVMHostMachine() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS VM host machines.",
 		CreateContext: resourceVMHostMachineCreate,

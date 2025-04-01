@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceMaasMachine() *schema.Resource {
+func resourceMAASMachine() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS machines.",
 		CreateContext: resourceMachineCreate,
@@ -26,8 +26,8 @@ func resourceMaasMachine() *schema.Resource {
 		SchemaVersion: 1,
 		StateUpgraders: []schema.StateUpgrader{
 			{
-				Type:    resourceMaasMachineResourceV0().CoreConfigSchema().ImpliedType(),
-				Upgrade: resourceMaasMachineStateUpgradeV0,
+				Type:    resourceMAASMachineResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceMAASMachineStateUpgradeV0,
 				Version: 0,
 			},
 		},

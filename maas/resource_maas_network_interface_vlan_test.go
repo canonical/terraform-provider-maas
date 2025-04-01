@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfaceVLAN(machine string, macAddressPhys string, mtu int) string {
+func testAccMAASNetworkInterfaceVLAN(machine string, macAddressPhys string, mtu int) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
 	name = "tf-fabric-vlan"
@@ -54,14 +54,14 @@ resource "maas_network_interface_vlan" "test" {
   `, machine, macAddressPhys, mtu)
 }
 
-func TestAccResourceMaasNetworkInterfaceVLAN_basic(t *testing.T) {
+func TestAccResourceMAASNetworkInterfaceVLAN_basic(t *testing.T) {
 	var networkInterfaceVLAN entity.NetworkInterface
 
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddressPhys := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasNetworkInterfaceVLANCheckExists("maas_network_interface_vlan.test", &networkInterfaceVLAN),
+		testAccMAASNetworkInterfaceVLANCheckExists("maas_network_interface_vlan.test", &networkInterfaceVLAN),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "accept_ra", "false"),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "parent", "bond0"),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "tags.#", "2"),
@@ -73,17 +73,17 @@ func TestAccResourceMaasNetworkInterfaceVLAN_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasNetworkInterfaceVLANDestroy,
+		CheckDestroy: testAccCheckMAASNetworkInterfaceVLANDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceVLAN(machine, macAddressPhys, 1500),
+				Config: testAccMAASNetworkInterfaceVLAN(machine, macAddressPhys, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMaasNetworkInterfaceVLAN(machine, macAddressPhys, 9000),
+				Config: testAccMAASNetworkInterfaceVLAN(machine, macAddressPhys, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "mtu", "9000"))...),
 			},
@@ -108,7 +108,7 @@ func TestAccResourceMaasNetworkInterfaceVLAN_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasNetworkInterfaceVLANCheckExists(rn string, networkInterfaceVLAN *entity.NetworkInterface) resource.TestCheckFunc {
+func testAccMAASNetworkInterfaceVLANCheckExists(rn string, networkInterfaceVLAN *entity.NetworkInterface) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -137,7 +137,7 @@ func testAccMaasNetworkInterfaceVLANCheckExists(rn string, networkInterfaceVLAN 
 	}
 }
 
-func testAccCheckMaasNetworkInterfaceVLANDestroy(s *terraform.State) error {
+func testAccCheckMAASNetworkInterfaceVLANDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

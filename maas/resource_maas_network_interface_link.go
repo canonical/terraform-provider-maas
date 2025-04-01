@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceMaasNetworkInterfaceLink() *schema.Resource {
+func resourceMAASNetworkInterfaceLink() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage network configuration on a network interface.",
 		CreateContext: resourceNetworkInterfaceLinkCreate,

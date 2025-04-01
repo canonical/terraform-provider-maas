@@ -39,13 +39,13 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMaasNetworkInterfaceDestroy,
+		CheckDestroy: testAccCheckMAASNetworkInterfaceDestroy,
 		Steps: []resource.TestStep{
 			// Test creation.
 			{
-				Config: testAccMaasNetworkInterfaceTagConfig(hostname, macAddress, tagName, tagName2),
+				Config: testAccMAASNetworkInterfaceTagConfig(hostname, macAddress, tagName, tagName2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName, tagName2),
+					testAccCheckMAASNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName, tagName2),
 					resource.TestCheckResourceAttr("maas_network_interface_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName2),
@@ -53,9 +53,9 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 			},
 			// Test update. Expected behaviour is that the previous tag is removed and the new tag is added.
 			{
-				Config: testAccMaasNetworkInterfaceTagConfig(hostname, macAddress, tagName2, tagName3),
+				Config: testAccMAASNetworkInterfaceTagConfig(hostname, macAddress, tagName2, tagName3),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName2, tagName3),
+					testAccCheckMAASNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName2, tagName3),
 					resource.TestCheckResourceAttr("maas_network_interface_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName2),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName3),
@@ -82,7 +82,7 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasNetworkInterfaceTagConfig(hostname, macAddress string, tagNames ...string) string {
+func testAccMAASNetworkInterfaceTagConfig(hostname, macAddress string, tagNames ...string) string {
 	return fmt.Sprintf(`
 resource "maas_device" "test" {
   hostname = %q
@@ -99,7 +99,7 @@ resource "maas_network_interface_tag" "test" {
 	`, hostname, macAddress, macAddress, fmt.Sprintf("[\"%s\"]", strings.Join(tagNames, "\", \"")))
 }
 
-func testAccCheckMaasNetworkInterfaceTagExists(resourceName string, tagNames ...string) resource.TestCheckFunc {
+func testAccCheckMAASNetworkInterfaceTagExists(resourceName string, tagNames ...string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
@@ -134,7 +134,7 @@ func testAccCheckMaasNetworkInterfaceTagExists(resourceName string, tagNames ...
 	}
 }
 
-func testAccCheckMaasNetworkInterfaceDestroy(s *terraform.State) error {
+func testAccCheckMAASNetworkInterfaceDestroy(s *terraform.State) error {
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	// loop through the resources in state, verifying each maas_network_interface_tag is destroyed

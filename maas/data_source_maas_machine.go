@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
 
-func dataSourceMaasMachine() *schema.Resource {
+func dataSourceMAASMachine() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMachineRead,
 

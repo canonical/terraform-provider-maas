@@ -34,9 +34,9 @@ func TestAccMAASVMHost_DeployParams(t *testing.T) {
 				PreConfig: func() {
 					t.Log("PreConfig, about to create VM host machine")
 				},
-				Config: testAccMaasVMHostDeployParamsConfig(vmHostIdentifier, testMachineName, testVMHostName),
+				Config: testAccMAASVMHostDeployParamsConfig(vmHostIdentifier, testMachineName, testVMHostName),
 				Check: resource.ComposeTestCheckFunc(
-					checkMaasVMHostExists(t, resourceName),
+					checkMAASVMHostExists(t, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "type", "lxd"),
 				),
 			},
@@ -44,7 +44,7 @@ func TestAccMAASVMHost_DeployParams(t *testing.T) {
 	})
 }
 
-func checkMaasVMHostExists(t *testing.T, resourceName string) resource.TestCheckFunc {
+func checkMAASVMHostExists(t *testing.T, resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		t.Log("Checking if VM host exists...")
 
@@ -83,7 +83,7 @@ func checkMaasVMHostExists(t *testing.T, resourceName string) resource.TestCheck
 	}
 }
 
-func testAccMaasVMHostDeployParamsConfig(vmHostIdentifier string, testMachineName string, testVMHostName string) string {
+func testAccMAASVMHostDeployParamsConfig(vmHostIdentifier string, testMachineName string, testVMHostName string) string {
 	return fmt.Sprintf(`
 	resource "maas_vm_host_machine" "%s" {
 	  vm_host = %q

@@ -18,7 +18,7 @@ var (
 	validDNSRecordTypes = []string{"A/AAAA", "CNAME", "MX", "NS", "SRV", "SSHFP", "TXT"}
 )
 
-func resourceMaasDNSRecord() *schema.Resource {
+func resourceMAASDNSRecord() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS DNS domain records.",
 		CreateContext: resourceDNSRecordCreate,

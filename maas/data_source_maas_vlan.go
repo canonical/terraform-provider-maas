@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasVlan() *schema.Resource {
+func dataSourceMAASVlan() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS VLAN.",
 		ReadContext: dataSourceVlanRead,

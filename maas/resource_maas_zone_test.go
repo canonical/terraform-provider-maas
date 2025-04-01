@@ -15,14 +15,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAccResourceMaasZone_basic(t *testing.T) {
+func TestAccResourceMAASZone_basic(t *testing.T) {
 	var zone entity.Zone
 
 	name := acctest.RandomWithPrefix("tf-zone-")
 	description := "Test description"
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasZoneCheckExists("maas_zone.test", &zone),
+		testAccMAASZoneCheckExists("maas_zone.test", &zone),
 		resource.TestCheckResourceAttr("maas_zone.test", "name", name),
 		resource.TestCheckResourceAttr("maas_zone.test", "description", description),
 	}
@@ -30,11 +30,11 @@ func TestAccResourceMaasZone_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasZoneDestroy,
+		CheckDestroy: testAccCheckMAASZoneDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasZone(name, description),
+				Config: testAccMAASZone(name, description),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 			// Test import using name
@@ -62,7 +62,7 @@ func TestAccResourceMaasZone_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasZoneCheckExists(rn string, zone *entity.Zone) resource.TestCheckFunc {
+func testAccMAASZoneCheckExists(rn string, zone *entity.Zone) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -86,7 +86,7 @@ func testAccMaasZoneCheckExists(rn string, zone *entity.Zone) resource.TestCheck
 	}
 }
 
-func testAccMaasZone(name string, description string) string {
+func testAccMAASZone(name string, description string) string {
 	return fmt.Sprintf(`
 resource "maas_zone" "test" {
 	name        = "%s"
@@ -95,7 +95,7 @@ resource "maas_zone" "test" {
 `, name, description)
 }
 
-func testAccCheckMaasZoneDestroy(s *terraform.State) error {
+func testAccCheckMAASZoneDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

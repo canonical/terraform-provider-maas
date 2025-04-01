@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceMaasInstance() *schema.Resource {
+func resourceMAASInstance() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to deploy and release machines already configured in MAAS, based on the specified parameters. If no parameters are given, a random machine will be allocated and deployed using the defaults.\n\n**NOTE:** The MAAS provider currently provides both standalone resources and in-line resources for network interfaces. You cannot use in-line network interfaces in conjunction with any standalone network interfaces resources. Doing so will cause conflicts and will overwrite network configs.",
 		CreateContext: resourceInstanceCreate,

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceMaasSubnet() *schema.Resource {
+func resourceMAASSubnet() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network subnets.\n\n**NOTE:** The MAAS provider currently supports both standalone resources and in-line resources for subnet IP ranges. You cannot use in-line `ip_ranges` in conjunction with standalone `maas_subnet_ip_range` resources. Doing so will cause conflicts and will overwrite subnet IP ranges.",
 		CreateContext: resourceSubnetCreate,

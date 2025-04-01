@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasVlan() *schema.Resource {
+func resourceMAASVlan() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network VLANs.",
 		CreateContext: resourceVlanCreate,

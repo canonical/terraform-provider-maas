@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasResourcePool() *schema.Resource {
+func dataSourceMAASResourcePool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS resource pool.",
 		ReadContext: dataSourceResourcePoolRead,

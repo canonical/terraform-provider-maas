@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasTag() *schema.Resource {
+func resourceMAASTag() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage a MAAS tag, used to tag machines.",
 		CreateContext: resourceTagCreate,

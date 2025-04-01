@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
 
-func resourceMaasMachineResourceV0() *schema.Resource {
+func resourceMAASMachineResourceV0() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"architecture": {
@@ -69,7 +69,7 @@ func resourceMaasMachineResourceV0() *schema.Resource {
 	}
 }
 
-func resourceMaasMachineStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
+func resourceMAASMachineStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	// Convert power_parameters from map[string]string to a serialized JSON string.
 	oldPowerParametersRaw := rawState["power_parameters"].(map[string]any)
 

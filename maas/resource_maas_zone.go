@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasZone() *schema.Resource {
+func resourceMAASZone() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS zones.",
 		CreateContext: resourceZoneCreate,

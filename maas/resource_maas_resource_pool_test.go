@@ -14,14 +14,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccResourceMaasResourcePool_basic(t *testing.T) {
+func TestAccResourceMAASResourcePool_basic(t *testing.T) {
 	var resourcePool entity.ResourcePool
 
 	description := "Test description"
 	name := acctest.RandomWithPrefix("tf-resource-pool-")
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasResourcePoolCheckExists("maas_resource_pool.test", &resourcePool),
+		testAccMAASResourcePoolCheckExists("maas_resource_pool.test", &resourcePool),
 		resource.TestCheckResourceAttr("maas_resource_pool.test", "description", description),
 		resource.TestCheckResourceAttr("maas_resource_pool.test", "name", name),
 	}
@@ -29,11 +29,11 @@ func TestAccResourceMaasResourcePool_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasResourcePoolDestroy,
+		CheckDestroy: testAccCheckMAASResourcePoolDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasResourcePool(description, name),
+				Config: testAccMAASResourcePool(description, name),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 			// Test import using ID
@@ -63,7 +63,7 @@ func TestAccResourceMaasResourcePool_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasResourcePoolCheckExists(rn string, resourcePool *entity.ResourcePool) resource.TestCheckFunc {
+func testAccMAASResourcePoolCheckExists(rn string, resourcePool *entity.ResourcePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -92,7 +92,7 @@ func testAccMaasResourcePoolCheckExists(rn string, resourcePool *entity.Resource
 	}
 }
 
-func testAccMaasResourcePool(description string, name string) string {
+func testAccMAASResourcePool(description string, name string) string {
 	return fmt.Sprintf(`
 resource "maas_resource_pool" "test" {
 	name        = "%s"
@@ -101,7 +101,7 @@ resource "maas_resource_pool" "test" {
 `, name, description)
 }
 
-func testAccCheckMaasResourcePoolDestroy(s *terraform.State) error {
+func testAccCheckMAASResourcePoolDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

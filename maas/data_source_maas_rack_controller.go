@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasRackController() *schema.Resource {
+func dataSourceMAASRackController() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS rack controller.",
 		ReadContext: resourceRackControllerRead,

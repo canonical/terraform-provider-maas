@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccResourceMaasSubnetIPRange_basic(t *testing.T) {
+func TestAccResourceMAASSubnetIPRange_basic(t *testing.T) {
 	// Setup IP range parameters
 	var ipRange entity.IPRange
 

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasNetworkInterfacePhysical() *schema.Resource {
+func dataSourceMAASNetworkInterfacePhysical() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceNetworkInterfacePhysicalRead,
 

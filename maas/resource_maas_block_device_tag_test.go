@@ -27,13 +27,13 @@ func TestAccBlockDeviceTag_basic(t *testing.T) {
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMaasBlockDeviceTagDestroy,
+		CheckDestroy: testAccCheckMAASBlockDeviceTagDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{
 				Config: testAccBlockDeviceTagConfig(machine, blockDeviceName, tagName, tagName2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasBlockDeviceTagExists("maas_block_device_tag.test", tagName, tagName2),
+					testAccCheckMAASBlockDeviceTagExists("maas_block_device_tag.test", tagName, tagName2),
 					resource.TestCheckResourceAttr("maas_block_device_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName),
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName2),
@@ -43,7 +43,7 @@ func TestAccBlockDeviceTag_basic(t *testing.T) {
 			{
 				Config: testAccBlockDeviceTagConfig(machine, blockDeviceName, tagName2, tagName3),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasBlockDeviceTagExists("maas_block_device_tag.test", tagName2, tagName3),
+					testAccCheckMAASBlockDeviceTagExists("maas_block_device_tag.test", tagName2, tagName3),
 					resource.TestCheckResourceAttr("maas_block_device_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName2),
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName3),
@@ -92,7 +92,7 @@ resource "maas_block_device_tag" "test" {
 	`, hostname, name, fmt.Sprintf("[\"%s\"]", strings.Join(tagNames, "\", \"")))
 }
 
-func testAccCheckMaasBlockDeviceTagExists(resourceName string, tagNames ...string) resource.TestCheckFunc {
+func testAccCheckMAASBlockDeviceTagExists(resourceName string, tagNames ...string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
@@ -127,7 +127,7 @@ func testAccCheckMaasBlockDeviceTagExists(resourceName string, tagNames ...strin
 	}
 }
 
-func testAccCheckMaasBlockDeviceTagDestroy(s *terraform.State) error {
+func testAccCheckMAASBlockDeviceTagDestroy(s *terraform.State) error {
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	// loop through the resources in state, verifying each maas_block_device_tag is destroyed

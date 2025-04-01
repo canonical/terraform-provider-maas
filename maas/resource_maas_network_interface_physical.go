@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasNetworkInterfacePhysical() *schema.Resource {
+func resourceMAASNetworkInterfacePhysical() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage a physical network interface from an existing MAAS machine.",
 		CreateContext: resourceNetworkInterfacePhysicalCreate,

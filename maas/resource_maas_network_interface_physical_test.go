@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfacePhysical(name string, machine string, macAddress string, mtu int) string {
+func testAccMAASNetworkInterfacePhysical(name string, machine string, macAddress string, mtu int) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
 	name = "tf-fabric-physical"
@@ -41,7 +41,7 @@ resource "maas_network_interface_physical" "test" {
 `, machine, name, macAddress, mtu)
 }
 
-func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
+func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
 	var networkInterfacePhysical entity.NetworkInterface
 
 	name := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 9))
@@ -49,7 +49,7 @@ func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
 	macAddress := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasNetworkInterfacePhysicalCheckExists("maas_network_interface_physical.test", &networkInterfacePhysical),
+		testAccMAASNetworkInterfacePhysicalCheckExists("maas_network_interface_physical.test", &networkInterfacePhysical),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "name", name),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mac_address", macAddress),
 		resource.TestCheckResourceAttr("maas_network_interface_physical.test", "tags.#", "2"),
@@ -61,17 +61,17 @@ func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasNetworkInterfacePhysicalDestroy,
+		CheckDestroy: testAccCheckMAASNetworkInterfacePhysicalDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfacePhysical(name, machine, macAddress, 1500),
+				Config: testAccMAASNetworkInterfacePhysical(name, machine, macAddress, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMaasNetworkInterfacePhysical(name, machine, macAddress, 9000),
+				Config: testAccMAASNetworkInterfacePhysical(name, machine, macAddress, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "9000"))...),
 			},
@@ -113,7 +113,7 @@ func TestAccResourceMaasNetworkInterfacePhysical_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasNetworkInterfacePhysicalCheckExists(rn string, networkInterfacePhysical *entity.NetworkInterface) resource.TestCheckFunc {
+func testAccMAASNetworkInterfacePhysicalCheckExists(rn string, networkInterfacePhysical *entity.NetworkInterface) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -142,7 +142,7 @@ func testAccMaasNetworkInterfacePhysicalCheckExists(rn string, networkInterfaceP
 	}
 }
 
-func testAccCheckMaasNetworkInterfacePhysicalDestroy(s *terraform.State) error {
+func testAccCheckMAASNetworkInterfacePhysicalDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

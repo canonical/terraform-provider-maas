@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasNetworkInterfaceBond() *schema.Resource {
+func resourceMAASNetworkInterfaceBond() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network Bonds.",
 		CreateContext: resourceNetworkInterfaceBondCreate,

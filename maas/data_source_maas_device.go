@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasDevice() *schema.Resource {
+func dataSourceMAASDevice() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS device.",
 		ReadContext: dataSourceDeviceRead,

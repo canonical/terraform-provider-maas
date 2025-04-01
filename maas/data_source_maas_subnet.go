@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasSubnet() *schema.Resource {
+func dataSourceMAASSubnet() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS network subnet.",
 		ReadContext: dataSourceSubnetRead,

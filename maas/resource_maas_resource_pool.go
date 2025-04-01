@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasResourcePool() *schema.Resource {
+func resourceMAASResourcePool() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS resource pools.",
 		CreateContext: resourceResourcePoolCreate,

@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasUser() *schema.Resource {
+func resourceMAASUser() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS users.",
 		CreateContext: resourceUserCreate,

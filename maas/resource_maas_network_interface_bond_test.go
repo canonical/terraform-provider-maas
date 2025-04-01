@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasNetworkInterfaceBond(name string, machine string, macAddress string, macAddressPhysOne string, macAddressPhysTwo string, mtu int) string {
+func testAccMAASNetworkInterfaceBond(name string, machine string, macAddress string, macAddressPhysOne string, macAddressPhysTwo string, mtu int) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
 	name = "tf-fabric-bond"
@@ -64,7 +64,7 @@ resource "maas_network_interface_bond" "test" {
 `, machine, macAddressPhysOne, macAddressPhysTwo, name, macAddress, mtu)
 }
 
-func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
+func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 	var networkInterfaceBond entity.NetworkInterface
 
 	name := fmt.Sprintf("tf-nic-bond-%d", acctest.RandIntRange(0, 9))
@@ -74,7 +74,7 @@ func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
 	macAddressPhysTwo := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasNetworkInterfaceBondCheckExists("maas_network_interface_bond.test", &networkInterfaceBond),
+		testAccMAASNetworkInterfaceBondCheckExists("maas_network_interface_bond.test", &networkInterfaceBond),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "name", name),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "accept_ra", "false"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "bond_downdelay", "1"),
@@ -97,17 +97,17 @@ func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasNetworkInterfaceBondDestroy,
+		CheckDestroy: testAccCheckMAASNetworkInterfaceBondDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
+				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMaasNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
+				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "9000"))...),
 			},
@@ -132,7 +132,7 @@ func TestAccResourceMaasNetworkInterfaceBond_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasNetworkInterfaceBondCheckExists(rn string, networkInterfaceBond *entity.NetworkInterface) resource.TestCheckFunc {
+func testAccMAASNetworkInterfaceBondCheckExists(rn string, networkInterfaceBond *entity.NetworkInterface) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -161,7 +161,7 @@ func testAccMaasNetworkInterfaceBondCheckExists(rn string, networkInterfaceBond 
 	}
 }
 
-func testAccCheckMaasNetworkInterfaceBondDestroy(s *terraform.State) error {
+func testAccCheckMAASNetworkInterfaceBondDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

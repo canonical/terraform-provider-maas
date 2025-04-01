@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceMaasBootSourceSelection_basic(t *testing.T) {
+func TestAccDataSourceMAASBootSourceSelection_basic(t *testing.T) {
 	os := "ubuntu"
 	release := "mantic"
 	arches := []string{"amd64"}
@@ -34,14 +34,14 @@ func TestAccDataSourceMaasBootSourceSelection_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootSourceSelection(os, release, arches, subarches, labels),
+				Config: testAccDataSourceMAASBootSourceSelection(os, release, arches, subarches, labels),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootSourceSelection(os string, release string, arches []string, subarches []string, labels []string) string {
+func testAccDataSourceMAASBootSourceSelection(os string, release string, arches []string, subarches []string, labels []string) string {
 	return fmt.Sprintf(`
 %s
 
