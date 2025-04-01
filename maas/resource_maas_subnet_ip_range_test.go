@@ -21,10 +21,12 @@ func TestAccResourceMaasSubnetIPRange_basic(t *testing.T) {
 	ipRangeAttrName := "maas_subnet_ip_range.test_ip_range"
 	range_type := "reserved"
 	comment := "test-comment"
-	ipStart := "10.88.88.1"
-	ipEnd := "10.88.88.50"
-	ipStartMod := "10.88.88.2"
-	ipEndMod := "10.88.88.49"
+	cidr := testutils.GenerateRandomCidr()
+	gateway := testutils.GetNetworkPrefixFromCidr(cidr) + ".1"
+	ipStart := testutils.GetNetworkPrefixFromCidr(cidr) + ".2"
+	ipEnd := testutils.GetNetworkPrefixFromCidr(cidr) + ".50"
+	ipStartMod := testutils.GetNetworkPrefixFromCidr(cidr) + ".2"
+	ipEndMod := testutils.GetNetworkPrefixFromCidr(cidr) + ".49"
 	commentMod := "a-different-comment"
 
 	// Check functions
@@ -45,7 +47,9 @@ func TestAccResourceMaasSubnetIPRange_basic(t *testing.T) {
 			// Test creation
 			{
 				Config: testAccSubnetIPRangeExampleResource(
+					cidr,
 					subnet_name,
+					gateway,
 					range_type,
 					comment,
 					ipStart,
@@ -129,7 +133,9 @@ func testAccMAASSubnetIPRangeCheckExists(rn string, ipRange *entity.IPRange) res
 // An example resource configuration for a subnet IP range.
 // Note that a subnet is required to create an IP range.
 func testAccSubnetIPRangeExampleResource(
+	cidr string,
 	name_subnet string,
+	gateway string,
 	range_type string,
 	comment string,
 	start_ip string,
@@ -138,20 +144,20 @@ func testAccSubnetIPRangeExampleResource(
 	// A subnet is required to create an IP range
 	return fmt.Sprintf(`
 		resource "maas_subnet" "test_subnet" {
-		  cidr        = "10.88.88.0/26"
-		  name        = "%s"
-		  gateway_ip  = "10.88.88.1"
+		  cidr        = %q
+		  name        = %q
+		  gateway_ip  = %q
 		  dns_servers = ["8.8.8.8"]
 		}
 
 		resource "maas_subnet_ip_range" "test_ip_range" {
 		  subnet   = maas_subnet.test_subnet.id
-		  type     = "%s"
-		  start_ip = "%s"
-		  end_ip   = "%s"
-		  comment  = "%s"
+		  type     = %q
+		  start_ip = %q
+		  end_ip   = %q
+		  comment  = %q
 		}
-	`, name_subnet, range_type, start_ip, end_ip, comment)
+	`, cidr, name_subnet, gateway, range_type, start_ip, end_ip, comment)
 }
 
 func testAccCheckMAASSubnetIPRangeDestroy(s *terraform.State) error {

@@ -107,9 +107,9 @@ resource "maas_network_interface_link" "first" {
 func TestAccResourceMaasNetworkInterfaceLink_device(t *testing.T) {
 	macAddress := testutils.RandomMAC()
 	randomName := acctest.RandomWithPrefix("tf-test")
-	cidr := "10.77.77.0/24"
-	gateway := "10.77.77.1"
-	ipAddress := "10.77.77.42"
+	cidr := testutils.GenerateRandomCidr()
+	gateway := testutils.GetNetworkPrefixFromCidr(cidr) + ".1"
+	ipAddress := testutils.GetNetworkPrefixFromCidr(cidr) + ".42"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
