@@ -289,7 +289,7 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 		params.Fabric = fmt.Sprintf("%v", fabric.ID)
 
 		if p, ok := d.GetOk("vlan"); ok {
-			vlan, err := getVlan(client, fabric.ID, p.(string))
+			vlan, err := getVLAN(client, fabric.ID, p.(string))
 			if err != nil {
 				return nil, err
 			}

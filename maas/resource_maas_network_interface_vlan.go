@@ -11,15 +11,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMAASNetworkInterfaceVlan() *schema.Resource {
+func resourceMAASNetworkInterfaceVLAN() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage MAAS network Vlans.",
-		CreateContext: resourceNetworkInterfaceVlanCreate,
-		ReadContext:   resourceNetworkInterfaceVlanRead,
-		UpdateContext: resourceNetworkInterfaceVlanUpdate,
-		DeleteContext: resourceNetworkInterfaceVlanDelete,
+		Description:   "Provides a resource to manage MAAS network VLANs.",
+		CreateContext: resourceNetworkInterfaceVLANCreate,
+		ReadContext:   resourceNetworkInterfaceVLANRead,
+		UpdateContext: resourceNetworkInterfaceVLANUpdate,
+		DeleteContext: resourceNetworkInterfaceVLANDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceNetworkInterfaceVlanImport,
+			State: resourceNetworkInterfaceVLANImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"accept_ra": {
@@ -76,7 +76,7 @@ func resourceMAASNetworkInterfaceVlan() *schema.Resource {
 	}
 }
 
-func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceNetworkInterfaceVLANCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -94,12 +94,12 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVlan(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
+	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	params := getNetworkInterfaceVlanParams(d, parentID, vlan.ID)
+	params := getNetworkInterfaceVLANParams(d, parentID, vlan.ID)
 
 	networkInterface, err := client.NetworkInterfaces.CreateVLAN(machine.SystemID, params)
 	if err != nil {
@@ -108,10 +108,10 @@ func resourceNetworkInterfaceVlanCreate(ctx context.Context, d *schema.ResourceD
 
 	d.SetId(strconv.Itoa(networkInterface.ID))
 
-	return resourceNetworkInterfaceVlanRead(ctx, d, meta)
+	return resourceNetworkInterfaceVLANRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceNetworkInterfaceVLANRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -154,7 +154,7 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -177,21 +177,21 @@ func resourceNetworkInterfaceVlanUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVlan(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
+	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	params := getNetworkInterfaceVlanUpdateParams(d, parentID, vlan.ID)
+	params := getNetworkInterfaceVLANUpdateParams(d, parentID, vlan.ID)
 
 	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourceNetworkInterfaceVlanRead(ctx, d, meta)
+	return resourceNetworkInterfaceVLANRead(ctx, d, meta)
 }
-func resourceNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -211,7 +211,7 @@ func resourceNetworkInterfaceVlanDelete(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func getNetworkInterfaceVlanParams(d *schema.ResourceData, parentID int, vlanID int) *entity.NetworkInterfaceVLANParams {
+func getNetworkInterfaceVLANParams(d *schema.ResourceData, parentID int, vlanID int) *entity.NetworkInterfaceVLANParams {
 	return &entity.NetworkInterfaceVLANParams{
 		AcceptRA: d.Get("accept_ra").(bool),
 		MTU:      d.Get("mtu").(int),
@@ -221,7 +221,7 @@ func getNetworkInterfaceVlanParams(d *schema.ResourceData, parentID int, vlanID 
 	}
 }
 
-func getNetworkInterfaceVlanUpdateParams(d *schema.ResourceData, parentID int, vlanID int) *entity.NetworkInterfaceUpdateParams {
+func getNetworkInterfaceVLANUpdateParams(d *schema.ResourceData, parentID int, vlanID int) *entity.NetworkInterfaceUpdateParams {
 	return &entity.NetworkInterfaceUpdateParams{
 		AcceptRA: d.Get("accept_ra").(bool),
 		MTU:      d.Get("mtu").(int),
@@ -231,7 +231,7 @@ func getNetworkInterfaceVlanUpdateParams(d *schema.ResourceData, parentID int, v
 	}
 }
 
-func resourceNetworkInterfaceVlanImport(d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
+func resourceNetworkInterfaceVLANImport(d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:VLAN_INTERFACE_ID", d.Id())

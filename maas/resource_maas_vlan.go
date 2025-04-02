@@ -11,13 +11,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMAASVlan() *schema.Resource {
+func resourceMAASVLAN() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network VLANs.",
-		CreateContext: resourceVlanCreate,
-		ReadContext:   resourceVlanRead,
-		UpdateContext: resourceVlanUpdate,
-		DeleteContext: resourceVlanDelete,
+		CreateContext: resourceVLANCreate,
+		ReadContext:   resourceVLANRead,
+		UpdateContext: resourceVLANUpdate,
+		DeleteContext: resourceVLANDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), ":")
@@ -30,7 +30,7 @@ func resourceMAASVlan() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				vlan, err := getVlan(client, fabric.ID, idParts[1])
+				vlan, err := getVLAN(client, fabric.ID, idParts[1])
 				if err != nil {
 					return nil, err
 				}
@@ -87,7 +87,7 @@ func resourceMAASVlan() *schema.Resource {
 	}
 }
 
-func resourceVlanCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceVLANCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
@@ -95,17 +95,17 @@ func resourceVlanCreate(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	vlan, err := client.VLANs.Create(fabric.ID, getVlanParams(d))
+	vlan, err := client.VLANs.Create(fabric.ID, getVLANParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(fmt.Sprintf("%v", vlan.ID))
 
-	return resourceVlanUpdate(ctx, d, meta)
+	return resourceVLANUpdate(ctx, d, meta)
 }
 
-func resourceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceVLANRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
@@ -113,7 +113,7 @@ func resourceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVlan(client, fabric.ID, d.Id())
+	vlan, err := getVLAN(client, fabric.ID, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -131,7 +131,7 @@ func resourceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 	return nil
 }
 
-func resourceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceVLANUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
@@ -139,19 +139,19 @@ func resourceVlanUpdate(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVlan(client, fabric.ID, d.Id())
+	vlan, err := getVLAN(client, fabric.ID, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if _, err := client.VLAN.Update(fabric.ID, vlan.VID, getVlanParams(d)); err != nil {
+	if _, err := client.VLAN.Update(fabric.ID, vlan.VID, getVLANParams(d)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourceVlanRead(ctx, d, meta)
+	return resourceVLANRead(ctx, d, meta)
 }
 
-func resourceVlanDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceVLANDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
@@ -159,7 +159,7 @@ func resourceVlanDelete(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVlan(client, fabric.ID, d.Id())
+	vlan, err := getVLAN(client, fabric.ID, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -171,7 +171,7 @@ func resourceVlanDelete(ctx context.Context, d *schema.ResourceData, meta any) d
 	return nil
 }
 
-func getVlanParams(d *schema.ResourceData) *entity.VLANParams {
+func getVLANParams(d *schema.ResourceData) *entity.VLANParams {
 	return &entity.VLANParams{
 		VID:    d.Get("vid").(int),
 		MTU:    d.Get("mtu").(int),
@@ -181,7 +181,7 @@ func getVlanParams(d *schema.ResourceData) *entity.VLANParams {
 	}
 }
 
-func findVlan(client *client.Client, fabricID int, identifier string) (*entity.VLAN, error) {
+func findVLAN(client *client.Client, fabricID int, identifier string) (*entity.VLAN, error) {
 	vlans, err := client.VLANs.Get(fabricID)
 	if err != nil {
 		return nil, err
@@ -196,8 +196,8 @@ func findVlan(client *client.Client, fabricID int, identifier string) (*entity.V
 	return nil, err
 }
 
-func getVlan(client *client.Client, fabricID int, identifier string) (*entity.VLAN, error) {
-	vlan, err := findVlan(client, fabricID, identifier)
+func getVLAN(client *client.Client, fabricID int, identifier string) (*entity.VLAN, error) {
+	vlan, err := findVLAN(client, fabricID, identifier)
 	if err != nil {
 		return nil, err
 	}

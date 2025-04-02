@@ -8,10 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMAASVlan() *schema.Resource {
+func dataSourceMAASVLAN() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS VLAN.",
-		ReadContext: dataSourceVlanRead,
+		ReadContext: dataSourceVLANRead,
 
 		Schema: map[string]*schema.Schema{
 			"dhcp_on": {
@@ -48,7 +48,7 @@ func dataSourceMAASVlan() *schema.Resource {
 	}
 }
 
-func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func dataSourceVLANRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
@@ -56,7 +56,7 @@ func dataSourceVlanRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVlan(client, fabric.ID, d.Get("vlan").(string))
+	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
