@@ -53,7 +53,7 @@ func resourceMaasVlanDHCP() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"primary_rack_controller", "secondary_rack_controller"},
 				AtLeastOneOf:  []string{"primary_rack_controller", "relay_vlan"},
-				Description:   "Database ID of the VLAN to to use as a relay for DHCP.",
+				Description:   "VID of the VLAN to to use as a relay for DHCP.",
 			},
 			"secondary_rack_controller": {
 				Type:          schema.TypeString,
@@ -71,9 +71,9 @@ func resourceMaasVlanDHCP() *schema.Resource {
 				},
 			},
 			"vlan": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "Database ID of the VLAN whose DHCP is managed.",
+				Description: "VID of the VLAN whose DHCP is managed.",
 			},
 		},
 	}
@@ -93,11 +93,7 @@ func resourceVlanDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 	fabricID := d.Get("fabric").(int)
-	vlanIDString := d.Get("vlan").(string)
-	vlanID, err := strconv.Atoi(vlanIDString)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	vlanID := d.Get("vlan").(int)
 	params := getVlanDHCPParams(d)
 	log.Printf("about to update vlan dhcp params with fabricID: %d, vlanID: %d, params: %+v", fabricID, vlanID, params)
 	_, err = client.VLAN.Update(fabricID, vlanID, params)
@@ -170,12 +166,8 @@ func resourceVlanDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 	client := meta.(*ClientConfig).Client
 
 	fabricID := d.Get("fabric").(int)
-	vlanIDString := d.Get("vlan").(string)
-	vlanID, err := strconv.Atoi(vlanIDString)	
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	_, err = client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
+	vlanID:= d.Get("vlan").(int)
+	_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
 		PrimaryRack: "", SecondaryRack: "", RelayVLAN: 0,
 	})
 	if err != nil {
