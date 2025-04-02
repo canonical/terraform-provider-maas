@@ -42,18 +42,14 @@ lint: lint-go lint-tf
 
 .PHONY: lint-go
 lint-go:
-	@test -z "$$(gofmt -l -s -d . | tee /dev/stderr)"
+	golangci-lint run $(if $(LINT_AUTOFIX),--fix,) ./...
+
+.PHONY: lint-go-fix
+lint-go-fix: LINT_AUTOFIX=true
+lint-go-fix: lint-go
 
 .PHONY: lint-tf
 lint-tf: tfproviderlint tfproviderlintx
-
-.PHONY: lint-golangci
-lint-golangci:
-	golangci-lint run $(if $(LINT_AUTOFIX),--fix,) ./...
-
-.PHONY: lint-golangci-fix
-lint-golangci-fix: LINT_AUTOFIX=true
-lint-golangci-fix: lint-golangci
 
 test:
 	go test $(TEST) -v $(TESTARGS) -timeout=5m -parallel=$(TEST_PARALLELISM)

@@ -32,8 +32,9 @@ jobs:
         with:
           go-version-file: "go.mod"
           cache: true
-      - run: make lint
-      - name: golangci-lint
+      - name: Terraform lint
+        run: make lint-tf
+      - name: Go lint
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.0
