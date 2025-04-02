@@ -13,7 +13,10 @@ import (
 func TestAccMaasVlanDHCP_basic(t *testing.T) {
 	vlanID := 0
 	fabricID := "0"
-
+	cidr := testutils.GenerateRandomCidr()
+	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
+	startIP, endIP := networkPrefix + ".2", networkPrefix + ".5"
+	rackController := "maas-dev"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
@@ -23,7 +26,7 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test create.
 			{
-				Config: testAccVlanDHCPConfigBasic(fabricID, vlanID),
+				Config: testAccVlanDHCPConfigBasic(fabricID, rackController, vlanID, cidr, startIP, endIP),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", vlanID),
 					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", strconv.Itoa(vlanID)),
@@ -92,14 +95,14 @@ func testAccCheckMAASVLANDHCPCheckDestroy(s *terraform.State) error {
 	return nil
 }
 	
-func testAccVlanDHCPConfigBasic(fabricID string, vlanID int) string {
+func testAccVlanDHCPConfigBasic(fabricID string, rackController string, vlanID int, cidr string, startIP string, endIP string) string {
 	return fmt.Sprintf(`
 data "maas_fabric" "test" {
   name = %q
 }
 
 data "maas_rack_controller" "test" {
-  hostname = "maas-dev"
+  hostname = %q
 }
 
 data "maas_vlan" "test" {
@@ -108,7 +111,7 @@ data "maas_vlan" "test" {
 }
 
 resource "maas_subnet" "test" {
-  cidr = "10.66.66.0/24"
+  cidr = %q
   fabric = data.maas_fabric.test.id
   vlan = data.maas_vlan.test.id
   name = "subnet-66-66"
@@ -116,8 +119,8 @@ resource "maas_subnet" "test" {
 
 resource "maas_subnet_ip_range" "test" {
   subnet = maas_subnet.test.id
-  start_ip = "10.66.66.1"
-  end_ip = "10.66.66.254"
+  start_ip = %q
+  end_ip = %q
   type = "dynamic"
 }
 
@@ -128,5 +131,5 @@ resource "maas_vlan_dhcp" "test" {
   ip_ranges = [maas_subnet_ip_range.test.id]
 }
 
-`, fabricID, vlanID)
+`, fabricID, rackController, vlanID, cidr, startIP, endIP)
 }
