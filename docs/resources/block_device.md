@@ -80,6 +80,7 @@ Optional:
 
 Read-Only:
 
+- `id` (Number) The ID of the partition.
 - `path` (String) The path of the partition.
 
 ## Import

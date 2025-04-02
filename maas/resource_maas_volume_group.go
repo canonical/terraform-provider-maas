@@ -26,10 +26,11 @@ func resourceMaasVolumeGroup() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"block_devices": {
-				Type:        schema.TypeSet,
-				Required:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "The list of block device ids to be included in this volume group.",
+				Type:         schema.TypeSet,
+				Optional:     true,
+				Elem:         &schema.Schema{Type: schema.TypeString},
+				Description:  "The list of block device ids to be included in this volume group.\n*Note*: For the boot disk, a partition should be supplied instead, as MAAS would otherwise automatically create one.",
+				AtLeastOneOf: []string{"block_devices", "partitions"},
 			},
 			"machine": {
 				Type:        schema.TypeString,
@@ -42,8 +43,15 @@ func resourceMaasVolumeGroup() *schema.Resource {
 				Required:    true,
 				Description: "The name for this volume group",
 			},
+			"partitions": {
+				Type:         schema.TypeSet,
+				Optional:     true,
+				Elem:         &schema.Schema{Type: schema.TypeString},
+				Description:  "The list of partition ids to be included in this volume group.",
+				AtLeastOneOf: []string{"block_devices", "partitions"},
+			},
 			"size_gigabytes": {
-				Type:        schema.TypeInt,
+				Type:        schema.TypeFloat,
 				Computed:    true,
 				Description: "The volume group size (GiB).",
 			},
@@ -89,11 +97,18 @@ func resourceMaasVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	block_devices := d.Get("block_devices").(*schema.Set).List()
+	block_devices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
+	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
+
+	boot_disk := fmt.Sprintf("%v", machine.BootDisk.ID)
+	if slices.Contains(block_devices, boot_disk) {
+		return diag.Errorf("Cannot add the boot disk %v (%v) as a block device, provide partitions on top of it instead.", boot_disk, machine.BootDisk.Name)
+	}
 
 	volumeGroupParams := entity.VolumeGroupCreateParams{
 		Name:         d.Get("name").(string),
-		BlockDevices: convertToStringSlice(block_devices),
+		BlockDevices: block_devices,
+		Partitions:   partitions,
 	}
 
 	volumeGroup, err := client.VolumeGroups.Create(machine.SystemID, &volumeGroupParams)
@@ -123,12 +138,13 @@ func resourceMaasVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	blockDevices := findVolumeGroupBlockDevices(volumeGroup)
+	blockDevices, partitions := findVolumeGroupDevices(volumeGroup)
 
 	tfState := map[string]interface{}{
 		"block_devices":  blockDevices,
 		"machine":        volumeGroup.SystemID,
 		"name":           volumeGroup.Name,
+		"partitions":     partitions,
 		"size_gigabytes": int64(volumeGroup.Size / (1024 * 1024 * 1024)),
 		"uuid":           volumeGroup.UUID,
 	}
@@ -173,10 +189,33 @@ func resourceMaasVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
+	var addPartitions []string
+	var removePartitions []string
+
+	if d.HasChange("partitions") {
+		oldPartitions, newPartitions := d.GetChange("partitions")
+
+		oldPartitionList := convertToStringSlice(oldPartitions.(*schema.Set).List())
+		newPartitionList := convertToStringSlice(newPartitions.(*schema.Set).List())
+
+		for _, partition := range newPartitionList {
+			if !slices.Contains(oldPartitionList, partition) {
+				addPartitions = append(addPartitions, partition)
+			}
+		}
+		for _, partition := range oldPartitionList {
+			if !slices.Contains(newPartitionList, partition) {
+				removePartitions = append(removePartitions, partition)
+			}
+		}
+	}
+
 	updateParams := entity.VolumeGroupUpdateParams{
 		Name:               d.Get("name").(string),
 		AddBlockDevices:    addBlockDevices,
 		RemoveBlockDevices: removeBlockDevices,
+		AddPartitions:      addPartitions,
+		RemovePartitions:   removePartitions,
 	}
 
 	volumeGroup, err := client.VolumeGroup.Update(machine.SystemID, id, &updateParams)
@@ -209,43 +248,25 @@ func resourceMaasVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func findVolumeGroupBlockDevices(volumeGroup *entity.VolumeGroup) []string {
+func findVolumeGroupDevices(volumeGroup *entity.VolumeGroup) ([]string, []string) {
 	var blockDevices []string
+	var partitions []string
+
 	for _, device := range volumeGroup.Devices.([]interface{}) {
 		thisDevice := device.(map[string]interface{})
 
-		var deviceId string
+		if id, ok := thisDevice["id"]; ok {
+			id := fmt.Sprintf("%v", id)
 
-		// We specifically want the list of blockdevices assigned to this volume group,
-		// but some of the attached devices are a partition. We instead search for the
-		// existence of `device_id` which exists only on partitions, and is the id of
-		// the parent block device on the partition data:
-		// {
-		// 	bootable:false
-		// 	device_id:218
-		// 	filesystem: {...}
-		// 	id:238
-		// 	path:...
-		// 	resource_uri:...
-		// 	size:...
-		// 	system_id:...
-		// 	tags:[]
-		// 	type:partition
-		// 	used_for:...
-		// 	uuid:...
-		// }
-		// for block devices we can directly reference the `id`:
-		if did, ok := thisDevice["device_id"]; ok {
-			deviceId = fmt.Sprintf("%v", did)
-		} else if id, ok := thisDevice["id"]; ok {
-			deviceId = fmt.Sprintf("%v", id)
-		} else {
-			continue
+			// partitions have a parent device_id, block devices do not
+			if _, ok := thisDevice["device_id"]; ok {
+				partitions = append(partitions, id)
+			} else {
+				blockDevices = append(blockDevices, id)
+			}
 		}
-
-		blockDevices = append(blockDevices, deviceId)
 	}
-	return blockDevices
+	return blockDevices, partitions
 }
 
 func getVolumeGroup(client *client.Client, machineID string, identifier string) (*entity.VolumeGroup, error) {

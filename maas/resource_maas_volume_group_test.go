@@ -34,23 +34,24 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
-				Config: testAccMaasVolumeGroup(machine, name, []string{"maas_block_device.bd1.id"}),
+				Config: testAccMaasVolumeGroup(machine, name, []string{}, []string{"maas_block_device.bd1.partitions.0.id"}),
 				Check: resource.ComposeTestCheckFunc(append(baseChecks,
+					// we loose about 5MB when creating a volume group, which rounds down to the next GB
 					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "19"),
-					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "1"),
-					resource.TestCheckResourceAttrPair("maas_volume_group.test", "block_devices.0", "maas_block_device.bd1", "id"),
+					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "0"),
+					resource.TestCheckResourceAttr("maas_volume_group.test", "partitions.#", "1"),
+					resource.TestCheckResourceAttrPair("maas_volume_group.test", "partitions.0", "maas_block_device.bd1", "partitions.0.id"),
 				)...),
 			},
 			// Test the update function
 			{
-				Config: testAccMaasVolumeGroup(machine, name, []string{"maas_block_device.bd1.id", "maas_block_device.bd2.id"}),
+				Config: testAccMaasVolumeGroup(machine, name, []string{"maas_block_device.bd2.id"}, []string{"maas_block_device.bd1.partitions.0.id"}),
 				Check: resource.ComposeTestCheckFunc(append(baseChecks,
 					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "69"),
-					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "2"),
-					// volume_group.block_devices is sorted, but there is no guarantee as to which
-					// block device gets which id, so we need to test as an unordered collection
-					resource.TestCheckTypeSetElemAttrPair("maas_volume_group.test", "block_devices.*", "maas_block_device.bd1", "id"),
-					resource.TestCheckTypeSetElemAttrPair("maas_volume_group.test", "block_devices.*", "maas_block_device.bd2", "id"),
+					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "1"),
+					resource.TestCheckResourceAttr("maas_volume_group.test", "partitions.#", "1"),
+					resource.TestCheckTypeSetElemAttrPair("maas_volume_group.test", "block_devices.0", "maas_block_device.bd2", "id"),
+					resource.TestCheckResourceAttrPair("maas_volume_group.test", "partitions.0", "maas_block_device.bd1", "partitions.0.id"),
 				)...),
 			},
 			// Test import
@@ -74,7 +75,7 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasVolumeGroup(machine string, name string, blockDevices []string) string {
+func testAccMaasVolumeGroup(machine string, name string, blockDevices []string, partitions []string) string {
 	return fmt.Sprintf(`
 
 data "maas_machine" "machine" {
@@ -84,9 +85,20 @@ data "maas_machine" "machine" {
 resource "maas_block_device" "bd1" {
   machine        = data.maas_machine.machine.id
   name           = "bd1"
-  size_gigabytes = 20
+  size_gigabytes = 25
   block_size     = 512
   id_path        = "/dev/bd1"
+  is_boot_device = true
+
+  partitions {
+    size_gigabytes = 20
+  }
+
+  lifecycle {
+    ignore_changes = [
+      partitions[0].fs_type 
+    ]
+  }
 }
 
 resource "maas_block_device" "bd2" {
@@ -101,9 +113,12 @@ resource "maas_volume_group" "test" {
   machine       = data.maas_machine.machine.id
   name          = %q
   block_devices = [%s]
+  partitions 	= [%s]
+
+  depends_on = [maas_block_device.bd1, maas_block_device.bd2]
 }
 
-`, machine, name, strings.Join(blockDevices, ", "))
+`, machine, name, strings.Join(blockDevices, ", "), strings.Join(partitions, ", "))
 }
 
 func testAccCheckMaasVolumeGroupExists(rn string, volumeGroup *entity.VolumeGroup) resource.TestCheckFunc {
