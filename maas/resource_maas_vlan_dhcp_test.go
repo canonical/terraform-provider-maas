@@ -2,13 +2,16 @@ package maas_test
 
 import (
 	"testing"
-
+	"fmt"
 	"terraform-provider-maas/maas/testutils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccMaasVlanDHCP_basic(t *testing.T) {
+	vlanID := "0"
+	fabricID := "0"
+
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
@@ -18,24 +21,22 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test create.
 			{
-				Config: testAccVlanDHCPConfigBasic(),
-				// Check: resource.ComposeTestCheckFunc(
-				// 	testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", vlanID, subnetID),
-				// 	resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", strconv.Itoa(vlanID)),
-				// 	resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "subnets.#", "1"),
-				// 	resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "subnets.0", strconv.Itoa(subnetID)),
-				// 	resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "primary_rack_controller", ""),
-				// ),
+				Config: testAccVlanDHCPConfigBasic(fabricID, vlanID),
+				Check: resource.ComposeTestCheckFunc(
+					// testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", vlanID),
+					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", vlanID),
+					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "fabric", fabricID),
+					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "primary_rack_controller"),
+				),
 			},
 		},
 	})
 }
 		
-func testAccVlanDHCPConfigBasic() string {
-return`
-
+func testAccVlanDHCPConfigBasic(fabricID string, vlanID string) string {
+	return fmt.Sprintf(`
 data "maas_fabric" "test" {
-  name = "fabric-0"
+  name = %q
 }
 
 data "maas_rack_controller" "test" {
@@ -43,7 +44,7 @@ data "maas_rack_controller" "test" {
 }
 
 data "maas_vlan" "test" {
-  vlan = "0"
+  vlan = %q
   fabric = data.maas_fabric.test.id
 }
 
@@ -68,5 +69,6 @@ resource "maas_vlan_dhcp" "test" {
   ip_ranges = [maas_subnet_ip_range.test.id]
 }
 
-`
+`, fabricID, vlanID)
 }
+
