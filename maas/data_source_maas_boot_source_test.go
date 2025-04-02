@@ -2,6 +2,7 @@ package maas_test
 
 import (
 	"fmt"
+	"slices"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
@@ -9,12 +10,20 @@ import (
 )
 
 func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
-
-	url := "http://images.maas.io/ephemeral-v3/stable/"
 	keyring_path := "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+	imageURLs := []string{
+		"http://images.maas.io/ephemeral-v3/stable/",
+		"http://images.maas.io/ephemeral-v3/candidate/",
+	}
 
 	checks := []resource.TestCheckFunc{
-		resource.TestCheckResourceAttr("data.maas_boot_source.test", "url", url),
+		resource.TestCheckResourceAttrWith("data.maas_boot_source.test", "url", func(value string) error {
+			if !slices.Contains(imageURLs, value) {
+				return fmt.Errorf("expected to be one of %v, got %v", imageURLs, value)
+			}
+
+			return nil
+		}),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "created"),
 		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_data", ""),
 		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_filename", keyring_path),
@@ -28,16 +37,13 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootSource(url, keyring_path),
+				Config: testAccDataSourceMaasBootSource(),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootSource(url string, keyring_path string) string {
-	return fmt.Sprintf(`
-%s
-
-data "maas_boot_source" "test" {}`, testAccMAASBootSource(url, keyring_path))
+func testAccDataSourceMaasBootSource() string {
+	return `data "maas_boot_source" "test" {}`
 }
