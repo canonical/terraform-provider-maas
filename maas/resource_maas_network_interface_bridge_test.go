@@ -68,7 +68,7 @@ func TestAccResourceMAASNetworkInterfaceBridge_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_fd", "42"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_stp", "true"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "bridge_type", "standard"),
-		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "macAddress", macAddress),
+		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "mac_address", macAddress),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "parent", "ethbr"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "tags.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bridge.test", "tags.0", "tag1"),
