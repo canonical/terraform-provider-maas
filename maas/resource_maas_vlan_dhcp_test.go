@@ -33,56 +33,40 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 		
 func testAccVlanDHCPConfigBasic() string {
 return`
-data "maas_fabric" "fabric" {
-	name = "fabric-0"
+
+data "maas_fabric" "test" {
+  name = "fabric-0"
 }
 
-data "maas_vlan" "vlan" {
-    fabric = "fabric-0"
-    vlan    = 0
+data "maas_rack_controller" "test" {
+  hostname = "maas-dev"
 }
 
-data "maas_rack_controller" "controller_primary" {
-    hostname = "maas-dev"
+data "maas_vlan" "test" {
+  vlan = "0"
+  fabric = data.maas_fabric.test.id
 }
 
-resource "maas_subnet" "subnet_1" {
-  fabric = data.maas_fabric.fabric.id
-  vlan   = data.maas_vlan.vlan.id
-  name   = "test_subnet"
-
-  cidr        = "10.66.66.0/24"
-  gateway_ip  = "10.66.66.1"
-  dns_servers = [
-    "1.1.1.1",
-  ]
-}\
-
-resource "maas_subnet_ip_range" "dynamic_ip_range_1_1" {
-  subnet   = maas_subnet.subnet_1.id
-  type     = "dynamic"
-  start_ip = "10.66.66.2"
-  end_ip   = "10.66.66.60"
+resource "maas_subnet" "test" {
+  cidr = "10.66.66.0/24"
+  fabric = data.maas_fabric.test.id
+  vlan = data.maas_vlan.test.id
+  name = "subnet-66-66"
 }
 
-resource "maas_subnet_ip_range" "dynamic_ip_range_1_2" {
-  subnet   = maas_subnet.subnet_1.id
-  type     = "dynamic"
-  start_ip = "10.66.66.61"
-  end_ip   = "10.66.66.120"
+resource "maas_subnet_ip_range" "test" {
+  subnet = maas_subnet.test.id
+  start_ip = "10.66.66.1"
+  end_ip = "10.66.66.254"
+  type = "dynamic"
 }
 
-resource "maas_vlan_dhcp" "dhcp" {
-    vlan = data.maas_vlan.vlan.id
-	fabric = data.maas_fabric.fabric.id
-    
-    ip_ranges = [
-        maas_subnet_ip_range.dynamic_ip_range_1_1.id,
-        maas_subnet_ip_range.dynamic_ip_range_1_2.id,
-    ]
-
-
-    primary_rack_controller = data.maas_rack_controller.controller_primary.id
+resource "maas_vlan_dhcp" "test" {
+  fabric = data.maas_fabric.test.id
+  vlan = data.maas_vlan.test.vlan
+  primary_rack_controller = data.maas_rack_controller.test.id
+  ip_ranges = [maas_subnet_ip_range.test.id]
 }
+
 `
 }

@@ -92,14 +92,15 @@ func resourceVlanDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	fabricID := d.Get("fabric").(int)
 	vlanIDString := d.Get("vlan").(string)
 	vlanID, err := strconv.Atoi(vlanIDString)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.VLAN.Update(fabricID, vlanID, getVlanDHCPParams(d))
+	params := getVlanDHCPParams(d)
+	log.Printf("about to update vlan dhcp params with fabricID: %d, vlanID: %d, params: %+v", fabricID, vlanID, params)
+	_, err = client.VLAN.Update(fabricID, vlanID, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -189,6 +190,7 @@ func getVlanDHCPParams(d *schema.ResourceData) *entity.VLANParams {
 	vlanParams := entity.VLANParams{
 		DHCPOn: true,
 	}
+	
 	if v, ok := d.GetOk("primary_rack_controller"); ok {
 		vlanParams.PrimaryRack = v.(string)
 	}
