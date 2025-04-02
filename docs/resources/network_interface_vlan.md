@@ -3,12 +3,12 @@
 page_title: "maas_network_interface_vlan Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage MAAS network Vlans.
+  Provides a resource to manage MAAS network VLANs.
 ---
 
 # maas_network_interface_vlan (Resource)
 
-Provides a resource to manage MAAS network Vlans.
+Provides a resource to manage MAAS network VLANs.
 
 ## Example Usage
 
