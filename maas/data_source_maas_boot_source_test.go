@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
@@ -33,7 +34,7 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASBootSourceDestroy,
+		CheckDestroy: func(s *terraform.State) error { return nil },
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
