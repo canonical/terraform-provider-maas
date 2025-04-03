@@ -14,8 +14,8 @@ import (
 )
 
 func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
-
 	var bootsourceselection entity.BootSourceSelection
+
 	os := "ubuntu"
 	release := "oracular"
 	arches := []string{"amd64"}
@@ -60,15 +60,18 @@ func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *e
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
-		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
+
+		bootSourceID, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
 		if err != nil {
 			return err
 		}
-		gotBootSourceSelection, err := conn.BootSourceSelection.Get(boot_source_id, id)
+
+		gotBootSourceSelection, err := conn.BootSourceSelection.Get(bootSourceID, id)
 		if err != nil {
 			return fmt.Errorf("error getting boot source selection: %s", err)
 		}
@@ -108,18 +111,18 @@ func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
-
 		}
-		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
+
+		bootSourceID, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
 		if err != nil {
 			return err
 		}
 
-		response, err := conn.BootSourceSelection.Get(boot_source_id, id)
+		response, err := conn.BootSourceSelection.Get(bootSourceID, id)
 		if err == nil {
 			// default boot source selection leads to noop
 			if response != nil && response.ID == id {
-				return fmt.Errorf("MAAS Boot Source Selection (%s %d %d) still exists.", rs.Primary.ID, boot_source_id, id)
+				return fmt.Errorf("MAAS Boot Source Selection (%s %d %d) still exists.", rs.Primary.ID, bootSourceID, id)
 			}
 
 			return nil

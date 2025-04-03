@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasBootSource() *schema.Resource {
+func dataSourceMAASBootSource() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceMaasBootSourceRead,
+		ReadContext: dataSourceMAASBootSourceRead,
 		Description: "Provides a resource to fetch the MAAS boot source.",
 
 		Schema: map[string]*schema.Schema{
@@ -43,16 +43,17 @@ func dataSourceMaasBootSource() *schema.Resource {
 	}
 }
 
-func dataSourceMaasBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMAASBootSourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"created":          bootsource.Created,
 		"keyring_data":     bootsource.KeyringData,
 		"keyring_filename": bootsource.KeyringFilename,

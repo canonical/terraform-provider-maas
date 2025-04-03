@@ -1,3 +1,4 @@
+//nolint:dupl // disable dupl check for now
 package maas
 
 import (
@@ -11,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasResourcePool() *schema.Resource {
+func resourceMAASResourcePool() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS resource pools.",
 		CreateContext: resourceResourcePoolCreate,
@@ -19,7 +20,7 @@ func resourceMaasResourcePool() *schema.Resource {
 		UpdateContext: resourceResourcePoolUpdate,
 		DeleteContext: resourceResourcePoolDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				resourcePool, err := getResourcePool(client, d.Id())
@@ -46,7 +47,7 @@ func resourceMaasResourcePool() *schema.Resource {
 	}
 }
 
-func resourceResourcePoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceResourcePoolCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	resourcePoolParams := entity.ResourcePoolParams{
@@ -58,12 +59,13 @@ func resourceResourcePoolCreate(ctx context.Context, d *schema.ResourceData, met
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", resourcePool.ID))
 
 	return resourceResourcePoolRead(ctx, d, meta)
 }
 
-func resourceResourcePoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceResourcePoolUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
@@ -80,22 +82,24 @@ func resourceResourcePoolUpdate(ctx context.Context, d *schema.ResourceData, met
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", resourcePool.ID))
 
 	return resourceResourcePoolRead(ctx, d, meta)
 }
 
-func resourceResourcePoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceResourcePoolDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	return diag.FromErr(client.ResourcePool.Delete(id))
 }
 
-func resourceResourcePoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceResourcePoolRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	resourcePool, err := getResourcePool(client, d.Id())
@@ -116,9 +120,11 @@ func getResourcePool(client *client.Client, identifier string) (*entity.Resource
 	if err != nil {
 		return nil, err
 	}
+
 	if resourcePool == nil {
 		return nil, fmt.Errorf("resource pool (%s) was not found", identifier)
 	}
+
 	return resourcePool, nil
 }
 
@@ -127,10 +133,12 @@ func findResourcePool(client *client.Client, identifier string) (*entity.Resourc
 	if err != nil {
 		return nil, err
 	}
+
 	for _, d := range resourcePools {
 		if fmt.Sprintf("%v", d.ID) == identifier || d.Name == identifier {
 			return &d, nil
 		}
 	}
-	return nil, nil
+
+	return nil, err
 }

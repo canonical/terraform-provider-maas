@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceMaasNetworkInterfaceLink() *schema.Resource {
+func resourceMAASNetworkInterfaceLink() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage network configuration on a network interface.",
 		CreateContext: resourceNetworkInterfaceLinkCreate,
@@ -72,21 +72,24 @@ func resourceMaasNetworkInterfaceLink() *schema.Resource {
 	}
 }
 
-func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	systemID, err := getMachineOrDeviceSystemID(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	networkInterface, err := getNetworkInterface(client, systemID, d.Get("network_interface").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	subnet, err := getSubnet(client, d.Get("subnet").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	link, err := createNetworkInterfaceLink(client, systemID, networkInterface, getNetworkInterfaceLinkParams(d, subnet.ID))
 	if err != nil {
 		return diag.FromErr(err)
@@ -98,7 +101,7 @@ func resourceNetworkInterfaceLinkCreate(ctx context.Context, d *schema.ResourceD
 	return resourceNetworkInterfaceLinkRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get params for the read operation
@@ -106,10 +109,12 @@ func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	systemID, err := getMachineOrDeviceSystemID(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	networkInterface, err := getNetworkInterface(client, systemID, d.Get("network_interface").(string))
 	if err != nil {
 		return diag.FromErr(err)
@@ -129,7 +134,7 @@ func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get params for the update operation
@@ -137,10 +142,12 @@ func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	systemID, err := getMachineOrDeviceSystemID(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	networkInterface, err := getNetworkInterface(client, systemID, d.Get("network_interface").(string))
 	if err != nil {
 		return diag.FromErr(err)
@@ -150,6 +157,7 @@ func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceD
 	if _, err := client.Machine.ClearDefaultGateways(systemID); err != nil {
 		return diag.FromErr(err)
 	}
+
 	if d.Get("default_gateway").(bool) {
 		if _, err := client.NetworkInterface.SetDefaultGateway(systemID, networkInterface.ID, linkID); err != nil {
 			return diag.FromErr(err)
@@ -159,7 +167,7 @@ func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceD
 	return resourceNetworkInterfaceLinkRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get params for the delete operation
@@ -167,10 +175,12 @@ func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	systemID, err := getMachineOrDeviceSystemID(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	networkInterface, err := getNetworkInterface(client, systemID, d.Get("network_interface").(string))
 	if err != nil {
 		return diag.FromErr(err)
@@ -207,6 +217,7 @@ func createNetworkInterfaceLink(client *client.Client, machineSystemID string, n
 	if err != nil {
 		return nil, err
 	}
+
 	return &networkInterface.Links[0], nil
 }
 
@@ -215,11 +226,13 @@ func getNetworkInterfaceLink(client *client.Client, machineSystemID string, netw
 	if err != nil {
 		return nil, err
 	}
+
 	for _, link := range networkInterface.Links {
 		if link.ID == linkID {
 			return &link, nil
 		}
 	}
+
 	return nil, fmt.Errorf("cannot find link (%v) on the network interface (%v) from machine (%s)", linkID, networkInterfaceID, machineSystemID)
 }
 

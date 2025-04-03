@@ -10,17 +10,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceMaasDevice_basic(t *testing.T) {
-
+func TestAccDataSourceMAASDevice_basic(t *testing.T) {
 	var device entity.Device
+
 	description := "Test description"
 	domain := acctest.RandomWithPrefix("tf-domain-")
 	hostname := acctest.RandomWithPrefix("tf-device-")
 	zone := "default"
-	mac_address := testutils.RandomMAC()
+	macAddress := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasDeviceCheckExists("maas_device.test", &device),
+		testAccMAASDeviceCheckExists("maas_device.test", &device),
 		resource.TestCheckResourceAttr("data.maas_device.test", "description", description),
 		resource.TestCheckResourceAttr("data.maas_device.test", "domain", domain),
 		resource.TestCheckResourceAttr("data.maas_device.test", "fqdn", fmt.Sprintf("%s.%s", hostname, domain)),
@@ -29,7 +29,7 @@ func TestAccDataSourceMaasDevice_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("data.maas_device.test", "ip_addresses.#", "0"),
 		resource.TestCheckResourceAttr("data.maas_device.test", "network_interfaces.#", "1"),
 		resource.TestCheckResourceAttrSet("data.maas_device.test", "network_interfaces.0.id"),
-		resource.TestCheckResourceAttr("data.maas_device.test", "network_interfaces.0.mac_address", mac_address),
+		resource.TestCheckResourceAttr("data.maas_device.test", "network_interfaces.0.mac_address", macAddress),
 		resource.TestCheckResourceAttr("data.maas_device.test", "network_interfaces.0.name", "eth0"),
 		resource.TestCheckResourceAttrSet("data.maas_device.test", "owner"),
 	}
@@ -37,23 +37,23 @@ func TestAccDataSourceMaasDevice_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasDeviceDestroy,
+		CheckDestroy: testAccCheckMAASDeviceDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasDevice(description, domain, hostname, zone, mac_address),
+				Config: testAccDataSourceMAASDevice(description, domain, hostname, zone, macAddress),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasDevice(description string, domain string, hostname string, zone string, mac_address string) string {
+func testAccDataSourceMAASDevice(description string, domain string, hostname string, zone string, macAddress string) string {
 	return fmt.Sprintf(`
 %s
 
 data "maas_device" "test" {
 	hostname = maas_device.test.hostname
 }
-`, testAccMaasDevice(description, domain, hostname, zone, mac_address))
+`, testAccMAASDevice(description, domain, hostname, zone, macAddress))
 }

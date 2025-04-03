@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasDevice() *schema.Resource {
+func dataSourceMAASDevice() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS device.",
 		ReadContext: dataSourceDeviceRead,
@@ -82,7 +82,7 @@ func dataSourceMaasDevice() *schema.Resource {
 	}
 }
 
-func dataSourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	device, err := getDevice(client, d.Get("hostname").(string))
@@ -103,18 +103,20 @@ func dataSourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta inte
 	for i, ip := range device.IPAddresses {
 		ipAddresses[i] = ip.String()
 	}
+
 	if err := d.Set("ip_addresses", ipAddresses); err != nil {
 		return diag.FromErr(err)
 	}
 
-	networkInterfaces := make([]map[string]interface{}, len(device.InterfaceSet))
+	networkInterfaces := make([]map[string]any, len(device.InterfaceSet))
 	for i, networkInterface := range device.InterfaceSet {
-		networkInterfaces[i] = map[string]interface{}{
+		networkInterfaces[i] = map[string]any{
 			"id":          networkInterface.ID,
 			"mac_address": networkInterface.MACAddress,
 			"name":        networkInterface.Name,
 		}
 	}
+
 	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
 		return diag.FromErr(err)
 	}
@@ -127,9 +129,11 @@ func getDevice(client *client.Client, identifier string) (*entity.Device, error)
 	if err != nil {
 		return nil, err
 	}
+
 	if device == nil {
 		return nil, fmt.Errorf("device (%s) was not found", identifier)
 	}
+
 	return device, nil
 }
 
@@ -138,10 +142,12 @@ func findDevice(client *client.Client, identifier string) (*entity.Device, error
 	if err != nil {
 		return nil, err
 	}
+
 	for _, d := range devices {
 		if d.SystemID == identifier || d.Hostname == identifier {
 			return &d, nil
 		}
 	}
-	return nil, nil
+
+	return nil, err
 }

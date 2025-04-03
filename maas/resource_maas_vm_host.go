@@ -23,7 +23,7 @@ var (
 	}
 )
 
-func resourceMaasVMHost() *schema.Resource {
+func resourceMAASVMHost() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS VM hosts.",
 		CreateContext: resourceVMHostCreate,
@@ -31,14 +31,14 @@ func resourceMaasVMHost() *schema.Resource {
 		UpdateContext: resourceVMHostUpdate,
 		DeleteContext: resourceVMHostDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				vmHost, err := getVMHost(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":   fmt.Sprintf("%v", vmHost.ID),
 					"type": vmHost.Type,
 				}
@@ -201,16 +201,19 @@ func resourceMaasVMHost() *schema.Resource {
 	}
 }
 
-func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 	// Create VM host
 	var vmHost *entity.VMHost
+
 	var err error
+
 	if p, ok := d.GetOk("machine"); ok {
 		// Get parameters for deployment
 		timeout := d.Timeout(schema.TimeoutCreate)
 		vmHostType := d.Get("type").(string)
-		deployParams, err := getVMHostDeployParams(d, vmHostType)
+
+		deployParams, err := getVMHostDeployParams(d, vmHostType) //nolint:govet // err is also used in else
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -234,7 +237,7 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	return resourceVMHostUpdate(ctx, d, meta)
 }
 
-func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get VM host details
@@ -242,13 +245,14 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	vmHost, err := client.VMHost.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Set Terraform state
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"name":                          vmHost.Name,
 		"zone":                          vmHost.Zone.Name,
 		"pool":                          vmHost.Pool.Name,
@@ -267,7 +271,7 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	return nil
 }
 
-func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get the VM host
@@ -285,7 +289,7 @@ func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	return resourceVMHostRead(ctx, d, meta)
 }
 
-func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Delete VM host
@@ -293,10 +297,12 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	vmHost, err := client.VMHost.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	err = client.VMHost.Delete(vmHost.ID)
 	if err != nil {
 		return diag.FromErr(err)
@@ -351,6 +357,7 @@ func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineId
 
 	// Allocate machine
 	allocateParams := entity.MachineAllocateParams{SystemID: machine.SystemID}
+
 	machine, err = client.Machines.Allocate(&allocateParams)
 	if err != nil {
 		return nil, err
@@ -373,6 +380,7 @@ func deployMachineAsVMHost(ctx context.Context, client *client.Client, machineId
 	if err != nil {
 		return nil, err
 	}
+
 	for _, vmHost := range vmHosts {
 		if vmHost.Host.SystemID == machine.SystemID {
 			return &vmHost, nil
@@ -387,11 +395,13 @@ func getVMHost(client *client.Client, identifier string) (*entity.VMHost, error)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, vmHost := range vmHosts {
 		if fmt.Sprintf("%v", vmHost.ID) == identifier || vmHost.Name == identifier {
 			return &vmHost, err
 		}
 	}
+
 	return nil, fmt.Errorf("VM host (%s) not found", identifier)
 }
 
@@ -403,9 +413,9 @@ func getVMHostDeployParams(d *schema.ResourceData, vmHostType string) (*entity.M
 
 	// Set deploy params if given
 	if p, ok := d.GetOk("deploy_params"); ok {
-		deployParamsData := p.([]interface{})
+		deployParamsData := p.([]any)
 		if deployParamsData[0] != nil {
-			params := deployParamsData[0].(map[string]interface{})
+			params := deployParamsData[0].(map[string]any)
 			deployParams.DistroSeries = params["distro_series"].(string)
 			deployParams.EnableHwSync = params["enable_hw_sync"].(bool)
 			deployParams.HWEKernel = params["hwe_kernel"].(string)

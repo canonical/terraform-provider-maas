@@ -10,14 +10,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceMaasResourcePool_basic(t *testing.T) {
-
+func TestAccDataSourceMAASResourcePool_basic(t *testing.T) {
 	var resourcePool entity.ResourcePool
+
 	description := "Test description"
 	name := acctest.RandomWithPrefix("tf-resource-pool-")
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasResourcePoolCheckExists("maas_resource_pool.test", &resourcePool),
+		testAccMAASResourcePoolCheckExists("maas_resource_pool.test", &resourcePool),
 		resource.TestCheckResourceAttr("data.maas_resource_pool.test", "description", description),
 		resource.TestCheckResourceAttr("data.maas_resource_pool.test", "name", name),
 	}
@@ -25,23 +25,23 @@ func TestAccDataSourceMaasResourcePool_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasResourcePoolDestroy,
+		CheckDestroy: testAccCheckMAASResourcePoolDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasResourcePool(description, name),
+				Config: testAccDataSourceMAASResourcePool(description, name),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasResourcePool(description string, name string) string {
+func testAccDataSourceMAASResourcePool(description string, name string) string {
 	return fmt.Sprintf(`
 %s
 
 data "maas_resource_pool" "test" {
 	name = maas_resource_pool.test.name
 }
-`, testAccMaasResourcePool(description, name))
+`, testAccMAASResourcePool(description, name))
 }

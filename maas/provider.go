@@ -54,43 +54,43 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"maas_boot_source_selection":      resourceMAASBootSourceSelection(),
 			"maas_boot_source":                resourceMAASBootSource(),
-			"maas_device":                     resourceMaasDevice(),
-			"maas_instance":                   resourceMaasInstance(),
-			"maas_vm_host":                    resourceMaasVMHost(),
-			"maas_vm_host_machine":            resourceMaasVMHostMachine(),
-			"maas_machine":                    resourceMaasMachine(),
-			"maas_network_interface_bridge":   resourceMaasNetworkInterfaceBridge(),
-			"maas_network_interface_bond":     resourceMaasNetworkInterfaceBond(),
-			"maas_network_interface_physical": resourceMaasNetworkInterfacePhysical(),
-			"maas_network_interface_vlan":     resourceMaasNetworkInterfaceVlan(),
-			"maas_network_interface_link":     resourceMaasNetworkInterfaceLink(),
-			"maas_fabric":                     resourceMaasFabric(),
-			"maas_vlan":                       resourceMaasVlan(),
-			"maas_subnet":                     resourceMaasSubnet(),
-			"maas_subnet_ip_range":            resourceMaasSubnetIPRange(),
-			"maas_dns_domain":                 resourceMaasDnsDomain(),
-			"maas_dns_record":                 resourceMaasDnsRecord(),
-			"maas_space":                      resourceMaasSpace(),
-			"maas_block_device":               resourceMaasBlockDevice(),
-			"maas_block_device_tag":           resourceMaasBlockDeviceTag(),
-			"maas_tag":                        resourceMaasTag(),
-			"maas_network_interface_tag":      resourceMaasNetworkInterfaceTag(),
-			"maas_user":                       resourceMaasUser(),
-			"maas_resource_pool":              resourceMaasResourcePool(),
-			"maas_zone":                       resourceMaasZone(),
+			"maas_device":                     resourceMAASDevice(),
+			"maas_instance":                   resourceMAASInstance(),
+			"maas_vm_host":                    resourceMAASVMHost(),
+			"maas_vm_host_machine":            resourceMAASVMHostMachine(),
+			"maas_machine":                    resourceMAASMachine(),
+			"maas_network_interface_bridge":   resourceMAASNetworkInterfaceBridge(),
+			"maas_network_interface_bond":     resourceMAASNetworkInterfaceBond(),
+			"maas_network_interface_physical": resourceMAASNetworkInterfacePhysical(),
+			"maas_network_interface_vlan":     resourceMAASNetworkInterfaceVLAN(),
+			"maas_network_interface_link":     resourceMAASNetworkInterfaceLink(),
+			"maas_fabric":                     resourceMAASFabric(),
+			"maas_vlan":                       resourceMAASVLAN(),
+			"maas_subnet":                     resourceMAASSubnet(),
+			"maas_subnet_ip_range":            resourceMAASSubnetIPRange(),
+			"maas_dns_domain":                 resourceMAASDNSDomain(),
+			"maas_dns_record":                 resourceMAASDNSRecord(),
+			"maas_space":                      resourceMAASSpace(),
+			"maas_block_device":               resourceMAASBlockDevice(),
+			"maas_block_device_tag":           resourceMAASBlockDeviceTag(),
+			"maas_tag":                        resourceMAASTag(),
+			"maas_network_interface_tag":      resourceMAASNetworkInterfaceTag(),
+			"maas_user":                       resourceMAASUser(),
+			"maas_resource_pool":              resourceMAASResourcePool(),
+			"maas_zone":                       resourceMAASZone(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"maas_boot_source":                dataSourceMaasBootSource(),
-			"maas_boot_source_selection":      dataSourceMaasBootSourceSelection(),
-			"maas_fabric":                     dataSourceMaasFabric(),
-			"maas_vlan":                       dataSourceMaasVlan(),
-			"maas_subnet":                     dataSourceMaasSubnet(),
-			"maas_machine":                    dataSourceMaasMachine(),
-			"maas_network_interface_physical": dataSourceMaasNetworkInterfacePhysical(),
-			"maas_device":                     dataSourceMaasDevice(),
-			"maas_resource_pool":              dataSourceMaasResourcePool(),
-			"maas_rack_controller":            dataSourceMaasRackController(),
-			"maas_zone":                       dataSourceMaasZone(),
+			"maas_boot_source":                dataSourceMAASBootSource(),
+			"maas_boot_source_selection":      dataSourceMAASBootSourceSelection(),
+			"maas_fabric":                     dataSourceMAASFabric(),
+			"maas_vlan":                       dataSourceMAASVLAN(),
+			"maas_subnet":                     dataSourceMAASSubnet(),
+			"maas_machine":                    dataSourceMAASMachine(),
+			"maas_network_interface_physical": dataSourceMAASNetworkInterfacePhysical(),
+			"maas_device":                     dataSourceMAASDevice(),
+			"maas_resource_pool":              dataSourceMAASResourcePool(),
+			"maas_rack_controller":            dataSourceMAASRackController(),
+			"maas_zone":                       dataSourceMAASZone(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
@@ -101,19 +101,21 @@ type ClientConfig struct {
 	InstallationMethod string
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	apiKey := d.Get("api_key").(string)
 	if apiKey == "" {
 		return nil, diag.FromErr(fmt.Errorf("MAAS API key cannot be empty"))
 	}
+
 	apiURL := d.Get("api_url").(string)
 	if apiURL == "" {
 		return nil, diag.FromErr(fmt.Errorf("MAAS API URL cannot be empty"))
 	}
+
 	config := Config{
 		APIKey:                apiKey,
 		APIURL:                apiURL,
-		ApiVersion:            d.Get("api_version").(string),
+		APIVersion:            d.Get("api_version").(string),
 		TLSCACertPath:         d.Get("tls_ca_cert_path").(string),
 		TLSInsecureSkipVerify: d.Get("tls_insecure_skip_verify").(bool),
 	}
@@ -128,6 +130,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 			Summary:  "Unable to create MAAS client",
 			Detail:   fmt.Sprintf("Unable to create authenticated MAAS client: %s", err),
 		})
+
 		return nil, diags
 	}
 

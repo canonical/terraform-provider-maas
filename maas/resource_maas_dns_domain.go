@@ -11,22 +11,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasDnsDomain() *schema.Resource {
+func resourceMAASDNSDomain() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS DNS domains.",
-		CreateContext: resourceDnsDomainCreate,
-		ReadContext:   resourceDnsDomainRead,
-		UpdateContext: resourceDnsDomainUpdate,
-		DeleteContext: resourceDnsDomainDelete,
+		CreateContext: resourceDNSDomainCreate,
+		ReadContext:   resourceDNSDomainRead,
+		UpdateContext: resourceDNSDomainUpdate,
+		DeleteContext: resourceDNSDomainDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				domain, err := getDomain(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":            fmt.Sprintf("%v", domain.ID),
 					"name":          domain.Name,
 					"ttl":           domain.TTL,
@@ -67,25 +67,27 @@ func resourceMaasDnsDomain() *schema.Resource {
 	}
 }
 
-func resourceDnsDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDNSDomainCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	domain, err := client.Domains.Create(getDomainParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", domain.ID))
 
-	return resourceDnsDomainUpdate(ctx, d, meta)
+	return resourceDNSDomainUpdate(ctx, d, meta)
 }
 
-func resourceDnsDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDNSDomainRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if _, err := client.Domain.Get(id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -93,33 +95,36 @@ func resourceDnsDomainRead(ctx context.Context, d *schema.ResourceData, meta int
 	return nil
 }
 
-func resourceDnsDomainUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDNSDomainUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	domain, err := client.Domain.Update(id, getDomainParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if d.Get("is_default").(bool) {
 		if _, err := client.Domain.SetDefault(domain.ID); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	return resourceDnsDomainRead(ctx, d, meta)
+	return resourceDNSDomainRead(ctx, d, meta)
 }
 
-func resourceDnsDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDNSDomainDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.Domain.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -140,10 +145,12 @@ func getDomain(client *client.Client, identifier string) (*entity.Domain, error)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, d := range domains {
 		if fmt.Sprintf("%v", d.ID) == identifier || d.Name == identifier {
 			return &d, nil
 		}
 	}
+
 	return nil, fmt.Errorf("domain (%s) was not found", identifier)
 }

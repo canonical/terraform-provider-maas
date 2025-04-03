@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasBlockDevice() *schema.Resource {
+func resourceMAASBlockDevice() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS machines' block devices.",
 		CreateContext: resourceBlockDeviceCreate,
@@ -21,7 +21,7 @@ func resourceMaasBlockDevice() *schema.Resource {
 		UpdateContext: resourceBlockDeviceUpdate,
 		DeleteContext: resourceBlockDeviceDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), ":")
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BLOCK_DEVICE", d.Id())
@@ -36,7 +36,7 @@ func resourceMaasBlockDevice() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":             fmt.Sprintf("%v", blockDevice.ID),
 					"machine":        machine.SystemID,
 					"name":           blockDevice.Name,
@@ -180,44 +180,50 @@ func resourceMaasBlockDevice() *schema.Resource {
 	}
 }
 
-func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	blockDevice, err := findBlockDevice(client, machine.SystemID, d.Get("name").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if blockDevice == nil {
 		blockDevice, err = client.BlockDevices.Create(machine.SystemID, getBlockDeviceParams(d))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
+
 	d.SetId(fmt.Sprintf("%v", blockDevice.ID))
 
 	return resourceBlockDeviceUpdate(ctx, d, meta)
 }
 
-func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	tfState := map[string]interface{}{
+
+	tfState := map[string]any{
 		"partitions": getBlockDevicePartitionsTFState(blockDevice),
 		"model":      blockDevice.Model,
 		"serial":     blockDevice.Serial,
@@ -233,29 +239,34 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta i
 	return nil
 }
 
-func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	blockDevice, err := client.BlockDevice.Update(machine.SystemID, id, getBlockDeviceParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := setBlockDeviceTags(client, d, blockDevice); err != nil {
 		return diag.FromErr(err)
 	}
+
 	if p, ok := d.GetOk("is_boot_device"); ok && p.(bool) {
 		if err := client.BlockDevice.SetBootDisk(machine.SystemID, id); err != nil {
 			return diag.FromErr(err)
 		}
 	}
+
 	if err := updateBlockDevicePartitions(client, d, blockDevice); err != nil {
 		return diag.FromErr(err)
 	}
@@ -263,17 +274,19 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta
 	return resourceBlockDeviceRead(ctx, d, meta)
 }
 
-func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.BlockDevice.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -297,12 +310,14 @@ func findBlockDevice(client *client.Client, machineID string, identifier string)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, b := range blockDevices {
 		if fmt.Sprintf("%v", b.ID) == identifier || b.Name == identifier || b.IDPath == identifier || b.Path == identifier {
 			return &b, nil
 		}
 	}
-	return nil, nil
+
+	return nil, err
 }
 
 func getBlockDevice(client *client.Client, machineID string, identifier string) (*entity.BlockDevice, error) {
@@ -310,9 +325,11 @@ func getBlockDevice(client *client.Client, machineID string, identifier string) 
 	if err != nil {
 		return nil, err
 	}
+
 	if blockDevice == nil {
 		return nil, fmt.Errorf("block device (%s) was not found on machine (%s)", identifier, machineID)
 	}
+
 	return blockDevice, nil
 }
 
@@ -321,7 +338,9 @@ func setBlockDeviceTags(client *client.Client, d *schema.ResourceData, blockDevi
 	if !ok {
 		return nil
 	}
+
 	tags := p.(*schema.Set).List()
+
 	blockDevice, err := client.BlockDevice.Get(blockDevice.SystemID, blockDevice.ID)
 	if err != nil {
 		return err
@@ -338,11 +357,12 @@ func setBlockDeviceTags(client *client.Client, d *schema.ResourceData, blockDevi
 			return err
 		}
 	}
+
 	return nil
 }
 
-func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[string]interface{} {
-	partitions := make([]map[string]interface{}, len(blockDevice.Partitions))
+func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[string]any {
+	partitions := make([]map[string]any, len(blockDevice.Partitions))
 
 	// Order by database ID since MAAS is returning the partitions in no particular order.
 	// MAAS is always maintaining a continuous sequence of numbers for partition indexes.
@@ -367,7 +387,7 @@ func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[stri
 	})
 
 	for i, p := range blockDevice.Partitions {
-		part := map[string]interface{}{
+		part := map[string]any{
 			"size_gigabytes": int(p.Size / (1024 * 1024 * 1024)),
 			"bootable":       p.Bootable,
 			"tags":           p.Tags,
@@ -379,6 +399,7 @@ func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[stri
 		}
 		partitions[i] = part
 	}
+
 	return partitions
 }
 
@@ -392,31 +413,34 @@ func updateBlockDevicePartitions(client *client.Client, d *schema.ResourceData, 
 		if err := client.BlockDevicePartition.Delete(blockDevice.SystemID, blockDevice.ID, part.ID); err != nil {
 			return err
 		}
-
 	}
 	// Create new partitions given by the user
-	partitions := p.([]interface{})
+	partitions := p.([]any)
 	for _, part := range partitions {
-		partition := part.(map[string]interface{})
+		partition := part.(map[string]any)
 		partitionParams := entity.BlockDevicePartitionParams{
 			Size:     int64(partition["size_gigabytes"].(int)) * 1024 * 1024 * 1024,
 			Bootable: partition["bootable"].(bool),
 		}
+
 		blockDevicePartition, err := client.BlockDevicePartitions.Create(blockDevice.SystemID, blockDevice.ID, &partitionParams)
 		if err != nil {
 			return err
 		}
+
 		tags := partition["tags"].(*schema.Set).List()
 		for _, t := range tags {
 			if _, err := client.BlockDevicePartition.AddTag(blockDevice.SystemID, blockDevice.ID, blockDevicePartition.ID, t.(string)); err != nil {
 				return err
 			}
 		}
+
 		if fsType := partition["fs_type"].(string); fsType != "" {
 			label := partition["label"].(string)
 			if _, err := client.BlockDevicePartition.Format(blockDevice.SystemID, blockDevice.ID, blockDevicePartition.ID, fsType, label); err != nil {
 				return err
 			}
+
 			if mountPoint := partition["mount_point"].(string); mountPoint != "" {
 				mountOptions := partition["mount_options"].(string)
 				if _, err := client.BlockDevicePartition.Mount(blockDevice.SystemID, blockDevice.ID, blockDevicePartition.ID, mountPoint, mountOptions); err != nil {
@@ -425,5 +449,6 @@ func updateBlockDevicePartitions(client *client.Client, d *schema.ResourceData, 
 			}
 		}
 	}
+
 	return nil
 }

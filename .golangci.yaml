@@ -1,0 +1,128 @@
+version: "2"
+run:
+  modules-download-mode: readonly
+  issues-exit-code: 1
+  tests: true
+  allow-parallel-runners: false
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
+  path-prefix: ""
+linters:
+  default: none
+  enable:
+    - dupl
+    - gocritic
+    - gosec
+    - govet
+    - nilerr
+    - nilnil
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - revive
+    - staticcheck
+    - tagliatelle
+    - unused
+    - whitespace
+    - wsl
+    - zerologlint
+  settings:
+    gosec:
+      excludes:
+        - G104
+    govet:
+      enable-all: true
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    revive:
+      rules:
+        - name: time-equal
+          severity: warning
+          disabled: false
+        - name: errorf
+          severity: warning
+          disabled: false
+        - name: context-as-argument
+          severity: warning
+          disabled: false
+        - name: error-return
+          severity: warning
+          disabled: false
+        - name: datarace
+          severity: warning
+          disabled: false
+    staticcheck:
+      initialisms: ["MAAS", "VLAN", "ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS", "SIP", "RTP", "AMQP", "DB", "TS"]
+      checks:
+        - all
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+          yaml: snake
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - dupl
+          - errcheck
+          - gocyclo
+          - gosec
+        path: _test\.go
+      - linters:
+          - lll
+        source: '^//go:generate '
+      - linters:
+          - staticcheck
+        path: internal/
+        text: 'ST1000:'
+      - linters:
+          - revive
+        path: internal/
+        text: 'package-comments:'
+      - linters:
+          - revive
+        path: internal/
+        text: 'exported:'
+      - linters:
+          - revive
+        path: main\.go
+        text: 'package-comments:'
+      - linters:
+          - govet
+        path: _test\.go
+        text: 'fieldalignment:'
+    paths:
+      - .*\.my\.go$
+      - lib/bad.go
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-same-issues: 0
+  uniq-by-line: true
+  new: false
+  fix: false
+severity:
+  default: error
+  rules:
+    - linters:
+        - dupl
+      severity: info
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - .*\.my\.go$
+      - lib/bad.go
+      - third_party$
+      - builtin$
+      - examples$

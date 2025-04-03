@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasZone() *schema.Resource {
+func dataSourceMAASZone() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS zone.",
 		ReadContext: dataSourceZoneRead,
@@ -28,15 +28,17 @@ func dataSourceMaasZone() *schema.Resource {
 	}
 }
 
-func dataSourceZoneRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceZoneRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	zone, err := getZone(client, d.Get("name").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", zone.ID))
-	tfstate := map[string]interface{}{
+
+	tfstate := map[string]any{
 		"name":        zone.Name,
 		"description": zone.Description,
 	}

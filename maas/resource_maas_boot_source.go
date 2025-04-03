@@ -54,13 +54,14 @@ func resourceMAASBootSource() *schema.Resource {
 	}
 }
 
-func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	// We create by transmuting the single boot source
@@ -77,7 +78,7 @@ func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta 
 	return resourceBootSourceRead(ctx, d, meta)
 }
 
-func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
@@ -85,7 +86,7 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"created":          bootsource.Created,
 		"keyring_data":     bootsource.KeyringData,
 		"keyring_filename": bootsource.KeyringFilename,
@@ -99,7 +100,7 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta in
 	return nil
 }
 
-func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	bootsource, err := getBootSource(client)
@@ -120,7 +121,7 @@ func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	return resourceBootSourceRead(ctx, d, meta)
 }
 
-func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	clientConfig := meta.(*ClientConfig)
 
 	bootsource, err := getBootSource(clientConfig.Client)
@@ -155,11 +156,14 @@ func getBootSource(client *client.Client) (*entity.BootSource, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if len(bootsources) == 0 {
 		return nil, fmt.Errorf("boot source was not found")
 	}
+
 	if len(bootsources) > 1 {
 		return nil, fmt.Errorf("expected a single boot source")
 	}
+
 	return &bootsources[0], nil
 }

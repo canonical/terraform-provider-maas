@@ -14,25 +14,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccResourceMaasSubnetIPRange_basic(t *testing.T) {
+func TestAccResourceMAASSubnetIPRange_basic(t *testing.T) {
 	// Setup IP range parameters
 	var ipRange entity.IPRange
-	subnet_name := acctest.RandomWithPrefix("test-subnet")
+
+	subnetName := acctest.RandomWithPrefix("test-subnet")
 	ipRangeAttrName := "maas_subnet_ip_range.test_ip_range"
-	range_type := "reserved"
+	rangeType := "reserved"
 	comment := "test-comment"
-	cidr := testutils.GenerateRandomCidr()
-	gateway := testutils.GetNetworkPrefixFromCidr(cidr) + ".1"
-	ipStart := testutils.GetNetworkPrefixFromCidr(cidr) + ".2"
-	ipEnd := testutils.GetNetworkPrefixFromCidr(cidr) + ".50"
-	ipStartMod := testutils.GetNetworkPrefixFromCidr(cidr) + ".2"
-	ipEndMod := testutils.GetNetworkPrefixFromCidr(cidr) + ".49"
+	cidr := testutils.GenerateRandomCIDR()
+	gateway := testutils.GetNetworkPrefixFromCIDR(cidr) + ".1"
+	ipStart := testutils.GetNetworkPrefixFromCIDR(cidr) + ".2"
+	ipEnd := testutils.GetNetworkPrefixFromCIDR(cidr) + ".50"
+	ipStartMod := testutils.GetNetworkPrefixFromCIDR(cidr) + ".2"
+	ipEndMod := testutils.GetNetworkPrefixFromCIDR(cidr) + ".49"
 	commentMod := "a-different-comment"
 
 	// Check functions
 	checks := []resource.TestCheckFunc{
 		testAccMAASSubnetIPRangeCheckExists(ipRangeAttrName, &ipRange),
-		resource.TestCheckResourceAttr(ipRangeAttrName, "type", range_type),
+		resource.TestCheckResourceAttr(ipRangeAttrName, "type", rangeType),
 		resource.TestCheckResourceAttr(ipRangeAttrName, "comment", comment),
 		resource.TestCheckResourceAttr(ipRangeAttrName, "start_ip", ipStart),
 		resource.TestCheckResourceAttr(ipRangeAttrName, "end_ip", ipEnd),
@@ -48,9 +49,9 @@ func TestAccResourceMaasSubnetIPRange_basic(t *testing.T) {
 			{
 				Config: testAccSubnetIPRangeExampleResource(
 					cidr,
-					subnet_name,
+					subnetName,
 					gateway,
-					range_type,
+					rangeType,
 					comment,
 					ipStart,
 					ipEnd,
@@ -64,7 +65,7 @@ func TestAccResourceMaasSubnetIPRange_basic(t *testing.T) {
 				PreConfig: func() {
 					client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 					params := entity.IPRangeParams{
-						Type:    range_type,
+						Type:    rangeType,
 						Comment: commentMod,
 						StartIP: ipStartMod,
 						EndIP:   ipEndMod,
@@ -82,7 +83,7 @@ func TestAccResourceMaasSubnetIPRange_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(ipRangeAttrName, "start_ip", ipStartMod),
 					resource.TestCheckResourceAttr(ipRangeAttrName, "end_ip", ipEndMod),
 					resource.TestCheckResourceAttr(ipRangeAttrName, "comment", commentMod),
-					resource.TestCheckResourceAttr(ipRangeAttrName, "type", range_type),
+					resource.TestCheckResourceAttr(ipRangeAttrName, "type", rangeType),
 				),
 			},
 			// Test import
@@ -115,10 +116,12 @@ func testAccMAASSubnetIPRangeCheckExists(rn string, ipRange *entity.IPRange) res
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
+
 		gotIPRange, err := conn.IPRange.Get(id)
 		if err != nil {
 			return fmt.Errorf("error getting ip range: %s", err)
@@ -134,12 +137,12 @@ func testAccMAASSubnetIPRangeCheckExists(rn string, ipRange *entity.IPRange) res
 // Note that a subnet is required to create an IP range.
 func testAccSubnetIPRangeExampleResource(
 	cidr string,
-	name_subnet string,
+	nameSubnet string,
 	gateway string,
-	range_type string,
+	rangeType string,
 	comment string,
-	start_ip string,
-	end_ip string,
+	startIP string,
+	endIP string,
 ) string {
 	// A subnet is required to create an IP range
 	return fmt.Sprintf(`
@@ -157,7 +160,7 @@ func testAccSubnetIPRangeExampleResource(
 		  end_ip   = %q
 		  comment  = %q
 		}
-	`, cidr, name_subnet, gateway, range_type, start_ip, end_ip, comment)
+	`, cidr, nameSubnet, gateway, rangeType, startIP, endIP, comment)
 }
 
 func testAccCheckMAASSubnetIPRangeDestroy(s *terraform.State) error {
