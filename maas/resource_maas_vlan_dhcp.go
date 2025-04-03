@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"slices"
 	"log"
+	"slices"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
@@ -166,7 +166,7 @@ func resourceVlanDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 	client := meta.(*ClientConfig).Client
 
 	fabricID := d.Get("fabric").(int)
-	vlanID:= d.Get("vlan").(int)
+	vlanID := d.Get("vlan").(int)
 	_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
 		PrimaryRack: "", SecondaryRack: "", RelayVLAN: 0,
 	})
@@ -182,7 +182,7 @@ func getVlanDHCPParams(d *schema.ResourceData) *entity.VLANParams {
 	vlanParams := entity.VLANParams{
 		DHCPOn: true,
 	}
-	
+
 	if v, ok := d.GetOk("primary_rack_controller"); ok {
 		vlanParams.PrimaryRack = v.(string)
 	}

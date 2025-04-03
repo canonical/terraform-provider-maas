@@ -1,13 +1,14 @@
 package maas_test
 
 import (
-	"testing"
-	"strconv"
 	"fmt"
+	"strconv"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccMaasVlanDHCP_basic(t *testing.T) {
@@ -15,7 +16,7 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 	fabricID := "0"
 	cidr := testutils.GenerateRandomCidr()
 	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
-	startIP, endIP := networkPrefix + ".2", networkPrefix + ".5"
+	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
 	rackController := "maas-dev"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -94,7 +95,7 @@ func testAccCheckMAASVLANDHCPCheckDestroy(s *terraform.State) error {
 	}
 	return nil
 }
-	
+
 func testAccVlanDHCPConfigBasic(fabricID string, rackController string, vlanID int, cidr string, startIP string, endIP string) string {
 	return fmt.Sprintf(`
 data "maas_fabric" "test" {
