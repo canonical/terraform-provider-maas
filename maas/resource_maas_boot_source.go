@@ -142,11 +142,12 @@ func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta 
 		KeyringFilename: keyring,
 	}
 
-	if _, err := clientConfig.Client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
+	_, err = clientConfig.Client.BootSource.Update(bootsource.ID, &bootsourceParams)
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourceBootSourceRead(ctx, d, meta)
+	return nil
 }
 
 func getBootSource(client *client.Client) (*entity.BootSource, error) {

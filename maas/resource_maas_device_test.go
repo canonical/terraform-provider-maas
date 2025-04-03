@@ -80,10 +80,10 @@ func TestAccResourceMaasDevice_update(t *testing.T) {
 	mac_address := testutils.RandomMAC()
 	mac_address2 := testutils.RandomMAC()
 	fabricName := acctest.RandomWithPrefix("tf-fabric")
-	subnetCIDR := "10.77.77.0/24"
+	subnetCIDR := testutils.GenerateRandomCidr()
 	subnetName := acctest.RandomWithPrefix("tf-subnet")
-	subnetGatewayIP := "10.77.77.1"
-	linkIPAddress := "10.77.77.42"
+	subnetGatewayIP := testutils.GetNetworkPrefixFromCidr(subnetCIDR) + ".1"
+	linkIPAddress := testutils.GetNetworkPrefixFromCidr(subnetCIDR) + ".42"
 	checks := []resource.TestCheckFunc{
 		testAccMaasDeviceCheckExists("maas_device.test", &device),
 		resource.TestCheckResourceAttr("maas_device.test", "hostname", deviceHostname),
