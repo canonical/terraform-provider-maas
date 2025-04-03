@@ -6,7 +6,7 @@ import (
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
-
+	"regexp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -27,13 +27,41 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test create.
 			{
-				Config: testAccVlanDHCPConfigBasic(fabricID, rackController, vlanID, cidr, startIP, endIP),
+				Config: testAccVLANDHCPConfigBasic(fabricID, rackController, vlanID, cidr, startIP, endIP),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", vlanID),
 					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", strconv.Itoa(vlanID)),
 					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "fabric", fabricID),
 					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "primary_rack_controller"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccMaasVlanDHCP_wrongIPRange(t *testing.T) {
+	vlanID := 0
+	fabricID := "0"
+	cidr := testutils.GenerateRandomCidr()
+	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
+	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
+	rackController := "maas-dev"
+	vlanID2 := 3
+	fabricID2 := "new-fabric"
+	cidr2 := testutils.GenerateRandomCidr()
+	networkPrefix2 := testutils.GetNetworkPrefixFromCidr(cidr2)
+	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		Providers:    testutils.TestAccProviders,
+		ErrorCheck:   func(err error) error { return err },
+		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
+		Steps: []resource.TestStep{
+			// Test create.
+			{
+				Config: testAccVLANDHCPPConfigWrongIPRange(fabricID, fabricID2, rackController, vlanID, vlanID2, cidr, cidr2, startIP, startIP2, endIP, endIP2),
+				ExpectError: regexp.MustCompile(`error`),
 			},
 		},
 	})
@@ -96,7 +124,7 @@ func testAccCheckMAASVLANDHCPCheckDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccVlanDHCPConfigBasic(fabricID string, rackController string, vlanID int, cidr string, startIP string, endIP string) string {
+func testAccVLANDHCPConfigCore(fabricID string, rackController string, vlanID int, cidr string, startIP string, endIP string) string {
 	return fmt.Sprintf(`
 data "maas_fabric" "test" {
   name = %q
@@ -125,6 +153,46 @@ resource "maas_subnet_ip_range" "test" {
   type = "dynamic"
 }
 
+`, fabricID, rackController, vlanID, cidr, startIP, endIP)
+}
+
+func testAccVLANDHCPPConfigWrongIPRange(fabricID string, fabricID2 string, rackController string, vlanID int, vlanID2 int, cidr string, cidr2 string, startIP string, startIP2 string, endIP string, endIP2 string) string {
+	return fmt.Sprintf(`
+%s
+resource "maas_fabric" "separate_fabric" {
+	name = %q
+}
+
+resource "maas_vlan" "separate_vlan" {
+	vid = %d
+	fabric = maas_fabric.separate_fabric.id
+}
+
+resource "maas_subnet" "separate_subnet" {
+	cidr = %q
+	fabric = maas_fabric.separate_fabric.id
+	vlan = maas_vlan.separate_vlan.id
+}
+
+resource "maas_subnet_ip_range" "separate_ip_range" {
+  subnet = maas_subnet.separate_subnet.id
+  start_ip = %q
+  end_ip = %q
+  type = "dynamic"
+}
+
+resource "maas_vlan_dhcp" "test" {
+  fabric = data.maas_fabric.test.id
+  vlan = data.maas_vlan.test.vlan
+  primary_rack_controller = data.maas_rack_controller.test.id
+  ip_ranges = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.separate_ip_range.id]
+}
+`, testAccVLANDHCPConfigCore(fabricID, rackController, vlanID, cidr, startIP, endIP),fabricID2, vlanID2, cidr2, startIP2, endIP2)
+}
+
+func testAccVLANDHCPConfigBasic(fabricID string, rackController string, vlanID int, cidr string, startIP string, endIP string) string {
+	return fmt.Sprintf(`
+%s
 resource "maas_vlan_dhcp" "test" {
   fabric = data.maas_fabric.test.id
   vlan = data.maas_vlan.test.vlan
@@ -132,5 +200,5 @@ resource "maas_vlan_dhcp" "test" {
   ip_ranges = [maas_subnet_ip_range.test.id]
 }
 
-`, fabricID, rackController, vlanID, cidr, startIP, endIP)
+`, testAccVLANDHCPConfigCore(fabricID, rackController, vlanID, cidr, startIP, endIP))
 }
