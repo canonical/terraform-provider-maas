@@ -92,6 +92,12 @@ func resourceVlanDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	err = confirmIPRangeSubnetsInVLAN(client, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	fabricID := d.Get("fabric").(int)
 	vlanID := d.Get("vlan").(int)
 	params := getVlanDHCPParams(d)
@@ -229,5 +235,19 @@ func confirmAllIPRangesDynamic(client *client.Client, d *schema.ResourceData) er
 		}
 	}
 
+	return nil
+}
+
+func confirmIPRangeSubnetsInVLAN(client *client.Client, d *schema.ResourceData) error {
+	log.Println("running confirmIPRangeSubnetsInVLAN")
+	for _, ipRangeID := range d.Get("ip_ranges").(*schema.Set).List() {
+		ipRange, err := client.IPRange.Get(ipRangeID.(int))
+		if err != nil {
+			return err
+		}
+		if ipRange.Subnet.VLAN.VID != d.Get("vlan").(int) {
+			return fmt.Errorf("IP range %s is not in the same VLAN as the VLAN DHCP resource. IP range subnet ID: %d with VLAN VID: %d", ipRangeID, ipRange.Subnet.ID, ipRange.Subnet.VLAN.VID)
+		}
+	}
 	return nil
 }

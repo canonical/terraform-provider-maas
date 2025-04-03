@@ -61,7 +61,7 @@ func TestAccMaasVlanDHCP_wrongIPRange(t *testing.T) {
 			// Test create.
 			{
 				Config: testAccVLANDHCPPConfigWrongIPRange(fabricID, fabricID2, rackController, vlanID, vlanID2, cidr, cidr2, startIP, startIP2, endIP, endIP2),
-				ExpectError: regexp.MustCompile(`error`),
+				ExpectError: regexp.MustCompile("is not in the same VLAN as the VLAN DHCP resource."),
 			},
 		},
 	})
