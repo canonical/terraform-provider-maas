@@ -94,13 +94,13 @@ func testAccCheckMAASBootSourceDestroy(s *terraform.State) error {
 		response, err := conn.BootSource.Get(id)
 		if err == nil {
 			if response.URL != defaultURL {
-				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.URL)
+				return fmt.Errorf(`MAAS Boot Source (%s) "url" not reset to default. Returned value: %s`, rs.Primary.ID, response.URL)
 			}
 			if response.KeyringFilename != snapKeyring {
-				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.KeyringFilename)
+				return fmt.Errorf(`MAAS Boot Source (%s) "keyring_filename" not reset to default. Returned value: %s`, rs.Primary.ID, response.KeyringFilename)
 			}
 			if response.KeyringData != "" {
-				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.KeyringData)
+				return fmt.Errorf(`MAAS Boot Source (%s) "keyring_data" not reset to default. Returned value: %s`, rs.Primary.ID, response.KeyringData)
 			}
 
 			return nil
