@@ -143,8 +143,11 @@ func resourceBootSourceDelete(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	_, err = clientConfig.Client.BootSource.Update(bootsource.ID, &bootsourceParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	return diag.FromErr(err)
+	return nil
 }
 
 func getBootSource(client *client.Client) (*entity.BootSource, error) {
