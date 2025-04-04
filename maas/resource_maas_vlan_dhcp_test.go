@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccMaasVlanDHCP_basic(t *testing.T) {
+func TestAccMAASVLANDHCP_basic(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("basic")
 	cidr := testutils.GenerateRandomCIDR()
@@ -48,7 +48,7 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 	})
 }
 
-func TestAccMaasVlanDHCP_wrongIPRange(t *testing.T) {
+func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("wrong-ip-range")
 	cidr := testutils.GenerateRandomCIDR()
@@ -76,7 +76,7 @@ func TestAccMaasVlanDHCP_wrongIPRange(t *testing.T) {
 	})
 }
 
-func TestAccMaasVlanDHCP_relay(t *testing.T) {
+func TestAccMAASVLANDHCP_relay(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("tf-relay")
 	dummyFabricName := acctest.RandomWithPrefix("dummy")
@@ -105,7 +105,7 @@ func TestAccMaasVlanDHCP_relay(t *testing.T) {
 	})
 }
 
-func TestAccMaasVlanDHCP_subnet(t *testing.T) {
+func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("basic")
 	cidr := testutils.GenerateRandomCIDR()
