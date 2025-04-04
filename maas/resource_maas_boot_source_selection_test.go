@@ -23,7 +23,7 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 	labels := []string{"*"}
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasBootSourceSelectionCheckExists("maas_boot_source_selection.test", &bootsourceselection),
+		testAccMAASBootSourceSelectionCheckExists("maas_boot_source_selection.test", &bootsourceselection),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "os", os),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "release", release),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.#", "1"),
@@ -37,18 +37,18 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasBootSourceSelectionDestroy,
+		CheckDestroy: testAccCheckMAASBootSourceSelectionDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasBootSourceSelection(os, release, arches, subarches, labels),
+				Config: testAccMAASBootSourceSelection(os, release, arches, subarches, labels),
 				Check:  resource.ComposeAggregateTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccMaasBootSourceSelectionCheckExists(rn string, bootSourceSelection *entity.BootSourceSelection) resource.TestCheckFunc {
+func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *entity.BootSourceSelection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -82,7 +82,7 @@ func testAccMaasBootSourceSelectionCheckExists(rn string, bootSourceSelection *e
 	}
 }
 
-func testAccMaasBootSourceSelection(os string, release string, arches []string, subarches []string, labels []string) string {
+func testAccMAASBootSourceSelection(os string, release string, arches []string, subarches []string, labels []string) string {
 	return fmt.Sprintf(`
 data "maas_boot_source" "test" {}
 
@@ -98,7 +98,7 @@ resource "maas_boot_source_selection" "test" {
 `, os, release, arches[0], subarches[0], labels[0])
 }
 
-func testAccCheckMaasBootSourceSelectionDestroy(s *terraform.State) error {
+func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

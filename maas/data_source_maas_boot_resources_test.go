@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccDataSourceMaasBootResources_basic(t *testing.T) {
+func TestAccDataSourceMAASBootResources_basic(t *testing.T) {
 	os := "ubuntu"
 	release := "kinetic"
 	arches := []string{"*"}
@@ -40,18 +40,18 @@ func TestAccDataSourceMaasBootResources_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckDataSourceMaasBootResourcesDestroy,
+		CheckDestroy: testAccCheckDataSourceMAASBootResourcesDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootResources(os, release, arches, subarches, labels),
+				Config: testAccDataSourceMAASBootResources(os, release, arches, subarches, labels),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootResources(os string, release string, arches []string, subarches []string, labels []string) string {
+func testAccDataSourceMAASBootResources(os string, release string, arches []string, subarches []string, labels []string) string {
 	return fmt.Sprintf(`
 %s
 
@@ -59,10 +59,10 @@ data "maas_boot_resources" "test" {
   os      = maas_boot_source_selection.test.os
   release = maas_boot_source_selection.test.release
 }
-`, testAccMaasBootSourceSelection(os, release, arches, subarches, labels))
+`, testAccMAASBootSourceSelection(os, release, arches, subarches, labels))
 }
 
-func testAccCheckDataSourceMaasBootResourcesDestroy(s *terraform.State) error {
+func testAccCheckDataSourceMAASBootResourcesDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

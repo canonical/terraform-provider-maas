@@ -30,7 +30,7 @@ func TestAccDataSourceMAASBootSourceSelection_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasBootSourceSelectionDestroy,
+		CheckDestroy: testAccCheckMAASBootSourceSelectionDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
@@ -51,5 +51,5 @@ data "maas_boot_source_selection" "test" {
 	os      = maas_boot_source_selection.test.os
 	release = maas_boot_source_selection.test.release
 }
-`, testAccMaasBootSourceSelection(os, release, arches, subarches, labels))
+`, testAccMAASBootSourceSelection(os, release, arches, subarches, labels))
 }

@@ -14,7 +14,7 @@ const defaultURL = "http://images.maas.io/ephemeral-v3/stable/"
 const snapKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 const debKeyring = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
-func resourceMaasBootSource() *schema.Resource {
+func resourceMAASBootSource() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage the MAAS boot source.",
 		CreateContext: resourceBootSourceCreate,

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasBootSourceSelection() *schema.Resource {
+func resourceMAASBootSourceSelection() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage a MAAS boot source selection.",
 		CreateContext: resourceBootSourceSelectionCreate,
@@ -91,7 +91,7 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	bootsourceselectionParams := entity.BootSourceSelectionParams{
+	bootSourceSelectionParams := entity.BootSourceSelectionParams{
 
 		OS:        d.Get("os").(string),
 		Release:   d.Get("release").(string),

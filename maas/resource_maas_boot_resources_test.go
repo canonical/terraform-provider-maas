@@ -20,12 +20,12 @@ type BootResources struct {
 	boot_source_selections []int
 }
 
-func TestAccResourceMaasBootResources_basic(t *testing.T) {
+func TestAccResourceMAASBootResources_basic(t *testing.T) {
 
 	var bootresources BootResources
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasBootResourcesCheckExists("maas_boot_resources.test", &bootresources),
+		testAccMAASBootResourcesCheckExists("maas_boot_resources.test", &bootresources),
 		resource.TestCheckResourceAttr("maas_boot_resources.test", "boot_source_selections.#", "1"),
 		resource.TestCheckResourceAttrPair("maas_boot_resources.test", "boot_source_selections.0", "maas_boot_source_selection.mantic", "id"),
 	}
@@ -33,18 +33,18 @@ func TestAccResourceMaasBootResources_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasBootResourcesDestroy,
+		CheckDestroy: testAccCheckMAASBootResourcesDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasBootResources(),
+				Config: testAccMAASBootResources(),
 				Check:  resource.ComposeAggregateTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccMaasBootResources() string {
+func testAccMAASBootResources() string {
 	return `
 data "maas_boot_source" "test" {}
 
@@ -64,7 +64,7 @@ resource "maas_boot_resources" "test" {
 }`
 }
 
-func testAccMaasBootResourcesCheckExists(rn string, bootReources *BootResources) resource.TestCheckFunc {
+func testAccMAASBootResourcesCheckExists(rn string, bootReources *BootResources) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -128,7 +128,7 @@ func testAccMaasBootResourcesCheckExists(rn string, bootReources *BootResources)
 	}
 }
 
-func testAccCheckMaasBootResourcesDestroy(s *terraform.State) error {
+func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

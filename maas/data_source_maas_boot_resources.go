@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasBootResources() *schema.Resource {
+func dataSourceMAASBootResources() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceMaasBootResourcesRead,
+		ReadContext: dataSourceMAASBootResourcesRead,
 		Description: "Provides a data source to manage MAAS bootresources.",
 
 		Schema: map[string]*schema.Schema{
@@ -57,7 +57,7 @@ func dataSourceMaasBootResources() *schema.Resource {
 	}
 }
 
-func dataSourceMaasBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMAASBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	err := awaitImportComplete(client)

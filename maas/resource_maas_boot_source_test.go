@@ -23,7 +23,7 @@ func TestAccResourceMAASBootSource_basic(t *testing.T) {
 	url := "http://images.maas.io/ephemeral-v3/candidate/"
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasBootSourceCheckExists("maas_boot_source.test", &bootsource),
+		testAccMAASBootSourceCheckExists("maas_boot_source.test", &bootsource),
 		resource.TestCheckResourceAttr("maas_boot_source.test", "url", url),
 		resource.TestCheckResourceAttr("maas_boot_source.test", "keyring_filename", snapKeyring),
 	}
@@ -31,18 +31,18 @@ func TestAccResourceMAASBootSource_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasBootSourceDestroy,
+		CheckDestroy: testAccCheckMAASBootSourceDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasBootSource(url, snapKeyring),
+				Config: testAccMAASBootSource(url, snapKeyring),
 				Check:  resource.ComposeAggregateTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccMaasBootSourceCheckExists(rn string, bootSource *entity.BootSource) resource.TestCheckFunc {
+func testAccMAASBootSourceCheckExists(rn string, bootSource *entity.BootSource) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -79,7 +79,7 @@ resource "maas_boot_source" "test" {
 }`, url, keyringFilename)
 }
 
-func testAccCheckMaasBootSourceDestroy(s *terraform.State) error {
+func testAccCheckMAASBootSourceDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
