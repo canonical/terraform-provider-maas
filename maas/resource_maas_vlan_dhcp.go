@@ -176,8 +176,7 @@ func resourceVLANDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func getVLANDHCPParams(d *schema.ResourceData) *entity.VLANParams {
-	vlanParams := entity.VLANParams{
-	}
+	vlanParams := entity.VLANParams{}
 	if v, ok := d.GetOk("primary_rack_controller"); ok {
 		vlanParams.DHCPOn = true
 		vlanParams.PrimaryRack = v.(string)

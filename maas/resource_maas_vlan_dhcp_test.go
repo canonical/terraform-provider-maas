@@ -2,17 +2,15 @@ package maas_test
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"regexp"
 	"strconv"
+	"strings"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
-	"strings"
-	// "log"
-	// "github.com/canonical/gomaasclient/entity"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 )
 
 func TestAccMaasVlanDHCP_basic(t *testing.T) {
@@ -31,7 +29,7 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
-			{	
+			{
 				Config: testAccVLANDHCPConfigBasic(fabricName, rackController, cidr, startIP, endIP),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", fabricName),
@@ -42,7 +40,7 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 			},
 			// Test update.
 			{
-				Config: testAccVLANDHCPConfigBasicUpdate(fabricName, rackController, cidr, startIP, endIP, startIP2, endIP2),
+				Config:      testAccVLANDHCPConfigBasicUpdate(fabricName, rackController, cidr, startIP, endIP, startIP2, endIP2),
 				ExpectError: regexp.MustCompile("Changing 'ip_ranges' from .* to .* is not allowed. Please recreate the resource."),
 			},
 		},
@@ -70,7 +68,7 @@ func TestAccMaasVlanDHCP_wrongIPRange(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test create.
 			{
-				Config: testAccVLANDHCPPConfigWrongIPRange(fabricName, fabricName2, rackController, vlanID2, cidr, cidr2, startIP, startIP2, endIP, endIP2),
+				Config:      testAccVLANDHCPPConfigWrongIPRange(fabricName, fabricName2, rackController, vlanID2, cidr, cidr2, startIP, startIP2, endIP, endIP2),
 				ExpectError: regexp.MustCompile("is not in the same VLAN as the VLAN DHCP resource."),
 			},
 		},
@@ -106,6 +104,36 @@ func TestAccMaasVlanDHCP_relay(t *testing.T) {
 	})
 }
 
+func TestAccMaasVlanDHCP_subnet(t *testing.T) {
+	// Test variables
+	fabricName := acctest.RandomWithPrefix("basic")
+	cidr := testutils.GenerateRandomCidr()
+	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
+	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
+	cidr2 := testutils.GenerateRandomCidr()
+	networkPrefix2 := testutils.GetNetworkPrefixFromCidr(cidr2)
+	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
+	rackController := "maas-dev"
+	fmt.Println(fmt.Sprintf("using cidr2: %s", cidr2), fmt.Sprintf("using startIP2: %s", startIP2), fmt.Sprintf("using endIP2: %s", endIP2))
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		Providers:    testutils.TestAccProviders,
+		ErrorCheck:   func(err error) error { return err },
+		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
+		Steps: []resource.TestStep{
+			// Test create.
+			{
+				Config: testAccVLANDHCPConfigSubnet(fabricName, rackController, cidr, startIP, endIP, cidr2, startIP2, endIP2),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", fabricName),
+					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", "0"),
+					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "fabric"),
+					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "primary_rack_controller"),
+				),
+			},
+		},
+	})
+}
 func testAccCheckMaasVlanDHCPExists(n string, fabricName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -133,6 +161,7 @@ func testAccCheckMaasVlanDHCPExists(n string, fabricName string) resource.TestCh
 		if vlan.Fabric != fabricName {
 			return fmt.Errorf("VLAN fabric name does not match, expected %s, got %s", fabricName, vlan.Fabric)
 		}
+		// All tests use the default untagged VLAN with VID = 0
 		if vlan.VID != 0 {
 			return fmt.Errorf("VLAN ID is not 0, got %d", vlan.ID)
 		}
@@ -236,7 +265,7 @@ resource "maas_vlan_dhcp" "test" {
   primary_rack_controller = data.maas_rack_controller.test.id
   ip_ranges = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.separate_ip_range.id]
 }
-`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP),fabricID2, vlanID2, cidr2, startIP2, endIP2)
+`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), fabricID2, vlanID2, cidr2, startIP2, endIP2)
 }
 
 func testAccVLANDHCPConfigBasic(fabricID string, rackController string, cidr string, startIP string, endIP string) string {
@@ -250,6 +279,31 @@ resource "maas_vlan_dhcp" "test" {
 }
 
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP))
+}
+
+func testAccVLANDHCPConfigSubnet(fabricID string, rackController string, cidr string, startIP string, endIP string, cidr2 string, startIP2 string, endIP2 string) string {
+	return fmt.Sprintf(`
+%s
+# Subnet needs ip ranges to be set to inform terraform about the dependency.
+# Any other subnets defined earlier in this config aren't used by the VLAN DHCP resource.
+resource "maas_subnet" "test_subnet" {
+  cidr = %q
+  fabric = maas_fabric.test.id
+  vlan = data.maas_vlan.test.vlan
+  ip_ranges {
+      start_ip = %q
+      end_ip = %q
+      type = "dynamic"
+  }
+}
+
+resource "maas_vlan_dhcp" "test" {
+  fabric = maas_fabric.test.id
+  vlan = data.maas_vlan.test.vlan
+  primary_rack_controller = data.maas_rack_controller.test.id
+  subnets = [maas_subnet.test_subnet.id]
+}
+`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), cidr2, startIP2, endIP2)
 }
 
 func testAccVLANDHCPConfigBasicUpdate(fabricID string, rackController string, cidr string, startIP string, endIP string, startIP2 string, endIP2 string) string {
