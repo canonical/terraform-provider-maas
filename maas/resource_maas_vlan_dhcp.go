@@ -13,13 +13,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasVlanDHCP() *schema.Resource {
+func resourceMAASVLANDHCP() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage DHCP on MAAS network VLANs.",
-		CreateContext: resourceVlanDHCPCreate,
-		ReadContext:   resourceVlanDHCPRead,
-		UpdateContext: resourceVlanDHCPUpdate,
-		DeleteContext: resourceVlanDHCPDelete,
+		CreateContext: resourceVLANDHCPCreate,
+		ReadContext:   resourceVLANDHCPRead,
+		UpdateContext: resourceVLANDHCPUpdate,
+		DeleteContext: resourceVLANDHCPDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				return []*schema.ResourceData{d}, nil
@@ -78,7 +78,7 @@ func resourceMaasVlanDHCP() *schema.Resource {
 	}
 }
 
-func resourceVlanDHCPCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVLANDHCPCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 	// Validation
 	err := confirmAllIPRangesDynamic(client, d)
@@ -96,17 +96,17 @@ func resourceVlanDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 	// Turn on DHCP
 	fabricID := d.Get("fabric").(int)
 	vlanID := d.Get("vlan").(int)
-	params := getVlanDHCPParams(d)
+	params := getVLANDHCPParams(d)
 	_, err = client.VLAN.Update(fabricID, vlanID, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(strconv.Itoa(vlanID))
 
-	return resourceVlanDHCPRead(ctx, d, meta)
+	return resourceVLANDHCPRead(ctx, d, meta)
 }
 
-func resourceVlanDHCPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVLANDHCPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	vlanID, err := strconv.Atoi(d.Id())
@@ -135,7 +135,7 @@ func resourceVlanDHCPRead(ctx context.Context, d *schema.ResourceData, meta inte
 	return nil
 }
 
-func resourceVlanDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVLANDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	if d.HasChange("ip_ranges") {
@@ -153,14 +153,14 @@ func resourceVlanDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 	fabricID := d.Get("fabric").(int)
-	if _, err := client.VLAN.Update(fabricID, vlanID, getVlanDHCPParams(d)); err != nil {
+	if _, err := client.VLAN.Update(fabricID, vlanID, getVLANDHCPParams(d)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourceVlanDHCPRead(ctx, d, meta)
+	return resourceVLANDHCPRead(ctx, d, meta)
 }
 
-func resourceVlanDHCPDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVLANDHCPDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	fabricID := d.Get("fabric").(int)
@@ -175,7 +175,7 @@ func resourceVlanDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 	return nil
 }
 
-func getVlanDHCPParams(d *schema.ResourceData) *entity.VLANParams {
+func getVLANDHCPParams(d *schema.ResourceData) *entity.VLANParams {
 	vlanParams := entity.VLANParams{
 	}
 	if v, ok := d.GetOk("primary_rack_controller"); ok {
