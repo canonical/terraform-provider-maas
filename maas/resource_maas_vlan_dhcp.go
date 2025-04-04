@@ -85,10 +85,12 @@ func resourceVLANDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	err = confirmAllSubnetsWithADynamicIPRange(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	err = confirmIPRangeSubnetsInVLAN(client, d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -97,10 +99,12 @@ func resourceVLANDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 	fabricID := d.Get("fabric").(int)
 	vlanID := d.Get("vlan").(int)
 	params := getVLANDHCPParams(d)
+
 	_, err = client.VLAN.Update(fabricID, vlanID, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(strconv.Itoa(vlanID))
 
 	return resourceVLANDHCPRead(ctx, d, meta)
@@ -113,7 +117,9 @@ func resourceVLANDHCPRead(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	fabricID := d.Get("fabric").(int)
+
 	vlan, err := client.VLAN.Get(fabricID, vlanID)
 	if err != nil {
 		return diag.FromErr(err)
@@ -128,6 +134,7 @@ func resourceVLANDHCPRead(ctx context.Context, d *schema.ResourceData, meta inte
 	} else {
 		tfState["relay_vlan"] = 0
 	}
+
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
@@ -152,6 +159,7 @@ func resourceVLANDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	fabricID := d.Get("fabric").(int)
 	if _, err := client.VLAN.Update(fabricID, vlanID, getVLANDHCPParams(d)); err != nil {
 		return diag.FromErr(err)
@@ -165,6 +173,7 @@ func resourceVLANDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 
 	fabricID := d.Get("fabric").(int)
 	vlanID := d.Get("vlan").(int)
+
 	_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
 		PrimaryRack: "", SecondaryRack: "", RelayVLAN: 0,
 	})
@@ -181,12 +190,15 @@ func getVLANDHCPParams(d *schema.ResourceData) *entity.VLANParams {
 		vlanParams.DHCPOn = true
 		vlanParams.PrimaryRack = v.(string)
 	}
+
 	if v, ok := d.GetOk("secondary_rack_controller"); ok {
 		vlanParams.SecondaryRack = v.(string)
 	}
+
 	if v, ok := d.GetOk("relay_vlan"); ok {
 		vlanParams.RelayVLAN = v.(int)
 	}
+
 	return &vlanParams
 }
 
@@ -196,13 +208,16 @@ func confirmAllSubnetsWithADynamicIPRange(client *client.Client, d *schema.Resou
 		if err != nil {
 			return err
 		}
+
 		foundDynamic := false
+
 		for _, ipRange := range subnetIPRanges {
 			if slices.Contains(ipRange.Purpose, "dynamic") {
 				foundDynamic = true
 				break
 			}
 		}
+
 		if !foundDynamic {
 			return fmt.Errorf("subnet %s does not have any dynamic IP range", subnetID)
 		}
@@ -217,6 +232,7 @@ func confirmAllIPRangesDynamic(client *client.Client, d *schema.ResourceData) er
 		if err != nil {
 			return err
 		}
+
 		if ipRange.Type != "dynamic" {
 			return fmt.Errorf("IP range %s is not dynamic", ipRangeID)
 		}
@@ -231,9 +247,11 @@ func confirmIPRangeSubnetsInVLAN(client *client.Client, d *schema.ResourceData) 
 		if err != nil {
 			return err
 		}
+
 		if ipRange.Subnet.VLAN.VID != d.Get("vlan").(int) {
 			return fmt.Errorf("IP range %s is not in the same VLAN as the VLAN DHCP resource. IP range subnet ID: %d with VLAN VID: %d", ipRangeID, ipRange.Subnet.ID, ipRange.Subnet.VLAN.VID)
 		}
 	}
+
 	return nil
 }

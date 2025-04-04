@@ -2,22 +2,23 @@ package maas_test
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"regexp"
 	"strconv"
 	"strings"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccMaasVlanDHCP_basic(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("basic")
-	cidr := testutils.GenerateRandomCidr()
-	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
+	cidr := testutils.GenerateRandomCIDR()
+	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
 	startIP2, endIP2 := networkPrefix+".6", networkPrefix+".10"
 	rackController := "maas-dev"
@@ -32,7 +33,7 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 			{
 				Config: testAccVLANDHCPConfigBasic(fabricName, rackController, cidr, startIP, endIP),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", fabricName),
+					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test", fabricName),
 					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", "0"),
 					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "fabric"),
 					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "primary_rack_controller"),
@@ -50,14 +51,14 @@ func TestAccMaasVlanDHCP_basic(t *testing.T) {
 func TestAccMaasVlanDHCP_wrongIPRange(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("wrong-ip-range")
-	cidr := testutils.GenerateRandomCidr()
-	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
+	cidr := testutils.GenerateRandomCIDR()
+	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
 	rackController := "maas-dev"
 	vlanID2 := 3
 	fabricName2 := acctest.RandomWithPrefix("wrong-ip-range-2")
-	cidr2 := testutils.GenerateRandomCidr()
-	networkPrefix2 := testutils.GetNetworkPrefixFromCidr(cidr2)
+	cidr2 := testutils.GenerateRandomCIDR()
+	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -79,11 +80,11 @@ func TestAccMaasVlanDHCP_relay(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("tf-relay")
 	dummyFabricName := acctest.RandomWithPrefix("dummy")
-	cidr := testutils.GenerateRandomCidr()
-	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
+	cidr := testutils.GenerateRandomCIDR()
+	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
-	cidr2 := testutils.GenerateRandomCidr()
-	networkPrefix2 := testutils.GetNetworkPrefixFromCidr(cidr2)
+	cidr2 := testutils.GenerateRandomCIDR()
+	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
 	rackController := "maas-dev"
 
@@ -97,7 +98,7 @@ func TestAccMaasVlanDHCP_relay(t *testing.T) {
 			{
 				Config: testAccVLANDHCPConfigRelay(fabricName, rackController, cidr, startIP, endIP, cidr2, startIP2, endIP2, dummyFabricName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", fabricName),
+					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test", fabricName),
 				),
 			},
 		},
@@ -107,13 +108,14 @@ func TestAccMaasVlanDHCP_relay(t *testing.T) {
 func TestAccMaasVlanDHCP_subnet(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("basic")
-	cidr := testutils.GenerateRandomCidr()
-	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
+	cidr := testutils.GenerateRandomCIDR()
+	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
-	cidr2 := testutils.GenerateRandomCidr()
-	networkPrefix2 := testutils.GetNetworkPrefixFromCidr(cidr2)
+	cidr2 := testutils.GenerateRandomCIDR()
+	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
 	rackController := "maas-dev"
+
 	fmt.Println(fmt.Sprintf("using cidr2: %s", cidr2), fmt.Sprintf("using startIP2: %s", startIP2), fmt.Sprintf("using endIP2: %s", endIP2))
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
@@ -125,7 +127,7 @@ func TestAccMaasVlanDHCP_subnet(t *testing.T) {
 			{
 				Config: testAccVLANDHCPConfigSubnet(fabricName, rackController, cidr, startIP, endIP, cidr2, startIP2, endIP2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", fabricName),
+					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test", fabricName),
 					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", "0"),
 					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "fabric"),
 					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "primary_rack_controller"),
@@ -134,30 +136,37 @@ func TestAccMaasVlanDHCP_subnet(t *testing.T) {
 		},
 	})
 }
-func testAccCheckMaasVlanDHCPExists(n string, fabricName string) resource.TestCheckFunc {
+func testAccCheckMAASVLANDHCPExists(n string, fabricName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("resource not found: %s\n %#v", n, s.RootModule().Resources)
 		}
+
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("resource id not set")
 		}
+
 		client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		fabricIDString := rs.Primary.Attributes["fabric"]
+
 		fabricID, err := strconv.Atoi(fabricIDString)
 		if err != nil {
 			return fmt.Errorf("error converting fabric id to int: %s", err)
 		}
+
 		vlanVIDString := rs.Primary.Attributes["vlan"]
+
 		vlanVID, err := strconv.Atoi(vlanVIDString)
 		if err != nil {
 			return fmt.Errorf("error converting vlan id to int: %s", err)
 		}
+
 		vlan, err := client.VLAN.Get(fabricID, vlanVID)
 		if err != nil {
 			return fmt.Errorf("error getting VLAN: %s", err)
 		}
+
 		if vlan.Fabric != fabricName {
 			return fmt.Errorf("VLAN fabric name does not match, expected %s, got %s", fabricName, vlan.Fabric)
 		}
@@ -165,15 +174,18 @@ func testAccCheckMaasVlanDHCPExists(n string, fabricName string) resource.TestCh
 		if vlan.VID != 0 {
 			return fmt.Errorf("VLAN ID is not 0, got %d", vlan.ID)
 		}
+
 		if !vlan.DHCPOn {
 			return fmt.Errorf("VLAN DHCP is not enabled, resource failed to turn on DHCP")
 		}
+
 		return nil
 	}
 }
 
 func testAccCheckMAASVLANDHCPCheckDestroy(s *terraform.State) error {
 	client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "maas_vlan_dhcp" {
 			continue
@@ -183,7 +195,9 @@ func testAccCheckMAASVLANDHCPCheckDestroy(s *terraform.State) error {
 		if err != nil {
 			return err
 		}
+
 		fabricIDString := rs.Primary.Attributes["fabric"]
+
 		fabricID, err := strconv.Atoi(fabricIDString)
 		if err != nil {
 			return err
@@ -194,12 +208,15 @@ func testAccCheckMAASVLANDHCPCheckDestroy(s *terraform.State) error {
 			if strings.Contains(err.Error(), "404 Not Found") {
 				continue
 			}
+
 			return fmt.Errorf("error getting VLAN: %s", err)
 		}
+
 		if vlan.DHCPOn {
 			return fmt.Errorf("VLAN with vid %d has DHCP still enabled", vlanID)
 		}
 	}
+
 	return nil
 }
 
