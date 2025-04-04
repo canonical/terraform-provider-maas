@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceMaasSubnetIPRange() *schema.Resource {
+func resourceMAASSubnetIPRange() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network subnets IP ranges.",
 		CreateContext: resourceSubnetIPRangeCreate,
@@ -21,7 +21,7 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 		UpdateContext: resourceSubnetIPRangeUpdate,
 		DeleteContext: resourceSubnetIPRangeDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				idParts := strings.Split(d.Id(), ":")
@@ -45,7 +45,7 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 						return nil, err
 					}
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":       fmt.Sprintf("%v", ipRange.ID),
 					"subnet":   fmt.Sprintf("%v", ipRange.Subnet.ID),
 					"type":     ipRange.Type,
@@ -93,34 +93,38 @@ func resourceMaasSubnetIPRange() *schema.Resource {
 	}
 }
 
-func resourceSubnetIPRangeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubnetIPRangeCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	subnet, err := findSubnet(client, d.Get("subnet").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	ipRange, err := client.IPRanges.Create(getSubnetIPRangeParams(d, subnet.ID))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", ipRange.ID))
 
 	return resourceSubnetIPRangeUpdate(ctx, d, meta)
 }
 
-func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	ipRange, err := client.IPRange.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	tfState := map[string]interface{}{
+
+	tfState := map[string]any{
 		"comment":  ipRange.Comment,
 		"type":     ipRange.Type,
 		"start_ip": ipRange.StartIP.String(),
@@ -133,17 +137,19 @@ func resourceSubnetIPRangeRead(ctx context.Context, d *schema.ResourceData, meta
 	return nil
 }
 
-func resourceSubnetIPRangeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubnetIPRangeUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	subnet, err := findSubnet(client, d.Get("subnet").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if _, err := client.IPRange.Update(id, getSubnetIPRangeParams(d, subnet.ID)); err != nil {
 		return diag.FromErr(err)
 	}
@@ -151,13 +157,14 @@ func resourceSubnetIPRangeUpdate(ctx context.Context, d *schema.ResourceData, me
 	return resourceSubnetIPRangeRead(ctx, d, meta)
 }
 
-func resourceSubnetIPRangeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubnetIPRangeDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.IPRange.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -180,10 +187,12 @@ func getSubnetIPRange(client *client.Client, startIP string, endIP string) (*ent
 	if err != nil {
 		return nil, err
 	}
+
 	for _, ipr := range ipRanges {
 		if ipr.StartIP.String() == startIP && ipr.EndIP.String() == endIP {
 			return &ipr, nil
 		}
 	}
+
 	return nil, fmt.Errorf("IP range (%s->%s) was not found", startIP, endIP)
 }

@@ -16,15 +16,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAccResourceMaasTag_basic(t *testing.T) {
-
+func TestAccResourceMAASTag_basic(t *testing.T) {
 	var tag entity.Tag
+
 	comment := "Test comment"
 	name := acctest.RandomWithPrefix("tf-tag-")
 	machines := os.Getenv("TF_ACC_TAG_MACHINES")
 
 	checks := []resource.TestCheckFunc{
-		testAccMaasTagCheckExists("maas_tag.test", &tag),
+		testAccMAASTagCheckExists("maas_tag.test", &tag),
 		resource.TestCheckResourceAttr("maas_tag.test", "name", name),
 		resource.TestCheckResourceAttr("maas_tag.test", "comment", comment),
 		resource.TestCheckResourceAttr("maas_tag.test", "machines.#", strconv.Itoa(len(strings.Split(machines, ",")))),
@@ -33,11 +33,11 @@ func TestAccResourceMaasTag_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_TAG_MACHINES"}) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasTagDestroy,
+		CheckDestroy: testAccCheckMAASTagDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasTag(name, comment, machines),
+				Config: testAccMAASTag(name, comment, machines),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 			// Test import using name
@@ -60,7 +60,7 @@ func TestAccResourceMaasTag_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasTagCheckExists(rn string, tag *entity.Tag) resource.TestCheckFunc {
+func testAccMAASTagCheckExists(rn string, tag *entity.Tag) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -72,6 +72,7 @@ func testAccMaasTagCheckExists(rn string, tag *entity.Tag) resource.TestCheckFun
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		gotTag, err := conn.Tag.Get(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting tag: %s", err)
@@ -83,7 +84,7 @@ func testAccMaasTagCheckExists(rn string, tag *entity.Tag) resource.TestCheckFun
 	}
 }
 
-func testAccMaasTag(name string, comment string, machines string) string {
+func testAccMAASTag(name string, comment string, machines string) string {
 	return fmt.Sprintf(`
 resource "maas_tag" "test" {
 	name        = "%s"
@@ -94,7 +95,7 @@ resource "maas_tag" "test" {
 `, name, machines, comment)
 }
 
-func testAccCheckMaasTagDestroy(s *terraform.State) error {
+func testAccCheckMAASTagDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 

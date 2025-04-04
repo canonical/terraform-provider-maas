@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasBlockDeviceTag() *schema.Resource {
+func resourceMAASBlockDeviceTag() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage tags as strings on a block device.",
 		CreateContext: resourceBlockDeviceTagCreate,
@@ -17,11 +17,12 @@ func resourceMaasBlockDeviceTag() *schema.Resource {
 		UpdateContext: resourceBlockDeviceTagUpdate,
 		DeleteContext: resourceBlockDeviceTagDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				systemID, blockDeviceID, err := SplitTagStateId(d.Id())
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
+				systemID, blockDeviceID, err := SplitTagStateID(d.Id())
 				if err != nil {
 					return nil, err
 				}
+
 				client := meta.(*ClientConfig).Client
 				blockDevice, err := client.BlockDevice.Get(systemID, blockDeviceID)
 				if err != nil {
@@ -55,17 +56,19 @@ func resourceMaasBlockDeviceTag() *schema.Resource {
 	}
 }
 
-func resourceBlockDeviceTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceTagCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-	machineId := d.Get("machine").(string)
-	machine, err := getMachine(client, machineId)
+	machineID := d.Get("machine").(string)
+
+	machine, err := getMachine(client, machineID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	blockDeviceId := d.Get("block_device_id").(int)
+
+	blockDeviceID := d.Get("block_device_id").(int)
 
 	// Get the block device
-	blockDevice, err := getBlockDevice(client, machine.SystemID, fmt.Sprintf("%v", blockDeviceId))
+	blockDevice, err := getBlockDevice(client, machine.SystemID, fmt.Sprintf("%v", blockDeviceID))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -73,6 +76,7 @@ func resourceBlockDeviceTagCreate(ctx context.Context, d *schema.ResourceData, m
 	// Remove existing tags
 	desiredTags := convertToStringSlice(d.Get("tags").(*schema.Set).List())
 	existingTags := blockDevice.Tags
+
 	for _, tag := range existingTags {
 		if !slices.Contains(desiredTags, tag) {
 			_, err := client.BlockDevice.RemoveTag(machine.SystemID, blockDevice.ID, tag)
@@ -97,21 +101,22 @@ func resourceBlockDeviceTagCreate(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func resourceBlockDeviceTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceTagRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	// Get the existing block device
-	systemID, blockDeviceID, err := SplitTagStateId(d.Id())
+	systemID, blockDeviceID, err := SplitTagStateID(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	blockDevice, err := client.BlockDevice.Get(systemID, blockDeviceID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Set the attributes in state
-	tfstate := map[string]interface{}{
+	tfstate := map[string]any{
 		"tags":            blockDevice.Tags,
 		"machine":         blockDevice.SystemID,
 		"block_device_id": blockDevice.ID,
@@ -119,14 +124,16 @@ func resourceBlockDeviceTagRead(ctx context.Context, d *schema.ResourceData, met
 	if err := setTerraformState(d, tfstate); err != nil {
 		return diag.FromErr(fmt.Errorf("could not set block device properties: %v", err))
 	}
+
 	return nil
 }
 
-func resourceBlockDeviceTagUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceTagUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	systemID := d.Get("machine").(string)
 	blockDeviceID := d.Get("block_device_id").(int)
+
 	blockDevice, err := client.BlockDevice.Get(systemID, blockDeviceID)
 	if err != nil {
 		return diag.FromErr(err)
@@ -135,6 +142,7 @@ func resourceBlockDeviceTagUpdate(ctx context.Context, d *schema.ResourceData, m
 	// Remove undesired tags
 	desiredTags := convertToStringSlice(d.Get("tags").(*schema.Set).List())
 	existingTags := blockDevice.Tags
+
 	for _, tag := range existingTags {
 		if !slices.Contains(desiredTags, tag) {
 			_, err := client.BlockDevice.RemoveTag(blockDevice.SystemID, blockDevice.ID, tag)
@@ -153,10 +161,11 @@ func resourceBlockDeviceTagUpdate(ctx context.Context, d *schema.ResourceData, m
 			}
 		}
 	}
+
 	return resourceBlockDeviceTagRead(ctx, d, meta)
 }
 
-func resourceBlockDeviceTagDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBlockDeviceTagDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	systemID := d.Get("machine").(string)
@@ -170,6 +179,8 @@ func resourceBlockDeviceTagDelete(ctx context.Context, d *schema.ResourceData, m
 			return diag.FromErr(err)
 		}
 	}
+
 	d.SetId("")
+
 	return nil
 }

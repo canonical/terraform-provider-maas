@@ -39,17 +39,17 @@ func TestBase64Encode(t *testing.T) {
 func TestConvertToStringSlice(t *testing.T) {
 	testCases := []struct {
 		name string
-		in   []interface{}
+		in   []any
 		out  []string
 	}{
 		{
 			name: "empty slice",
-			in:   []interface{}{},
+			in:   []any{},
 			out:  []string{},
 		},
 		{
 			name: "slice properly converted",
-			in:   []interface{}{"elm1", "elem2", "elem3"},
+			in:   []any{"elm1", "elem2", "elem3"},
 			out:  []string{"elm1", "elem2", "elem3"},
 		},
 	}
@@ -59,6 +59,7 @@ func TestConvertToStringSlice(t *testing.T) {
 			out := convertToStringSlice(testCase.in)
 			outType := reflect.TypeOf(out).Kind()
 			assert.Equal(t, reflect.Slice, outType, fmt.Sprintf("convertToStringSlice(%s) has type %s, expected %s", testCase.in, outType, reflect.Slice))
+
 			for i := range out {
 				elemType := reflect.TypeOf(out[i]).Kind()
 				assert.Equal(t, reflect.String, elemType, fmt.Sprintf("convertToStringSlice(%s)[%v] has type %s, expected %s", testCase.in, i, elemType, reflect.String))

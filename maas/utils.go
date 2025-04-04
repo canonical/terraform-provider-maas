@@ -28,26 +28,32 @@ func isBase64Encoded(data []byte) bool {
 	return err == nil
 }
 
-func convertToStringSlice(field interface{}) []string {
+func convertToStringSlice(field any) []string {
 	if field == nil {
 		return nil
 	}
-	fieldSlice := field.([]interface{})
+
+	fieldSlice := field.([]any)
 	result := make([]string, len(fieldSlice))
+
 	for i, value := range fieldSlice {
 		result[i] = value.(string)
 	}
+
 	return result
 }
 
-func isElementIPAddress(i interface{}, p cty.Path) diag.Diagnostics {
+func isElementIPAddress(i any, p cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	attr := p[len(p)-1].(cty.IndexStep)
+
 	var index int
+
 	if err := gocty.FromCtyValue(attr.Key, &index); err != nil {
 		return diag.FromErr(err)
 	}
+
 	ws, es := validation.IsIPAddress(i, fmt.Sprintf("element %v", index))
 
 	for _, w := range ws {
@@ -57,6 +63,7 @@ func isElementIPAddress(i interface{}, p cty.Path) diag.Diagnostics {
 			AttributePath: p,
 		})
 	}
+
 	for _, e := range es {
 		diags = append(diags, diag.Diagnostic{
 			Severity:      diag.Error,
@@ -64,11 +71,13 @@ func isElementIPAddress(i interface{}, p cty.Path) diag.Diagnostics {
 			AttributePath: p,
 		})
 	}
+
 	return diags
 }
 
-func isEmailAddress(i interface{}, p cty.Path) diag.Diagnostics {
+func isEmailAddress(i any, p cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
+
 	attr := p[len(p)-1].(cty.GetAttrStep)
 
 	v, ok := i.(string)
@@ -96,19 +105,22 @@ func getNetworkInterface(client *client.Client, machineSystemID string, identifi
 	if err != nil {
 		return nil, err
 	}
+
 	for _, n := range networkInterfaces {
 		if n.MACAddress == identifier || n.Name == identifier || fmt.Sprintf("%v", n.ID) == identifier {
 			return &n, nil
 		}
 	}
+
 	return nil, fmt.Errorf("network interface (%s) was not found on machine (%s)", identifier, machineSystemID)
 }
 
-func setTerraformState(d *schema.ResourceData, tfState map[string]interface{}) error {
+func setTerraformState(d *schema.ResourceData, tfState map[string]any) error {
 	if val, ok := tfState["id"]; ok {
 		d.SetId(val.(string))
 		delete(tfState, "id")
 	}
+
 	for k, v := range tfState {
 		// NOTE: Ignore R001. We have this method being invoked in multiple places,
 		// however key values are actually string literals. Consider this a false positive.
@@ -119,6 +131,7 @@ func setTerraformState(d *schema.ResourceData, tfState map[string]interface{}) e
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -129,6 +142,7 @@ func getMachineOrDeviceSystemID(client *client.Client, d *schema.ResourceData) (
 		if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
 			return "", err
 		}
+
 		return machine.SystemID, nil
 	}
 
@@ -137,8 +151,10 @@ func getMachineOrDeviceSystemID(client *client.Client, d *schema.ResourceData) (
 		if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
 			return "", err
 		}
+
 		return device.SystemID, nil
 	}
+
 	return "", fmt.Errorf("either `machine` or `device` is required")
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasFabric() *schema.Resource {
+func resourceMAASFabric() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network fabrics.",
 		CreateContext: resourceFabricCreate,
@@ -19,7 +19,7 @@ func resourceMaasFabric() *schema.Resource {
 		UpdateContext: resourceFabricUpdate,
 		DeleteContext: resourceFabricDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				fabric, err := getFabric(client, d.Id())
@@ -44,25 +44,27 @@ func resourceMaasFabric() *schema.Resource {
 	}
 }
 
-func resourceFabricCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFabricCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	fabric, err := client.Fabrics.Create(getFabricParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", fabric.ID))
 
 	return resourceFabricUpdate(ctx, d, meta)
 }
 
-func resourceFabricRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFabricRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if _, err := client.Fabric.Get(id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -70,13 +72,14 @@ func resourceFabricRead(ctx context.Context, d *schema.ResourceData, meta interf
 	return nil
 }
 
-func resourceFabricUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFabricUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if _, err := client.Fabric.Update(id, getFabricParams(d)); err != nil {
 		return diag.FromErr(err)
 	}
@@ -84,13 +87,14 @@ func resourceFabricUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	return resourceFabricRead(ctx, d, meta)
 }
 
-func resourceFabricDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceFabricDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.Fabric.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -109,12 +113,14 @@ func findFabric(client *client.Client, identifier string) (*entity.Fabric, error
 	if err != nil {
 		return nil, err
 	}
+
 	for _, f := range fabrics {
 		if fmt.Sprintf("%v", f.ID) == identifier || f.Name == identifier {
 			return &f, nil
 		}
 	}
-	return nil, nil
+
+	return nil, err
 }
 
 func getFabric(client *client.Client, identifier string) (*entity.Fabric, error) {
@@ -122,8 +128,10 @@ func getFabric(client *client.Client, identifier string) (*entity.Fabric, error)
 	if err != nil {
 		return nil, err
 	}
+
 	if fabric == nil {
 		return nil, fmt.Errorf("fabric (%s) was not found", identifier)
 	}
+
 	return fabric, nil
 }

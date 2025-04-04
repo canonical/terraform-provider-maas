@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasNetworkInterfaceBridge() *schema.Resource {
+func resourceMAASNetworkInterfaceBridge() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network Bridges.",
 		CreateContext: resourceNetworkInterfaceBridgeCreate,
@@ -95,7 +95,7 @@ func resourceMaasNetworkInterfaceBridge() *schema.Resource {
 	}
 }
 
-func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -109,6 +109,7 @@ func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Resourc
 	}
 
 	params := getNetworkInterfaceBridgeParams(d, parentID)
+
 	networkInterface, err := client.NetworkInterfaces.CreateBridge(machine.SystemID, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -119,7 +120,7 @@ func resourceNetworkInterfaceBridgeCreate(ctx context.Context, d *schema.Resourc
 	return resourceNetworkInterfaceBridgeRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -141,23 +142,26 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("expected only one parent")
 	}
 
-	p := networkInterface.Params.(map[string]interface{})
+	p := networkInterface.Params.(map[string]any)
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
 	} else {
 		d.Set("accept_ra", false)
 	}
+
 	if _, ok := p["bridge_fd"]; ok {
 		d.Set("bridge_fd", int64(p["bridge_fd"].(float64)))
 	}
+
 	if _, ok := p["bridge_stp"]; ok {
 		d.Set("bridge_stp", p["bridge_stp"].(bool))
 	}
+
 	if _, ok := p["bridge_type"]; ok {
 		d.Set("bridge_type", p["bridge_type"].(string))
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
 		"name":        networkInterface.Name,
@@ -172,7 +176,7 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -191,6 +195,7 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 	}
 
 	params := getNetworkInterfaceBridgeUpdateParams(d, parentID)
+
 	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -199,17 +204,19 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 	return resourceNetworkInterfaceBridgeRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -256,7 +263,7 @@ func findInterfaceParent(client *client.Client, machineSystemID string, parent s
 	return networkInterface.ID, nil
 }
 
-func resourceNetworkInterfaceBridgeImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceNetworkInterfaceBridgeImport(d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BRIDGE_INTERFACE_ID", d.Id())

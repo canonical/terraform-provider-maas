@@ -10,8 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
-	keyring_path := "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+func TestAccDataSourceMAASBootSource_basic(t *testing.T) {
+	keyringPath := "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 	imageURLs := []string{
 		"http://images.maas.io/ephemeral-v3/stable/",
 		"http://images.maas.io/ephemeral-v3/candidate/",
@@ -27,7 +27,7 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 		}),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "created"),
 		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_data", ""),
-		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_filename", keyring_path),
+		resource.TestCheckResourceAttr("data.maas_boot_source.test", "keyring_filename", keyringPath),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source.test", "updated"),
 	}
 
@@ -38,13 +38,13 @@ func TestAccDataSourceMaasBootSource_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootSource(),
+				Config: testAccDataSourceMAASBootSource(),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootSource() string {
+func testAccDataSourceMAASBootSource() string {
 	return `data "maas_boot_source" "test" {}`
 }

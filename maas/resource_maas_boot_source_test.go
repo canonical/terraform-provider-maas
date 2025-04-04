@@ -17,9 +17,9 @@ const defaultURL = "http://images.maas.io/ephemeral-v3/stable/"
 // We assume tests are running from a snap MAAS environment
 const snapKeyring = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
-func TestAccResourceMaasBootSource_basic(t *testing.T) {
-
+func TestAccResourceMAASBootSource_basic(t *testing.T) {
 	var bootsource entity.BootSource
+
 	url := "http://images.maas.io/ephemeral-v3/candidate/"
 
 	checks := []resource.TestCheckFunc{
@@ -54,10 +54,12 @@ func testAccMaasBootSourceCheckExists(rn string, bootSource *entity.BootSource) 
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
+
 		gotBootSource, err := conn.BootSource.Get(id)
 		if err != nil {
 			return fmt.Errorf("error getting boot source: %s", err)
@@ -69,12 +71,12 @@ func testAccMaasBootSourceCheckExists(rn string, bootSource *entity.BootSource) 
 	}
 }
 
-func testAccMaasBootSource(url string, keyring_filename string) string {
+func testAccMAASBootSource(url string, keyringFilename string) string {
 	return fmt.Sprintf(`
 resource "maas_boot_source" "test" {
 	url              = "%s"
 	keyring_filename = "%s"
-}`, url, keyring_filename)
+}`, url, keyringFilename)
 }
 
 func testAccCheckMaasBootSourceDestroy(s *terraform.State) error {
@@ -91,14 +93,17 @@ func testAccCheckMaasBootSourceDestroy(s *terraform.State) error {
 		if err != nil {
 			return err
 		}
+
 		response, err := conn.BootSource.Get(id)
 		if err == nil {
 			if response.URL != defaultURL {
 				return fmt.Errorf(`MAAS Boot Source (%s) "url" not reset to default. Returned value: %s`, rs.Primary.ID, response.URL)
 			}
+
 			if response.KeyringFilename != snapKeyring {
 				return fmt.Errorf(`MAAS Boot Source (%s) "keyring_filename" not reset to default. Returned value: %s`, rs.Primary.ID, response.KeyringFilename)
 			}
+
 			if response.KeyringData != "" {
 				return fmt.Errorf(`MAAS Boot Source (%s) "keyring_data" not reset to default. Returned value: %s`, rs.Primary.ID, response.KeyringData)
 			}

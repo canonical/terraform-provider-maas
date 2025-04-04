@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasDevice() *schema.Resource {
+func resourceMAASDevice() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS devices.",
 		CreateContext: resourceDeviceCreate,
@@ -16,7 +16,7 @@ func resourceMaasDevice() *schema.Resource {
 		UpdateContext: resourceDeviceUpdate,
 		DeleteContext: resourceDeviceDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				device, err := getDevice(client, d.Id())
@@ -98,16 +98,18 @@ func resourceMaasDevice() *schema.Resource {
 	}
 }
 
-func expandNetworkInterfacesItems(items []interface{}) []string {
+func expandNetworkInterfacesItems(items []any) []string {
 	networkInterfacesItems := make([]string, 0)
+
 	for _, item := range items {
-		itemMap := item.(map[string]interface{})
+		itemMap := item.(map[string]any)
 		networkInterfacesItems = append(networkInterfacesItems, itemMap["mac_address"].(string))
 	}
+
 	return networkInterfacesItems
 }
 
-func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	deviceParams := entity.DeviceCreateParams{
@@ -121,12 +123,13 @@ func resourceDeviceCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(device.SystemID)
 
 	return resourceDeviceRead(ctx, d, meta)
 }
 
-func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	if d.HasChange("network_interfaces") {
@@ -134,6 +137,7 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		existingInterfaces := device.InterfaceSet
 		// Delete all existing interfaces
 		for _, existingInterface := range existingInterfaces {
@@ -143,8 +147,8 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		newInterfaces := d.Get("network_interfaces").(*schema.Set).List()
 		for _, newIface := range newInterfaces {
 			client.NetworkInterfaces.CreatePhysical(d.Id(), &entity.NetworkInterfacePhysicalParams{
-				MACAddress: newIface.(map[string]interface{})["mac_address"].(string),
-				Name:       newIface.(map[string]interface{})["name"].(string),
+				MACAddress: newIface.(map[string]any)["mac_address"].(string),
+				Name:       newIface.(map[string]any)["name"].(string),
 			})
 		}
 	}
@@ -155,21 +159,24 @@ func resourceDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		Hostname:    d.Get("hostname").(string),
 		Zone:        d.Get("zone").(string),
 	}
+
 	device, err := client.Device.Update(d.Id(), &deviceParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(device.SystemID)
+
 	return resourceDeviceRead(ctx, d, meta)
 }
 
-func resourceDeviceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDeviceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	return diag.FromErr(client.Device.Delete(d.Id()))
 }
 
-func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	device, err := getDevice(client, d.Id())
@@ -190,20 +197,23 @@ func resourceDeviceRead(ctx context.Context, d *schema.ResourceData, meta interf
 	for i, ip := range device.IPAddresses {
 		ipAddresses[i] = ip.String()
 	}
+
 	if err := d.Set("ip_addresses", ipAddresses); err != nil {
 		return diag.FromErr(err)
 	}
 
-	networkInterfaces := make([]map[string]interface{}, len(device.InterfaceSet))
+	networkInterfaces := make([]map[string]any, len(device.InterfaceSet))
 	for i, networkInterface := range device.InterfaceSet {
-		networkInterfaces[i] = map[string]interface{}{
+		networkInterfaces[i] = map[string]any{
 			"id":          networkInterface.ID,
 			"mac_address": networkInterface.MACAddress,
 			"name":        networkInterface.Name,
 		}
 	}
+
 	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
 		return diag.FromErr(err)
 	}
+
 	return nil
 }

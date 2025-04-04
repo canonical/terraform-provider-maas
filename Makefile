@@ -42,7 +42,11 @@ lint: lint-go lint-tf
 
 .PHONY: lint-go
 lint-go:
-	@test -z "$$(gofmt -l -s -d . | tee /dev/stderr)"
+	golangci-lint run $(if $(LINT_AUTOFIX),--fix,) ./...
+
+.PHONY: lint-go-fix
+lint-go-fix: LINT_AUTOFIX=true
+lint-go-fix: lint-go
 
 .PHONY: lint-tf
 lint-tf: tfproviderlint tfproviderlintx

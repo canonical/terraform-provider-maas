@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceMaasSubnet() *schema.Resource {
+func resourceMAASSubnet() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network subnets.\n\n**NOTE:** The MAAS provider currently supports both standalone resources and in-line resources for subnet IP ranges. You cannot use in-line `ip_ranges` in conjunction with standalone `maas_subnet_ip_range` resources. Doing so will cause conflicts and will overwrite subnet IP ranges.",
 		CreateContext: resourceSubnetCreate,
@@ -20,14 +20,14 @@ func resourceMaasSubnet() *schema.Resource {
 		UpdateContext: resourceSubnetUpdate,
 		DeleteContext: resourceSubnetDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				subnet, err := getSubnet(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":          fmt.Sprintf("%v", subnet.ID),
 					"cidr":        subnet.CIDR,
 					"name":        subnet.Name,
@@ -138,43 +138,49 @@ func resourceMaasSubnet() *schema.Resource {
 	}
 }
 
-func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	params, err := getSubnetParams(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	subnet, err := client.Subnets.Create(params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", subnet.ID))
 
 	return resourceSubnetUpdate(ctx, d, meta)
 }
 
-func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	subnet, err := client.Subnet.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	gatewayIp := subnet.GatewayIP.String()
-	if gatewayIp == "<nil>" {
-		gatewayIp = ""
+
+	gatewayIP := subnet.GatewayIP.String()
+	if gatewayIP == "<nil>" {
+		gatewayIP = ""
 	}
+
 	dnsServers := make([]string, len(subnet.DNSServers))
 	for i, ip := range subnet.DNSServers {
 		dnsServers[i] = ip.String()
 	}
-	tfState := map[string]interface{}{
-		"gateway_ip":  gatewayIp,
+
+	tfState := map[string]any{
+		"gateway_ip":  gatewayIP,
 		"dns_servers": dnsServers,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
@@ -184,20 +190,23 @@ func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta interf
 	return nil
 }
 
-func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	params, err := getSubnetParams(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if _, err := client.Subnet.Update(id, params); err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := updateIPRanges(client, d, id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -205,13 +214,14 @@ func resourceSubnetUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	return resourceSubnetRead(ctx, d, meta)
 }
 
-func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.Subnet.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -229,17 +239,20 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 	if err != nil {
 		return err
 	}
+
 	for _, ipr := range ipRanges {
 		if ipr.Subnet.ID != subnetID {
 			continue
 		}
+
 		if err := client.IPRange.Delete(ipr.ID); err != nil {
 			return err
 		}
 	}
 	// Create the new IP ranges on this subnet
 	for _, i := range p.(*schema.Set).List() {
-		ipr := i.(map[string]interface{})
+		ipr := i.(map[string]any)
+
 		params := entity.IPRangeParams{
 			Subnet:  fmt.Sprintf("%v", subnetID),
 			Type:    ipr["type"].(string),
@@ -251,6 +264,7 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -265,21 +279,26 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 		DNSServers: convertToStringSlice(d.Get("dns_servers")),
 		Managed:    true,
 	}
+
 	if p, ok := d.GetOk("fabric"); ok {
 		fabric, err := getFabric(client, p.(string))
 		if err != nil {
 			return nil, err
 		}
+
 		params.Fabric = fmt.Sprintf("%v", fabric.ID)
+
 		if p, ok := d.GetOk("vlan"); ok {
-			vlan, err := getVlan(client, fabric.ID, p.(string))
+			vlan, err := getVLAN(client, fabric.ID, p.(string))
 			if err != nil {
 				return nil, err
 			}
+
 			params.VLAN = fmt.Sprintf("%v", vlan.ID)
 			params.VID = vlan.VID
 		}
 	}
+
 	return &params, nil
 }
 
@@ -288,12 +307,14 @@ func findSubnet(client *client.Client, identifier string) (*entity.Subnet, error
 	if err != nil {
 		return nil, err
 	}
+
 	for _, s := range subnets {
 		if fmt.Sprintf("%v", s.ID) == identifier || s.CIDR == identifier {
 			return &s, nil
 		}
 	}
-	return nil, nil
+
+	return nil, err
 }
 
 func getSubnet(client *client.Client, identifier string) (*entity.Subnet, error) {
@@ -301,8 +322,10 @@ func getSubnet(client *client.Client, identifier string) (*entity.Subnet, error)
 	if err != nil {
 		return nil, err
 	}
+
 	if subnet == nil {
 		return nil, fmt.Errorf("subnet (%s) was not found", identifier)
 	}
+
 	return subnet, nil
 }

@@ -15,32 +15,32 @@ import (
 )
 
 var (
-	validDnsRecordTypes = []string{"A/AAAA", "CNAME", "MX", "NS", "SRV", "SSHFP", "TXT"}
+	validDNSRecordTypes = []string{"A/AAAA", "CNAME", "MX", "NS", "SRV", "SSHFP", "TXT"}
 )
 
-func resourceMaasDnsRecord() *schema.Resource {
+func resourceMAASDNSRecord() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS DNS domain records.",
-		CreateContext: resourceDnsRecordCreate,
-		ReadContext:   resourceDnsRecordRead,
-		UpdateContext: resourceDnsRecordUpdate,
-		DeleteContext: resourceDnsRecordDelete,
+		CreateContext: resourceDNSRecordCreate,
+		ReadContext:   resourceDNSRecordRead,
+		UpdateContext: resourceDNSRecordUpdate,
+		DeleteContext: resourceDNSRecordDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				idParts := strings.Split(d.Id(), ":")
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected TYPE:IDENTIFIER", d.Id())
 				}
 				resourceType := idParts[0]
-				if _, errors := validation.StringInSlice(validDnsRecordTypes, false)(resourceType, "type"); len(errors) > 0 {
+				if _, errors := validation.StringInSlice(validDNSRecordTypes, false)(resourceType, "type"); len(errors) > 0 {
 					return nil, errors[0]
 				}
 				client := meta.(*ClientConfig).Client
 
 				resourceIdentifier := idParts[1]
-				var tfState map[string]interface{}
+				var tfState map[string]any
 				if resourceType == "A/AAAA" {
-					dnsRecord, err := getDnsResource(client, resourceIdentifier)
+					dnsRecord, err := getDNSResource(client, resourceIdentifier)
 					if err != nil {
 						return nil, err
 					}
@@ -48,7 +48,7 @@ func resourceMaasDnsRecord() *schema.Resource {
 					for _, ipAddress := range dnsRecord.IPAddresses {
 						ips = append(ips, ipAddress.IP.String())
 					}
-					tfState = map[string]interface{}{
+					tfState = map[string]any{
 						"id":   fmt.Sprintf("%v", dnsRecord.ID),
 						"type": resourceType,
 						"data": strings.Join(ips, " "),
@@ -56,11 +56,11 @@ func resourceMaasDnsRecord() *schema.Resource {
 						"ttl":  dnsRecord.AddressTTL,
 					}
 				} else {
-					dnsRecord, err := getDnsResourceRecord(client, resourceIdentifier)
+					dnsRecord, err := getDNSResourceRecord(client, resourceIdentifier)
 					if err != nil {
 						return nil, err
 					}
-					tfState = map[string]interface{}{
+					tfState = map[string]any{
 						"id":   fmt.Sprintf("%v", dnsRecord.ID),
 						"type": dnsRecord.RRType,
 						"data": dnsRecord.RRData,
@@ -109,42 +109,47 @@ func resourceMaasDnsRecord() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validDnsRecordTypes, false)),
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validDNSRecordTypes, false)),
 				Description:      "The DNS record type. Valid options are: `A/AAAA`, `CNAME`, `MX`, `NS`, `SRV`, `SSHFP`, `TXT`.",
 			},
 		},
 	}
 }
 
-func resourceDnsRecordCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDNSRecordCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	var resourceID int
+
 	if d.Get("type").(string) == "A/AAAA" {
-		dnsRecord, err := client.DNSResources.Create(getDnsResourceParams(d))
+		dnsRecord, err := client.DNSResources.Create(getDNSResourceParams(d))
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		resourceID = dnsRecord.ID
 	} else {
-		dnsRecord, err := client.DNSResourceRecords.Create(getDnsResourceRecordParams(d))
+		dnsRecord, err := client.DNSResourceRecords.Create(getDNSResourceRecordParams(d))
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		resourceID = dnsRecord.ID
 	}
+
 	d.SetId(fmt.Sprintf("%v", resourceID))
 
-	return resourceDnsRecordUpdate(ctx, d, meta)
+	return resourceDNSRecordUpdate(ctx, d, meta)
 }
 
-func resourceDnsRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if d.Get("type").(string) == "A/AAAA" {
 		if _, err := client.DNSResource.Get(id); err != nil {
 			return diag.FromErr(err)
@@ -158,41 +163,45 @@ func resourceDnsRecordRead(ctx context.Context, d *schema.ResourceData, meta int
 	return nil
 }
 
-func resourceDnsRecordUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDNSRecordUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if d.Get("type").(string) == "A/AAAA" {
-		if _, err := client.DNSResource.Update(id, getDnsResourceParams(d)); err != nil {
+		if _, err := client.DNSResource.Update(id, getDNSResourceParams(d)); err != nil {
 			return diag.FromErr(err)
 		}
 	} else {
-		if _, err := client.DNSResourceRecord.Update(id, getDnsResourceRecordParams(d)); err != nil {
+		if _, err := client.DNSResourceRecord.Update(id, getDNSResourceRecordParams(d)); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	return resourceDnsRecordRead(ctx, d, meta)
+	return resourceDNSRecordRead(ctx, d, meta)
 }
 
-func resourceDnsRecordDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDNSRecordDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if d.Get("type").(string) == "A/AAAA" {
 		dnsResource, err := client.DNSResource.Get(id)
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		if err := client.DNSResource.Delete(id); err != nil {
 			return diag.FromErr(err)
 		}
+
 		if err := releaseDNSResourceIPAddresses(client, dnsResource, id); err != nil {
 			return diag.FromErr(err)
 		}
@@ -211,15 +220,19 @@ func releaseDNSResourceIPAddresses(client *client.Client, dnsResource *entity.DN
 	if err != nil {
 		return err
 	}
+
 	allOtherDNSResourcesIPAddresses := set.New[string](0)
+
 	for _, r := range allDNSResources {
 		if r.ID == dnsID {
 			continue
 		}
+
 		for _, ipAddress := range r.IPAddresses {
 			allOtherDNSResourcesIPAddresses.Insert(ipAddress.IP.String())
 		}
 	}
+
 	for _, ipAddress := range dnsResource.IPAddresses {
 		if allOtherDNSResourcesIPAddresses.Contains(ipAddress.IP.String()) {
 			continue
@@ -231,10 +244,11 @@ func releaseDNSResourceIPAddresses(client *client.Client, dnsResource *entity.DN
 			return err
 		}
 	}
+
 	return nil
 }
 
-func getDnsResourceParams(d *schema.ResourceData) *entity.DNSResourceParams {
+func getDNSResourceParams(d *schema.ResourceData) *entity.DNSResourceParams {
 	return &entity.DNSResourceParams{
 		IPAddresses: d.Get("data").(string),
 		Name:        d.Get("name").(string),
@@ -244,7 +258,7 @@ func getDnsResourceParams(d *schema.ResourceData) *entity.DNSResourceParams {
 	}
 }
 
-func getDnsResourceRecordParams(d *schema.ResourceData) *entity.DNSResourceRecordParams {
+func getDNSResourceRecordParams(d *schema.ResourceData) *entity.DNSResourceRecordParams {
 	return &entity.DNSResourceRecordParams{
 		RRType: d.Get("type").(string),
 		RRData: d.Get("data").(string),
@@ -255,28 +269,32 @@ func getDnsResourceRecordParams(d *schema.ResourceData) *entity.DNSResourceRecor
 	}
 }
 
-func getDnsResourceRecord(client *client.Client, identifier string) (*entity.DNSResourceRecord, error) {
+func getDNSResourceRecord(client *client.Client, identifier string) (*entity.DNSResourceRecord, error) {
 	dnsResourceRecords, err := client.DNSResourceRecords.Get(&entity.DNSResourceRecordsParams{})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, d := range dnsResourceRecords {
 		if fmt.Sprintf("%v", d.ID) == identifier || d.FQDN == identifier {
 			return &d, nil
 		}
 	}
+
 	return nil, fmt.Errorf("DNS resource record (%s) was not found", identifier)
 }
 
-func getDnsResource(client *client.Client, identifier string) (*entity.DNSResource, error) {
+func getDNSResource(client *client.Client, identifier string) (*entity.DNSResource, error) {
 	dnsResources, err := client.DNSResources.Get(&entity.DNSResourcesParams{})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, d := range dnsResources {
 		if fmt.Sprintf("%v", d.ID) == identifier || d.FQDN == identifier {
 			return &d, nil
 		}
 	}
+
 	return nil, fmt.Errorf("DNS resource (%s) was not found", identifier)
 }

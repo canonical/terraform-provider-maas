@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMaasBlockDevice(machine string) string {
+func testAccMAASBlockDevice(machine string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = "%s"
@@ -75,8 +75,7 @@ resource "maas_block_device" "test" {
 `, machine)
 }
 
-func TestAccResourceMaasBlockDevice_basic(t *testing.T) {
-
+func TestAccResourceMAASBlockDevice_basic(t *testing.T) {
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 
 	checks := []resource.TestCheckFunc{
@@ -118,7 +117,7 @@ func TestAccResourceMaasBlockDevice_basic(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMaasBlockDevice(machine),
+				Config: testAccMAASBlockDevice(machine),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},

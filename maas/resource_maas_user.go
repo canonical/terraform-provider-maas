@@ -10,21 +10,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasUser() *schema.Resource {
+func resourceMAASUser() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS users.",
 		CreateContext: resourceUserCreate,
 		ReadContext:   resourceUserRead,
 		DeleteContext: resourceUserDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
 				user, err := getUser(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
-				tfState := map[string]interface{}{
+				tfState := map[string]any{
 					"id":       user.UserName,
 					"name":     user.UserName,
 					"email":    user.Email,
@@ -69,19 +69,20 @@ func resourceMaasUser() *schema.Resource {
 	}
 }
 
-func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	user, err := client.Users.Create(getUserParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(user.UserName)
 
 	return nil
 }
 
-func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	if _, err := client.User.Get(d.Id()); err != nil {
@@ -91,7 +92,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	return nil
 }
 
-func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	if err := client.User.Delete(d.Id()); err != nil {
@@ -115,10 +116,12 @@ func getUser(client *client.Client, userName string) (*entity.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	for _, u := range users {
 		if u.UserName == userName {
 			return &u, nil
 		}
 	}
+
 	return nil, fmt.Errorf("user (%s) was not found", userName)
 }

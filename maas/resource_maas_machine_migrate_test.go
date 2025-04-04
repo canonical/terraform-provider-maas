@@ -8,25 +8,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
 
-func testResourceMaasMachineInstanceStateDataV0() map[string]interface{} {
-	return map[string]interface{}{
-		"power_parameters": map[string]interface{}{
+func testResourceMAASMachineInstanceStateDataV0() map[string]any {
+	return map[string]any{
+		"power_parameters": map[string]any{
 			"power_user": "ubuntu",
 		},
 	}
 }
 
-func testResourceMaasMachineInstanceStateDataV1() map[string]interface{} {
-	flattenedV0, _ := structure.FlattenJsonToString(map[string]interface{}{
+func testResourceMAASMachineInstanceStateDataV1() map[string]any {
+	flattenedV0, _ := structure.FlattenJsonToString(map[string]any{
 		"power_user": "ubuntu",
 	})
-	return map[string]interface{}{"power_parameters": flattenedV0}
+
+	return map[string]any{"power_parameters": flattenedV0}
 }
 
-func TestResourceMaasMachineInstanceStateUpgradeV0(t *testing.T) {
+func TestResourceMAASMachineInstanceStateUpgradeV0(t *testing.T) {
 	ctx := context.Background()
-	expected := testResourceMaasMachineInstanceStateDataV1()
-	actual, err := resourceMaasMachineStateUpgradeV0(ctx, testResourceMaasMachineInstanceStateDataV0(), nil)
+	expected := testResourceMAASMachineInstanceStateDataV1()
+
+	actual, err := resourceMAASMachineStateUpgradeV0(ctx, testResourceMAASMachineInstanceStateDataV0(), nil)
 	if err != nil {
 		t.Fatalf("error migrating state: %s", err)
 	}

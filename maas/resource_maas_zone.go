@@ -1,3 +1,4 @@
+//nolint:dupl // disable dupl check for now
 package maas
 
 import (
@@ -10,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasZone() *schema.Resource {
+func resourceMAASZone() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS zones.",
 		CreateContext: resourceZoneCreate,
@@ -18,7 +19,7 @@ func resourceMaasZone() *schema.Resource {
 		UpdateContext: resourceZoneUpdate,
 		DeleteContext: resourceZoneDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 				zone, err := getZone(client, d.Id())
 				if err != nil {
@@ -44,7 +45,7 @@ func resourceMaasZone() *schema.Resource {
 	}
 }
 
-func resourceZoneRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceZoneRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	zone, err := getZone(client, d.Id())
@@ -66,43 +67,49 @@ func resourceZoneRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	return nil
 }
 
-func resourceZoneCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceZoneCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	params := getZoneParams(d)
+
 	zone, err := client.Zones.Create(params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", zone.ID))
 
 	return resourceZoneRead(ctx, d, meta)
 }
 
-func resourceZoneUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceZoneUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	params := getZoneParams(d)
+
 	zone, err := getZone(client, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	zone, err = client.Zone.Update(zone.Name, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(fmt.Sprintf("%v", zone.ID))
 
 	return resourceZoneRead(ctx, d, meta)
 }
 
-func resourceZoneDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceZoneDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	zone, err := getZone(client, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.Zone.Delete(zone.Name); err != nil {
 		return diag.FromErr(err)
 	}
@@ -122,12 +129,14 @@ func findZone(client *client.Client, identifier string) (*entity.Zone, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	for _, z := range zones {
 		if fmt.Sprintf("%v", z.ID) == identifier || z.Name == identifier {
 			return &z, nil
 		}
 	}
-	return nil, nil
+
+	return nil, err
 }
 
 func getZone(client *client.Client, identifier string) (*entity.Zone, error) {
@@ -135,8 +144,10 @@ func getZone(client *client.Client, identifier string) (*entity.Zone, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if zone == nil {
 		return nil, fmt.Errorf("zone (%s) was not found", identifier)
 	}
+
 	return zone, nil
 }

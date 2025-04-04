@@ -1,3 +1,4 @@
+//nolint:dupl // disable dupl check for now
 package maas
 
 import (
@@ -12,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasNetworkInterfaceBond() *schema.Resource {
+func resourceMAASNetworkInterfaceBond() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS network Bonds.",
 		CreateContext: resourceNetworkInterfaceBondCreate,
@@ -122,7 +123,7 @@ func resourceMaasNetworkInterfaceBond() *schema.Resource {
 	}
 }
 
-func resourceNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -136,6 +137,7 @@ func resourceNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceD
 	}
 
 	params := getNetworkInterfaceBondParams(d, p)
+
 	networkInterface, err := client.NetworkInterfaces.CreateBond(machine.SystemID, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -146,7 +148,7 @@ func resourceNetworkInterfaceBondCreate(ctx context.Context, d *schema.ResourceD
 	return resourceNetworkInterfaceBondRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -164,35 +166,42 @@ func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	p := networkInterface.Params.(map[string]interface{})
+	p := networkInterface.Params.(map[string]any)
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
 	} else {
 		d.Set("accept_ra", false)
 	}
+
 	if _, ok := p["bond_downdelay"]; ok {
 		d.Set("bond_downdelay", int64(p["bond_downdelay"].(float64)))
 	}
+
 	if _, ok := p["bond_lacp_rate"]; ok {
 		d.Set("bond_lacp_rate", p["bond_lacp_rate"].(string))
 	}
+
 	if _, ok := p["bond_miimon"]; ok {
 		d.Set("bond_miimon", int64(p["bond_miimon"].(float64)))
 	}
+
 	if _, ok := p["bond_mode"]; ok {
 		d.Set("bond_mode", p["bond_mode"].(string))
 	}
+
 	if _, ok := p["bond_num_grat_arp"]; ok {
 		d.Set("bond_num_grat_arp", int64(p["bond_num_grat_arp"].(float64)))
 	}
+
 	if _, ok := p["bond_updelay"]; ok {
 		d.Set("bond_updelay", int64(p["bond_updelay"].(float64)))
 	}
+
 	if _, ok := p["bond_xmit_hash_policy"]; ok {
 		d.Set("bond_xmit_hash_policy", p["bond_xmit_hash_policy"].(string))
 	}
 
-	tfState := map[string]interface{}{
+	tfState := map[string]any{
 		"mac_address": networkInterface.MACAddress,
 		"mtu":         networkInterface.EffectiveMTU,
 		"name":        networkInterface.Name,
@@ -207,7 +216,7 @@ func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -226,6 +235,7 @@ func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	params := getNetworkInterfaceBondUpdateParams(d, p)
+
 	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -234,17 +244,19 @@ func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceD
 	return resourceNetworkInterfaceBondRead(ctx, d, meta)
 }
 
-func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -272,7 +284,6 @@ func getNetworkInterfaceBondParams(d *schema.ResourceData, parentIDs []int) *ent
 }
 
 func getNetworkInterfaceBondUpdateParams(d *schema.ResourceData, parentIDs []int) *entity.NetworkInterfaceUpdateParams {
-
 	return &entity.NetworkInterfaceUpdateParams{
 		AcceptRA:           d.Get("accept_ra").(bool),
 		BondDownDelay:      d.Get("bond_downdelay").(int),
@@ -291,17 +302,20 @@ func getNetworkInterfaceBondUpdateParams(d *schema.ResourceData, parentIDs []int
 	}
 }
 
-func findBondParentsID(client *client.Client, machineSystemID string, parents []interface{}) ([]int, error) {
+func findBondParentsID(client *client.Client, machineSystemID string, parents []any) ([]int, error) {
 	var result []int
+
 	for _, p := range parents {
 		if p, ok := p.(string); ok {
 			networkInterface, err := getNetworkInterface(client, machineSystemID, p)
 			if err != nil {
 				return nil, err
 			}
+
 			if networkInterface.Type != "physical" {
 				continue
 			}
+
 			result = append(result, networkInterface.ID)
 		}
 	}
@@ -309,7 +323,7 @@ func findBondParentsID(client *client.Client, machineSystemID string, parents []
 	return result, nil
 }
 
-func resourceNetworkInterfaceBondImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceNetworkInterfaceBondImport(d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BOND_INTERFACE_ID", d.Id())

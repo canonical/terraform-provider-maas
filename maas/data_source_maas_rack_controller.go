@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasRackController() *schema.Resource {
+func dataSourceMAASRackController() *schema.Resource {
 	return &schema.Resource{
 		Description: "Provides details about an existing MAAS rack controller.",
 		ReadContext: resourceRackControllerRead,
@@ -52,10 +52,11 @@ func dataSourceMaasRackController() *schema.Resource {
 	}
 }
 
-func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	hostname := d.Get("hostname").(string)
+
 	rackControllers, err := client.RackControllers.Get(
 		&entity.RackControllersGetParams{
 			Hostname: []string{hostname},
@@ -63,21 +64,24 @@ func resourceRackControllerRead(ctx context.Context, d *schema.ResourceData, met
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if len(rackControllers) == 0 {
 		return diag.Errorf("rack controller (%s) was not found", hostname)
 	}
+
 	d.SetId(rackControllers[0].SystemID)
 
 	d.Set("description", rackControllers[0].Description)
 	d.Set("version", rackControllers[0].Description)
 
-	services := make([]map[string]interface{}, len(rackControllers[0].ServiceSet))
+	services := make([]map[string]any, len(rackControllers[0].ServiceSet))
 	for i, service := range rackControllers[0].ServiceSet {
-		services[i] = map[string]interface{}{
+		services[i] = map[string]any{
 			"name":   service.Name,
 			"status": service.Status,
 		}
 	}
+
 	if err := d.Set("services", services); err != nil {
 		return diag.FromErr(err)
 	}

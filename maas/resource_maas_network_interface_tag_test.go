@@ -14,16 +14,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestSplitTagStateId(t *testing.T) {
-	expectedSystemId := "abc123"
-	expectedInterfaceId := 12
-	stateId := fmt.Sprintf("%s/%d", expectedSystemId, expectedInterfaceId)
-	systemId, interfaceId, err := maas.SplitTagStateId(stateId)
+func TestSplitTagStateID(t *testing.T) {
+	expectedSystemID := "abc123"
+	expectedInterfaceID := 12
+	stateID := fmt.Sprintf("%s/%d", expectedSystemID, expectedInterfaceID)
+	systemID, interfaceID, err := maas.SplitTagStateID(stateID)
+
 	if err != nil {
 		t.Fatalf("Error splitting state ID: %s", err)
 	}
-	if systemId != expectedSystemId || interfaceId != expectedInterfaceId {
-		t.Fatalf("Expected system ID %s and interface ID %d, got system ID %s and interface ID %d", expectedSystemId, expectedInterfaceId, systemId, interfaceId)
+
+	if systemID != expectedSystemID || interfaceID != expectedInterfaceID {
+		t.Fatalf("Expected system ID %s and interface ID %d, got system ID %s and interface ID %d", expectedSystemID, expectedInterfaceID, systemID, interfaceID)
 	}
 }
 
@@ -37,13 +39,13 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMaasNetworkInterfaceDestroy,
+		CheckDestroy: testAccCheckMAASNetworkInterfaceDestroy,
 		Steps: []resource.TestStep{
 			// Test creation.
 			{
-				Config: testAccMaasNetworkInterfaceTagConfig(hostname, macAddress, tagName, tagName2),
+				Config: testAccMAASNetworkInterfaceTagConfig(hostname, macAddress, tagName, tagName2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName, tagName2),
+					testAccCheckMAASNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName, tagName2),
 					resource.TestCheckResourceAttr("maas_network_interface_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName2),
@@ -51,9 +53,9 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 			},
 			// Test update. Expected behaviour is that the previous tag is removed and the new tag is added.
 			{
-				Config: testAccMaasNetworkInterfaceTagConfig(hostname, macAddress, tagName2, tagName3),
+				Config: testAccMAASNetworkInterfaceTagConfig(hostname, macAddress, tagName2, tagName3),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMaasNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName2, tagName3),
+					testAccCheckMAASNetworkInterfaceTagExists("maas_network_interface_tag.test", tagName2, tagName3),
 					resource.TestCheckResourceAttr("maas_network_interface_tag.test", "tags.#", "2"),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName2),
 					resource.TestCheckTypeSetElemAttr("maas_network_interface_tag.test", "tags.*", tagName3),
@@ -80,7 +82,7 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasNetworkInterfaceTagConfig(hostname, macAddress string, tagNames ...string) string {
+func testAccMAASNetworkInterfaceTagConfig(hostname, macAddress string, tagNames ...string) string {
 	return fmt.Sprintf(`
 resource "maas_device" "test" {
   hostname = %q
@@ -97,24 +99,26 @@ resource "maas_network_interface_tag" "test" {
 	`, hostname, macAddress, macAddress, fmt.Sprintf("[\"%s\"]", strings.Join(tagNames, "\", \"")))
 }
 
-func testAccCheckMaasNetworkInterfaceTagExists(resourceName string, tagNames ...string) resource.TestCheckFunc {
+func testAccCheckMAASNetworkInterfaceTagExists(resourceName string, tagNames ...string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("Not found: %s", resourceName)
 		}
 		// Get the system and interface ID from the state ID
-		systemId, interfaceId, err := maas.SplitTagStateId(rs.Primary.ID)
+		systemID, interfaceID, err := maas.SplitTagStateID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		// Get the existing interface
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-		response, err := conn.NetworkInterface.Get(systemId, interfaceId)
+
+		response, err := conn.NetworkInterface.Get(systemID, interfaceID)
 		if err != nil {
 			return err
 		}
+
 		if response == nil {
 			return fmt.Errorf("MAAS Network Interface (%s) not found.", rs.Primary.ID)
 		}
@@ -130,7 +134,7 @@ func testAccCheckMaasNetworkInterfaceTagExists(resourceName string, tagNames ...
 	}
 }
 
-func testAccCheckMaasNetworkInterfaceDestroy(s *terraform.State) error {
+func testAccCheckMAASNetworkInterfaceDestroy(s *terraform.State) error {
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	// loop through the resources in state, verifying each maas_network_interface_tag is destroyed
@@ -140,15 +144,15 @@ func testAccCheckMaasNetworkInterfaceDestroy(s *terraform.State) error {
 		}
 
 		// Retrieve the system and interface ID from the state ID
-		systemId, interfaceId, err := maas.SplitTagStateId(rs.Primary.ID)
+		systemID, interfaceID, err := maas.SplitTagStateID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		// Check the interface doesn't exist
-		response, err := conn.NetworkInterface.Get(systemId, interfaceId)
+		response, err := conn.NetworkInterface.Get(systemID, interfaceID)
 		if err == nil {
-			if response != nil && response.ID == interfaceId {
+			if response != nil && response.ID == interfaceID {
 				return fmt.Errorf("MAAS Network Interface (%s) still exists.", rs.Primary.ID)
 			}
 		}
@@ -157,5 +161,6 @@ func testAccCheckMaasNetworkInterfaceDestroy(s *terraform.State) error {
 			return err
 		}
 	}
+
 	return nil
 }

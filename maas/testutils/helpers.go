@@ -1,9 +1,9 @@
 package testutils
 
 import (
+	"crypto/rand"
 	"fmt"
-	"log"
-	"math/rand"
+	mrand "math/rand"
 	"strings"
 	"time"
 )
@@ -13,7 +13,10 @@ func RandomMAC() string {
 	mac := make([]byte, 6)
 
 	// Fill the slice with random bytes
-	rand.Read(mac)
+	_, err := rand.Read(mac)
+	if err != nil {
+		return "01:23:45:67:89:AB"
+	}
 
 	// Ensure the MAC address is valid:
 	// - Bit 0 of the first byte is cleared (ensuring it's a unicast address)
@@ -23,26 +26,26 @@ func RandomMAC() string {
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5])
 }
 
-// Generate a random CIDR of the form 10.x.y.0/24, where x and y are random numbers in the usable range of 50 to 255
-func GenerateRandomCidr() string {
+// GenerateRandomCIDR generates a random CIDR of the form 10.x.y.0/24, where x and y are random numbers in the usable range of 50 to 255
+func GenerateRandomCIDR() string {
 	// Create and log a seed if required for test reproducibility
 	seed := time.Now().UnixNano()
-	rand.New(rand.NewSource(seed))
-	log.Printf("Seed used for random CIDR: %d", seed)
+	mrand.New(mrand.NewSource(seed)) //nolint:gosec // used for testing only, no need for real randomness
 
-	// Arbitrary minIpRange to ensure the CIDR generated doesn't conflict with any existing MAAS networks
-	minIpRange := 50
-	maxIpRange := 255
+	// Arbitrary minIPRange to ensure the CIDR generated doesn't conflict with any existing MAAS networks
+	minIPRange := 50
+	maxIPRange := 255
 
-	cidr := fmt.Sprintf("10.%d.%d.0/24", generateRandomNumberInRange(minIpRange, maxIpRange), generateRandomNumberInRange(minIpRange, maxIpRange))
+	cidr := fmt.Sprintf("10.%d.%d.0/24", generateRandomNumberInRange(minIPRange, maxIPRange), generateRandomNumberInRange(minIPRange, maxIPRange))
+
 	return cidr
 }
 
-// Returns the network prefix from a CIDR. For example 10.77.77.0/24 would return 10.77.77
-func GetNetworkPrefixFromCidr(cidr string) string {
+// GetNetworkPrefixFromCIDR returns the network prefix from a CIDR. For example 10.77.77.0/24 would return 10.77.77
+func GetNetworkPrefixFromCIDR(cidr string) string {
 	return strings.Join(strings.Split(cidr, ".")[:3], ".")
 }
 
 func generateRandomNumberInRange(min int, max int) int {
-	return rand.Intn(max-min) + min
+	return mrand.Intn(max-min) + min //nolint:gosec // used for testing only, no need for real randomness
 }
