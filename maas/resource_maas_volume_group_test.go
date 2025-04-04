@@ -14,14 +14,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
+func TestAccResourceMAASVolumeGroup_basic(t *testing.T) {
 	var volumeGroup entity.VolumeGroup
 
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 	name := "test volume group"
 
 	baseChecks := []resource.TestCheckFunc{
-		testAccCheckMaasVolumeGroupExists("maas_volume_group.test", &volumeGroup),
+		testAccCheckMAASVolumeGroupExists("maas_volume_group.test", &volumeGroup),
 		resource.TestCheckResourceAttr("maas_volume_group.test", "name", name),
 		resource.TestCheckResourceAttrPair("maas_volume_group.test", "machine", "data.maas_machine.machine", "id"),
 	}
@@ -29,12 +29,12 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMaasVolumeGroupDestroy,
+		CheckDestroy: testAccCheckMAASVolumeGroupDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
-				Config: testAccMaasVolumeGroup(machine, name, []string{}, []string{"maas_block_device.bd1.partitions.0.id"}),
+				Config: testAccMAASVolumeGroup(machine, name, []string{}, []string{"maas_block_device.bd1.partitions.0.id"}),
 				Check: resource.ComposeTestCheckFunc(append(baseChecks,
 					// we loose about 5MB when creating a volume group, which rounds down to the next GB
 					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "19"),
@@ -45,7 +45,7 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 			},
 			// Test the update function
 			{
-				Config: testAccMaasVolumeGroup(machine, name, []string{"maas_block_device.bd2.id"}, []string{"maas_block_device.bd1.partitions.0.id"}),
+				Config: testAccMAASVolumeGroup(machine, name, []string{"maas_block_device.bd2.id"}, []string{"maas_block_device.bd1.partitions.0.id"}),
 				Check: resource.ComposeTestCheckFunc(append(baseChecks,
 					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "69"),
 					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "1"),
@@ -75,7 +75,7 @@ func TestAccResourceMaasVolumeGroup_basic(t *testing.T) {
 	})
 }
 
-func testAccMaasVolumeGroup(machine string, name string, blockDevices []string, partitions []string) string {
+func testAccMAASVolumeGroup(machine string, name string, blockDevices []string, partitions []string) string {
 	return fmt.Sprintf(`
 
 data "maas_machine" "machine" {
@@ -121,7 +121,7 @@ resource "maas_volume_group" "test" {
 `, machine, name, strings.Join(blockDevices, ", "), strings.Join(partitions, ", "))
 }
 
-func testAccCheckMaasVolumeGroupExists(rn string, volumeGroup *entity.VolumeGroup) resource.TestCheckFunc {
+func testAccCheckMAASVolumeGroupExists(rn string, volumeGroup *entity.VolumeGroup) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -153,7 +153,7 @@ func testAccCheckMaasVolumeGroupExists(rn string, volumeGroup *entity.VolumeGrou
 	}
 }
 
-func testAccCheckMaasVolumeGroupDestroy(s *terraform.State) error {
+func testAccCheckMAASVolumeGroupDestroy(s *terraform.State) error {
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	for _, rs := range s.RootModule().Resources {

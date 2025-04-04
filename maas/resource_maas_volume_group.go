@@ -13,15 +13,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasVolumeGroup() *schema.Resource {
+func resourceMAASVolumeGroup() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS Volume Groups, and construct them from partion-less block devices.",
-		CreateContext: resourceMaasVolumeGroupCreate,
-		ReadContext:   resourceMaasVolumeGroupRead,
-		UpdateContext: resourceMaasVolumeGroupUpdate,
-		DeleteContext: resourceMaasVolumeGroupDelete,
+		CreateContext: resourceMAASVolumeGroupCreate,
+		ReadContext:   resourceMAASVolumeGroupRead,
+		UpdateContext: resourceMAASVolumeGroupUpdate,
+		DeleteContext: resourceMAASVolumeGroupDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: resourceMaasVolumeGroupImport,
+			StateContext: resourceMAASVolumeGroupImport,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -64,7 +64,7 @@ func resourceMaasVolumeGroup() *schema.Resource {
 	}
 }
 
-func resourceMaasVolumeGroupImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMAASVolumeGroupImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), "/")
 
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
@@ -90,24 +90,24 @@ func resourceMaasVolumeGroupImport(ctx context.Context, d *schema.ResourceData, 
 	return []*schema.ResourceData{d}, nil
 }
 
-func resourceMaasVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMAASVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	block_devices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
+	blockDevices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
 	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
 
-	boot_disk := fmt.Sprintf("%v", machine.BootDisk.ID)
-	if slices.Contains(block_devices, boot_disk) {
-		return diag.Errorf("Cannot add the boot disk %v (%v) as a block device, provide partitions on top of it instead.", boot_disk, machine.BootDisk.Name)
+	bootDisk := fmt.Sprintf("%v", machine.BootDisk.ID)
+	if slices.Contains(blockDevices, bootDisk) {
+		return diag.Errorf("Cannot add the boot disk %v (%v) as a block device, provide partitions on top of it instead.", bootDisk, machine.BootDisk.Name)
 	}
 
 	volumeGroupParams := entity.VolumeGroupCreateParams{
 		Name:         d.Get("name").(string),
-		BlockDevices: block_devices,
+		BlockDevices: blockDevices,
 		Partitions:   partitions,
 	}
 
@@ -118,10 +118,10 @@ func resourceMaasVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, 
 
 	d.SetId(fmt.Sprintf("%v", volumeGroup.ID))
 
-	return resourceMaasVolumeGroupRead(ctx, d, meta)
+	return resourceMAASVolumeGroupRead(ctx, d, meta)
 }
 
-func resourceMaasVolumeGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMAASVolumeGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -156,7 +156,7 @@ func resourceMaasVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 	return nil
 }
 
-func resourceMaasVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -225,10 +225,10 @@ func resourceMaasVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	d.SetId(fmt.Sprintf("%v", volumeGroup.ID))
 
-	return resourceMaasVolumeGroupRead(ctx, d, meta)
+	return resourceMAASVolumeGroupRead(ctx, d, meta)
 }
 
-func resourceMaasVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMAASVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
