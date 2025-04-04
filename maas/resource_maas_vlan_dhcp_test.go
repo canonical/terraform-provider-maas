@@ -12,6 +12,7 @@ import (
 	// "github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 )
 
 func TestAccMaasVlanDHCP_basic(t *testing.T) {
@@ -81,12 +82,14 @@ func TestAccMaasVlanDHCP_relay(t *testing.T) {
 	// Test variables
 	vlanID := 0
 	fabricID := "0"
-	var dummyVlanVID int
-	var dummyFabricID int
+
+	dummyFabricName := acctest.RandomWithPrefix("dummy")
 	cidr := testutils.GenerateRandomCidr()
 	networkPrefix := testutils.GetNetworkPrefixFromCidr(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
-	// startIP2, endIP2 := networkPrefix+".6", networkPrefix+".10"
+	cidr2 := testutils.GenerateRandomCidr()
+	networkPrefix2 := testutils.GetNetworkPrefixFromCidr(cidr2)
+	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
 	rackController := "maas-dev"
 	// relayVlanVID := 1
 
@@ -98,33 +101,9 @@ func TestAccMaasVlanDHCP_relay(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test create.
 			{
-				// PreConfig: func() {
-				// 	client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-				// 	fabricParams := entity.FabricParams{
-				// 		Name: "dummy",
-				// 	}
-				// 	fabric, err := client.Fabrics.Create(&fabricParams)
-				// 	if err != nil {
-				// 		t.Fatalf("Failed to create dummy fabric: %s", err)
-				// 	}
-				// 	vlanParams := entity.VLANParams{
-				// 		VID: 0,
-				// 		// PrimaryRack: rackController,
-				// 		DHCPOn: false,
-				// 	}
-				// 	vlan, err := client.VLAN.Update(fabric.ID, 0, &vlanParams)
-				// 	if err != nil {
-				// 		t.Fatalf("Failed to create dummy vlan: %s", err)
-				// 	}
-				// 	dummyVlanVID = vlan.VID
-				// 	dummyFabricID = fabric.ID
-				// },
-				Config: testAccVLANDHCPConfigRelay(fabricID, rackController, vlanID, cidr, startIP, endIP, dummyVlanVID, dummyFabricID),
+				Config: testAccVLANDHCPConfigRelay(fabricID, rackController, vlanID, cidr, startIP, endIP, cidr2, startIP2, endIP2, dummyFabricName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMaasVlanDHCPExists("maas_vlan_dhcp.test", vlanID),
-					// resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", strconv.Itoa(vlanID)),
-					// resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "fabric", fabricID),
-					// resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "relay_vlan", strconv.Itoa(relayVlanVID)),
 				),
 			},
 		},
@@ -288,115 +267,29 @@ resource "maas_vlan_dhcp" "test" {
 `, testAccVLANDHCPConfigCore(fabricID, rackController, vlanID, cidr, startIP, endIP), startIP2, endIP2)
 }
 
-func testAccVLANDHCPConfigRelay(fabricID string, rackController string, vlanID int, cidr string, startIP string, endIP string, dummyVlanVID int, dummyFabricID int) string {
-// 	return fmt.Sprintf(`
-// data "maas_fabric" "test" {
-//   name = %q
-// }
-
-// data "maas_rack_controller" "test" {
-//   hostname = %q
-// }
-
-// data "maas_vlan" "test" {
-//   vlan = %d
-//   fabric = data.maas_fabric.test.id
-// }
-
-// resource "maas_subnet" "test" {
-//   cidr = %q
-//   fabric = data.maas_fabric.test.id
-//   vlan = data.maas_vlan.test.id
-// }
-
-// resource "maas_subnet_ip_range" "test" {
-//   subnet = maas_subnet.test.id
-//   start_ip = %q
-//   end_ip = %q
-//   type = "dynamic"
-// }
-
-// resource "maas_vlan_dhcp" "test" {
-//   fabric = data.maas_fabric.test.id
-//   vlan = data.maas_vlan.test.vlan
-//   primary_rack_controller = data.maas_rack_controller.test.id
-//   ip_ranges = [maas_subnet_ip_range.test.id]
-// }
-
-// resource "maas_subnet" "dummy" {
-//   cidr = "10.60.60.0/24"
-//   fabric = %d
-//   vlan = %d
-// }
-
-// resource "maas_subnet_ip_range" "dummy" {
-//   subnet = maas_subnet.dummy.id
-//   start_ip = "10.60.60.2"
-//   end_ip = "10.60.60.25"
-//   type = "dynamic"
-// }
-
-// resource "maas_vlan_dhcp" "test_2" {
-//   fabric = %d
-//   vlan = %d
-//   ip_ranges = [maas_subnet_ip_range.dummy.id]
-//   relay_vlan = maas_vlan_dhcp.test.vlan
-// }
-
-// `, fabricID, rackController, vlanID, cidr, startIP, endIP, dummyFabricID, dummyVlanVID, dummyFabricID, dummyVlanVID)
-	return `
-data "maas_fabric" "test" {
-  name = "0"
-}
-
-data "maas_rack_controller" "test" {
-  hostname = "maas-dev"
-}
-
-data "maas_vlan" "test" {
-  vlan = 0
-  fabric = data.maas_fabric.test.id
-}
-
-resource "maas_subnet" "test" {
-  cidr = "10.66.66.0/24"
-  fabric = data.maas_fabric.test.id
-  vlan = data.maas_vlan.test.id
-}
-
-resource "maas_subnet_ip_range" "test" {
-  subnet = maas_subnet.test.id
-  start_ip = "10.66.66.1"
-  end_ip = "10.66.66.254"
-  type = "dynamic"
-}
-
-resource "maas_vlan_dhcp" "test" {
-  fabric = data.maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
-  primary_rack_controller = data.maas_rack_controller.test.id
-  ip_ranges = [maas_subnet_ip_range.test.id]
-}
+func testAccVLANDHCPConfigRelay(fabricID string, rackController string, vlanID int, cidr string, startIP string, endIP string, cidr2 string, startIP2 string, endIP2 string, dummyFabricID string) string {
+	return fmt.Sprintf(`
+%s
 
 resource "maas_fabric" "dummy" {
-  name = "dummy"
+  name = %q
 }
 
 data "maas_vlan" "dummy" {
-  vlan = 0
+  vlan = 0    # the default untagged vlan on all new fabrics.
   fabric = maas_fabric.dummy.id
 }
 
 resource "maas_subnet" "dummy" {
-  cidr = "10.70.60.0/24"
+  cidr = %q
   fabric = maas_fabric.dummy.id
   vlan = data.maas_vlan.dummy.vlan
 }
 
 resource "maas_subnet_ip_range" "dummy" {
   subnet = maas_subnet.dummy.id
-  start_ip = "10.70.60.2"
-  end_ip = "10.70.60.25"
+  start_ip = %q
+  end_ip = %q
   type = "dynamic"
 }
 
@@ -407,5 +300,5 @@ resource "maas_vlan_dhcp" "test_2" {
   relay_vlan = maas_vlan_dhcp.test.vlan
 }
 
-`
+`, testAccVLANDHCPConfigBasic(fabricID, rackController, vlanID, cidr, startIP, endIP), dummyFabricID, cidr2, startIP2, endIP2)
 }
