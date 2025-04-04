@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"log"
 	"slices"
 
 	"github.com/canonical/gomaasclient/client"
@@ -80,28 +79,24 @@ func resourceMaasVlanDHCP() *schema.Resource {
 }
 
 func resourceVlanDHCPCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Println("running resourceVlanDHCPCreate")
 	client := meta.(*ClientConfig).Client
-
+	// Validation
 	err := confirmAllIPRangesDynamic(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	err = confirmAllSubnetsWithADynamicIPRange(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	err = confirmIPRangeSubnetsInVLAN(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	// Turn on DHCP
 	fabricID := d.Get("fabric").(int)
 	vlanID := d.Get("vlan").(int)
 	params := getVlanDHCPParams(d)
-	log.Printf("about to update vlan dhcp params with fabricID: %d, vlanID: %d, params: %+v", fabricID, vlanID, params)
 	_, err = client.VLAN.Update(fabricID, vlanID, params)
 	if err != nil {
 		return diag.FromErr(err)
@@ -112,7 +107,6 @@ func resourceVlanDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceVlanDHCPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Println("running resourceVlanDHCPRead")
 	client := meta.(*ClientConfig).Client
 
 	vlanID, err := strconv.Atoi(d.Id())
@@ -142,7 +136,6 @@ func resourceVlanDHCPRead(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceVlanDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Println("running resourceVlanDHCPUpdate")
 	client := meta.(*ClientConfig).Client
 
 	if d.HasChange("ip_ranges") {
@@ -168,7 +161,6 @@ func resourceVlanDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceVlanDHCPDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Println("running resourceVlanDHCPDelete")
 	client := meta.(*ClientConfig).Client
 
 	fabricID := d.Get("fabric").(int)
@@ -184,16 +176,13 @@ func resourceVlanDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func getVlanDHCPParams(d *schema.ResourceData) *entity.VLANParams {
-	log.Println("running getVlanDHCPParams")
 	vlanParams := entity.VLANParams{
 	}
-	
 	if v, ok := d.GetOk("primary_rack_controller"); ok {
 		vlanParams.DHCPOn = true
 		vlanParams.PrimaryRack = v.(string)
 	}
 	if v, ok := d.GetOk("secondary_rack_controller"); ok {
-		vlanParams.DHCPOn = true
 		vlanParams.SecondaryRack = v.(string)
 	}
 	if v, ok := d.GetOk("relay_vlan"); ok {
@@ -203,7 +192,6 @@ func getVlanDHCPParams(d *schema.ResourceData) *entity.VLANParams {
 }
 
 func confirmAllSubnetsWithADynamicIPRange(client *client.Client, d *schema.ResourceData) error {
-	log.Println("running confirmAllSubnetsWithADynamicIPRange")
 	for _, subnetID := range d.Get("subnets").(*schema.Set).List() {
 		subnetIPRanges, err := client.Subnet.GetReservedIPRanges(subnetID.(int))
 		if err != nil {
@@ -225,7 +213,6 @@ func confirmAllSubnetsWithADynamicIPRange(client *client.Client, d *schema.Resou
 }
 
 func confirmAllIPRangesDynamic(client *client.Client, d *schema.ResourceData) error {
-	log.Println("running confirmAllIPRangesDynamic")
 	for _, ipRangeID := range d.Get("ip_ranges").(*schema.Set).List() {
 		ipRange, err := client.IPRange.Get(ipRangeID.(int))
 		if err != nil {
@@ -240,7 +227,6 @@ func confirmAllIPRangesDynamic(client *client.Client, d *schema.ResourceData) er
 }
 
 func confirmIPRangeSubnetsInVLAN(client *client.Client, d *schema.ResourceData) error {
-	log.Println("running confirmIPRangeSubnetsInVLAN")
 	for _, ipRangeID := range d.Get("ip_ranges").(*schema.Set).List() {
 		ipRange, err := client.IPRange.Get(ipRangeID.(int))
 		if err != nil {
