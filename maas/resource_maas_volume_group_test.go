@@ -127,11 +127,13 @@ func testAccCheckMAASVolumeGroupExists(rn string, volumeGroup *entity.VolumeGrou
 		if !ok {
 			return fmt.Errorf("resource not found: %s\n %#v", rn, s.RootModule().Resources)
 		}
+
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("resource id not set")
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return err
@@ -165,6 +167,7 @@ func testAccCheckMAASVolumeGroupDestroy(s *terraform.State) error {
 		if err != nil {
 			return err
 		}
+
 		machine, ok := rs.Primary.Attributes["machine"]
 		if !ok {
 			return fmt.Errorf("Could not find machine id on resource")
@@ -182,5 +185,6 @@ func testAccCheckMAASVolumeGroupDestroy(s *terraform.State) error {
 			return err
 		}
 	}
+
 	return nil
 }

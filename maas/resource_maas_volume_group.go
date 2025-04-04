@@ -72,6 +72,7 @@ func resourceMAASVolumeGroupImport(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	client := meta.(*ClientConfig).Client
+
 	machine, err := getMachine(client, idParts[0])
 	if err != nil {
 		return nil, err
@@ -97,6 +98,7 @@ func resourceMAASVolumeGroupCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	blockDevices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
 	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
 
@@ -128,6 +130,7 @@ func resourceMAASVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -163,12 +166,14 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	var addBlockDevices []string
+
 	var removeBlockDevices []string
 
 	if d.HasChange("block_devices") {
@@ -182,6 +187,7 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 				addBlockDevices = append(addBlockDevices, device)
 			}
 		}
+
 		for _, device := range oldDeviceList {
 			if !slices.Contains(newDeviceList, device) {
 				removeBlockDevices = append(removeBlockDevices, device)
@@ -190,6 +196,7 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	var addPartitions []string
+
 	var removePartitions []string
 
 	if d.HasChange("partitions") {
@@ -203,6 +210,7 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 				addPartitions = append(addPartitions, partition)
 			}
 		}
+
 		for _, partition := range oldPartitionList {
 			if !slices.Contains(newPartitionList, partition) {
 				removePartitions = append(removePartitions, partition)
@@ -235,6 +243,7 @@ func resourceMAASVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -250,6 +259,7 @@ func resourceMAASVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, 
 
 func findVolumeGroupDevices(volumeGroup *entity.VolumeGroup) ([]string, []string) {
 	var blockDevices []string
+
 	var partitions []string
 
 	for _, device := range volumeGroup.Devices.([]interface{}) {
@@ -266,6 +276,7 @@ func findVolumeGroupDevices(volumeGroup *entity.VolumeGroup) ([]string, []string
 			}
 		}
 	}
+
 	return blockDevices, partitions
 }
 
@@ -274,13 +285,16 @@ func getVolumeGroup(client *client.Client, machineID string, identifier string) 
 	if err != nil {
 		return nil, err
 	}
+
 	if volumegroups == nil {
 		return nil, fmt.Errorf("volume group %v was not found on machine %v", identifier, machineID)
 	}
+
 	for _, vg := range volumegroups {
 		if fmt.Sprintf("%v", vg.ID) == identifier || vg.Name == identifier {
 			return &vg, nil
 		}
 	}
-	return nil, nil
+
+	return nil, err
 }
