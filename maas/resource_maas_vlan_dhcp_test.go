@@ -236,21 +236,21 @@ data "maas_rack_controller" "test" {
 }
 
 data "maas_vlan" "test" {
-  vlan = 0
+  vlan   = 0
   fabric = maas_fabric.test.id
 }
 
 resource "maas_subnet" "test" {
-  cidr = %q
+  cidr   = %q
   fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.id
+  vlan   = data.maas_vlan.test.id
 }
 
 resource "maas_subnet_ip_range" "test" {
-  subnet = maas_subnet.test.id
+  subnet   = maas_subnet.test.id
   start_ip = %q
-  end_ip = %q
-  type = "dynamic"
+  end_ip   = %q
+  type     = "dynamic"
 }
 
 `, fabricID, rackController, cidr, startIP, endIP)
@@ -260,36 +260,35 @@ func testAccVLANDHCPPConfigWrongIPRange(fabricID string, fabricID2 string, rackC
 	return fmt.Sprintf(`
 %s
 
-## Create IP ranges in a separate fabric and VLAN to the VLAN where DHCP will be enabled.
-# 
-
+# Create IP ranges in a separate fabric and VLAN to the VLAN where DHCP will be enabled.
+##
 resource "maas_fabric" "separate_fabric" {
-	name = %q
+  name = %q
 }
 
 data "maas_vlan" "separate_vlan" {
-	vlan = 0
-	fabric = maas_fabric.separate_fabric.id
+  vlan   = 0
+  fabric = maas_fabric.separate_fabric.id
 }
 
 resource "maas_subnet" "separate_subnet" {
-	cidr = %q
-	fabric = maas_fabric.separate_fabric.id
-	vlan = data.maas_vlan.separate_vlan.vlan
+  cidr   = %q
+  fabric = maas_fabric.separate_fabric.id
+  vlan   = data.maas_vlan.separate_vlan.vlan
 }
 
 resource "maas_subnet_ip_range" "separate_ip_range" {
-  subnet = maas_subnet.separate_subnet.id
+  subnet   = maas_subnet.separate_subnet.id
   start_ip = %q
-  end_ip = %q
-  type = "dynamic"
+  end_ip   = %q
+  type     = "dynamic"
 }
 
 resource "maas_vlan_dhcp" "test" {
-  fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
+  fabric                  = maas_fabric.test.id
+  vlan                    = data.maas_vlan.test.vlan
   primary_rack_controller = data.maas_rack_controller.test.id
-  ip_ranges = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.separate_ip_range.id]
+  ip_ranges               = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.separate_ip_range.id]
 }
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), fabricID2, cidr2, startIP2, endIP2)
 }
@@ -298,10 +297,10 @@ func testAccVLANDHCPConfigBasic(fabricID string, rackController string, cidr str
 	return fmt.Sprintf(`
 %s
 resource "maas_vlan_dhcp" "test" {
-  fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
+  fabric                  = maas_fabric.test.id
+  vlan                    = data.maas_vlan.test.vlan
   primary_rack_controller = data.maas_rack_controller.test.id
-  ip_ranges = [maas_subnet_ip_range.test.id]
+  ip_ranges               = [maas_subnet_ip_range.test.id]
 }
 
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP))
@@ -312,22 +311,23 @@ func testAccVLANDHCPConfigSubnet(fabricID string, rackController string, cidr st
 %s
 # Subnet needs ip ranges to be set to inform terraform about the dependency.
 # Any other subnets defined earlier in this config aren't used by the VLAN DHCP resource.
+## 
 resource "maas_subnet" "test_subnet" {
-  cidr = %q
+  cidr   = %q
   fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
+  vlan   = data.maas_vlan.test.vlan
   ip_ranges {
-      start_ip = %q
-      end_ip = %q
-      type = "dynamic"
+    start_ip = %q
+    end_ip   = %q
+    type     = "dynamic"
   }
 }
 
 resource "maas_vlan_dhcp" "test" {
-  fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
+  fabric                  = maas_fabric.test.id
+  vlan                    = data.maas_vlan.test.vlan
   primary_rack_controller = data.maas_rack_controller.test.id
-  subnets = [maas_subnet.test_subnet.id]
+  subnets                 = [maas_subnet.test_subnet.id]
 }
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), cidr2, startIP2, endIP2)
 }
@@ -336,28 +336,28 @@ func testAccVLANDHCPConfigSubnetUpdate(fabricID string, rackController string, c
 	return fmt.Sprintf(`
 %s
 resource "maas_subnet" "test_subnet" {
-  cidr = %q
+  cidr   = %q
   fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
+  vlan   = data.maas_vlan.test.vlan
   ip_ranges {
-      start_ip = %q
-      end_ip = %q
-      type = "dynamic"
+    start_ip = %q
+    end_ip   = %q
+    type     = "dynamic"
   }
 }
 
 # New subnet to be added to the VLAN DHCP resource
 resource "maas_subnet" "new_subnet" {
-  cidr = %q
+  cidr   = %q
   fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
+  vlan   = data.maas_vlan.test.vlan
 }
 
 resource "maas_vlan_dhcp" "test" {
-  fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
+  fabric                  = maas_fabric.test.id
+  vlan                    = data.maas_vlan.test.vlan
   primary_rack_controller = data.maas_rack_controller.test.id
-  subnets = [maas_subnet.test_subnet.id, maas_subnet.new_subnet.id]
+  subnets                 = [maas_subnet.test_subnet.id, maas_subnet.new_subnet.id]
 }
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), cidr2, startIP2, endIP2, cidr3)
 }
@@ -367,16 +367,16 @@ func testAccVLANDHCPConfigBasicUpdate(fabricID string, rackController string, ci
 	return fmt.Sprintf(`
 %s
 resource "maas_subnet_ip_range" "test_2" {
-  subnet = maas_subnet.test.id
+  subnet   = maas_subnet.test.id
   start_ip = %q
-  end_ip = %q
-  type = "dynamic"
+  end_ip   = %q
+  type     = "dynamic"
 }
 resource "maas_vlan_dhcp" "test" {
-  fabric = maas_fabric.test.id
-  vlan = data.maas_vlan.test.vlan
+  fabric                  = maas_fabric.test.id
+  vlan                    = data.maas_vlan.test.vlan
   primary_rack_controller = data.maas_rack_controller.test.id
-  ip_ranges = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.test_2.id]
+  ip_ranges               = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.test_2.id]
 }
 
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), startIP2, endIP2)
@@ -391,27 +391,27 @@ resource "maas_fabric" "dummy" {
 }
 
 data "maas_vlan" "dummy" {
-  vlan = 0    # the default untagged vlan on all new fabrics.
+  vlan   = 0 # the default untagged vlan on all new fabrics.
   fabric = maas_fabric.dummy.id
 }
 
 resource "maas_subnet" "dummy" {
-  cidr = %q
+  cidr   = %q
   fabric = maas_fabric.dummy.id
-  vlan = data.maas_vlan.dummy.vlan
+  vlan   = data.maas_vlan.dummy.vlan
 }
 
 resource "maas_subnet_ip_range" "dummy" {
-  subnet = maas_subnet.dummy.id
+  subnet   = maas_subnet.dummy.id
   start_ip = %q
-  end_ip = %q
-  type = "dynamic"
+  end_ip   = %q
+  type     = "dynamic"
 }
 
 resource "maas_vlan_dhcp" "test_2" {
-  fabric = maas_fabric.dummy.id
-  vlan = data.maas_vlan.dummy.vlan
-  ip_ranges = [maas_subnet_ip_range.dummy.id]
+  fabric     = maas_fabric.dummy.id
+  vlan       = data.maas_vlan.dummy.vlan
+  ip_ranges  = [maas_subnet_ip_range.dummy.id]
   relay_vlan = maas_vlan_dhcp.test.vlan
 }
 
