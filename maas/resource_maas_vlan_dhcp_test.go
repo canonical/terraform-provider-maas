@@ -98,7 +98,7 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
 	rackController := "maas-dev"
-	cidr_for_update := testutils.GenerateRandomCIDR()
+	cidrForSubnetUpdate := testutils.GenerateRandomCIDR()
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
@@ -118,7 +118,7 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 			},
 			// Test update.
 			{
-				Config:      testAccMAASVLANDHCPConfigSubnetUpdate(fabricName, rackController, cidr, startIP, endIP, startIP2, endIP2, cidr2, cidr_for_update),
+				Config:      testAccMAASVLANDHCPConfigSubnetUpdate(fabricName, rackController, cidr, startIP, endIP, startIP2, endIP2, cidr2, cidrForSubnetUpdate),
 				ExpectError: regexp.MustCompile("Changing 'subnets' from .* to .* is not allowed. Please recreate the resource."),
 			},
 		},
@@ -208,6 +208,7 @@ func testAccCheckMAASVLANDHCPAttrsUnsetWhenDHCPOff() resource.TestCheckFunc {
 		if !ok {
 			return fmt.Errorf("fabric not found")
 		}
+
 		fabricID, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error converting fabric id to int: %s", err)
@@ -217,6 +218,7 @@ func testAccCheckMAASVLANDHCPAttrsUnsetWhenDHCPOff() resource.TestCheckFunc {
 		if !ok {
 			return fmt.Errorf("vlan not found")
 		}
+
 		vlanVID, err := strconv.Atoi(rs.Primary.Attributes["vlan"])
 		if err != nil {
 			return fmt.Errorf("error converting vlan id to int: %s", err)
@@ -224,16 +226,20 @@ func testAccCheckMAASVLANDHCPAttrsUnsetWhenDHCPOff() resource.TestCheckFunc {
 
 		// Check if the attributes are set as expected on the VLAN in MAAS
 		client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		vlan, err := client.VLAN.Get(fabricID, vlanVID)
 		if err != nil {
 			return fmt.Errorf("error getting VLAN from MAAS: %s", err)
 		}
+
 		if vlan.DHCPOn {
 			return fmt.Errorf("VLAN DHCP is still enabled, expected it to be disabled")
 		}
+
 		if vlan.PrimaryRack != "" {
 			return fmt.Errorf("VLAN primary rack controller is not nil, expected nil")
 		}
+
 		if vlan.SecondaryRack != "" {
 			return fmt.Errorf("VLAN secondary rack controller is not nil, expected nil")
 		}

@@ -243,6 +243,7 @@ func confirmAllIPRangesDynamic(client *client.Client, d *schema.ResourceData) er
 func confirmIPRangeSubnetsInVLAN(client *client.Client, d *schema.ResourceData) error {
 	expectedVLANVID := d.Get("vlan").(int)
 	expectedFabricID := d.Get("fabric").(int)
+
 	for _, ipRangeID := range d.Get("ip_ranges").(*schema.Set).List() {
 		ipRange, err := client.IPRange.Get(ipRangeID.(int))
 		if err != nil {
