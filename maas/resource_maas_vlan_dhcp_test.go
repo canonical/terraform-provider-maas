@@ -116,7 +116,6 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 	rackController := "maas-dev"
 	cidr_for_update := testutils.GenerateRandomCIDR()
 
-	fmt.Println(fmt.Sprintf("using cidr2: %s", cidr2), fmt.Sprintf("using startIP2: %s", startIP2), fmt.Sprintf("using endIP2: %s", endIP2))
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
