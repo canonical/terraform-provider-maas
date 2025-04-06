@@ -16,7 +16,7 @@ import (
 
 func TestAccMAASVLANDHCP_basic(t *testing.T) {
 	// Test variables
-	fabricName := acctest.RandomWithPrefix("basic")
+	fabricName := acctest.RandomWithPrefix("tf-basic")
 	cidr := testutils.GenerateRandomCIDR()
 	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
@@ -55,7 +55,6 @@ func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
 	rackController := "maas-dev"
-	vlanID2 := 3
 	fabricName2 := acctest.RandomWithPrefix("wrong-ip-range-2")
 	cidr2 := testutils.GenerateRandomCIDR()
 	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
@@ -69,7 +68,7 @@ func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test create.
 			{
-				Config:      testAccVLANDHCPPConfigWrongIPRange(fabricName, fabricName2, rackController, vlanID2, cidr, cidr2, startIP, startIP2, endIP, endIP2),
+				Config:      testAccVLANDHCPPConfigWrongIPRange(fabricName, fabricName2, rackController, cidr, cidr2, startIP, startIP2, endIP, endIP2),
 				ExpectError: regexp.MustCompile("is not in the same VLAN as the VLAN DHCP resource."),
 			},
 		},
@@ -115,6 +114,7 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
 	rackController := "maas-dev"
+	cidr_for_update := testutils.GenerateRandomCIDR()
 
 	fmt.Println(fmt.Sprintf("using cidr2: %s", cidr2), fmt.Sprintf("using startIP2: %s", startIP2), fmt.Sprintf("using endIP2: %s", endIP2))
 	resource.ParallelTest(t, resource.TestCase{
@@ -132,6 +132,11 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "fabric"),
 					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "primary_rack_controller"),
 				),
+			},
+			// Test update.
+			{
+				Config:      testAccVLANDHCPConfigSubnetUpdate(fabricName, rackController, cidr, startIP, endIP, startIP2, endIP2, cidr2, cidr_for_update),
+				ExpectError: regexp.MustCompile("Changing 'subnets' from .* to .* is not allowed. Please recreate the resource."),
 			},
 		},
 	})
@@ -251,22 +256,26 @@ resource "maas_subnet_ip_range" "test" {
 `, fabricID, rackController, cidr, startIP, endIP)
 }
 
-func testAccVLANDHCPPConfigWrongIPRange(fabricID string, fabricID2 string, rackController string, vlanID2 int, cidr string, cidr2 string, startIP string, startIP2 string, endIP string, endIP2 string) string {
+func testAccVLANDHCPPConfigWrongIPRange(fabricID string, fabricID2 string, rackController string, cidr string, cidr2 string, startIP string, startIP2 string, endIP string, endIP2 string) string {
 	return fmt.Sprintf(`
 %s
+
+## Create IP ranges in a separate fabric and VLAN to the VLAN where DHCP will be enabled.
+# 
+
 resource "maas_fabric" "separate_fabric" {
 	name = %q
 }
 
-resource "maas_vlan" "separate_vlan" {
-	vid = %d
+data "maas_vlan" "separate_vlan" {
+	vlan = 0
 	fabric = maas_fabric.separate_fabric.id
 }
 
 resource "maas_subnet" "separate_subnet" {
 	cidr = %q
 	fabric = maas_fabric.separate_fabric.id
-	vlan = maas_vlan.separate_vlan.id
+	vlan = data.maas_vlan.separate_vlan.vlan
 }
 
 resource "maas_subnet_ip_range" "separate_ip_range" {
@@ -282,7 +291,7 @@ resource "maas_vlan_dhcp" "test" {
   primary_rack_controller = data.maas_rack_controller.test.id
   ip_ranges = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.separate_ip_range.id]
 }
-`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), fabricID2, vlanID2, cidr2, startIP2, endIP2)
+`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), fabricID2, cidr2, startIP2, endIP2)
 }
 
 func testAccVLANDHCPConfigBasic(fabricID string, rackController string, cidr string, startIP string, endIP string) string {
@@ -322,6 +331,37 @@ resource "maas_vlan_dhcp" "test" {
 }
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), cidr2, startIP2, endIP2)
 }
+
+func testAccVLANDHCPConfigSubnetUpdate(fabricID string, rackController string, cidr string, startIP string, endIP string, startIP2 string, endIP2 string, cidr2 string, cidr3 string) string {
+	return fmt.Sprintf(`
+%s
+resource "maas_subnet" "test_subnet" {
+  cidr = %q
+  fabric = maas_fabric.test.id
+  vlan = data.maas_vlan.test.vlan
+  ip_ranges {
+      start_ip = %q
+      end_ip = %q
+      type = "dynamic"
+  }
+}
+
+# New subnet to be added to the VLAN DHCP resource
+resource "maas_subnet" "new_subnet" {
+  cidr = %q
+  fabric = maas_fabric.test.id
+  vlan = data.maas_vlan.test.vlan
+}
+
+resource "maas_vlan_dhcp" "test" {
+  fabric = maas_fabric.test.id
+  vlan = data.maas_vlan.test.vlan
+  primary_rack_controller = data.maas_rack_controller.test.id
+  subnets = [maas_subnet.test_subnet.id, maas_subnet.new_subnet.id]
+}
+`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), cidr2, startIP2, endIP2, cidr3)
+}
+
 
 func testAccVLANDHCPConfigBasicUpdate(fabricID string, rackController string, cidr string, startIP string, endIP string, startIP2 string, endIP2 string) string {
 	return fmt.Sprintf(`

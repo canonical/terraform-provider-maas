@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-
 	"slices"
 
 	"github.com/canonical/gomaasclient/client"
@@ -242,14 +241,16 @@ func confirmAllIPRangesDynamic(client *client.Client, d *schema.ResourceData) er
 }
 
 func confirmIPRangeSubnetsInVLAN(client *client.Client, d *schema.ResourceData) error {
+	expectedVLANVID := d.Get("vlan").(int)
+	expectedFabricID := d.Get("fabric").(int)
 	for _, ipRangeID := range d.Get("ip_ranges").(*schema.Set).List() {
 		ipRange, err := client.IPRange.Get(ipRangeID.(int))
 		if err != nil {
 			return err
 		}
 
-		if ipRange.Subnet.VLAN.VID != d.Get("vlan").(int) {
-			return fmt.Errorf("IP range %s is not in the same VLAN as the VLAN DHCP resource. IP range subnet ID: %d with VLAN VID: %d", ipRangeID, ipRange.Subnet.ID, ipRange.Subnet.VLAN.VID)
+		if ipRange.Subnet.VLAN.FabricID != expectedFabricID || ipRange.Subnet.VLAN.VID != expectedVLANVID {
+			return fmt.Errorf("IP range id=%d in fabric id=%d, vlan vid=%d and subnet id=%d is not in the same VLAN as the VLAN DHCP resource, with fabric id=%d and vlan vid=%d", ipRangeID, ipRange.Subnet.VLAN.FabricID, ipRange.Subnet.VLAN.VID, ipRange.Subnet.ID, expectedFabricID, expectedVLANVID)
 		}
 	}
 
