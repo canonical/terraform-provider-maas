@@ -27,7 +27,7 @@ func TestAccMAASVLANDHCP_basic(t *testing.T) {
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
+		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{
@@ -64,7 +64,7 @@ func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
+		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{
@@ -91,7 +91,7 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
+		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{
@@ -128,7 +128,7 @@ func TestAccMAASVLANDHCP_relay(t *testing.T) {
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
+		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{
@@ -187,7 +187,7 @@ func testAccCheckMAASVLANDHCPExists(n string, fabricName string) resource.TestCh
 	}
 }
 
-func testAccCheckMAASVLANDHCPCheckDestroy(s *terraform.State) error {
+func testAccCheckMAASVLANDHCPDestroy(s *terraform.State) error {
 	client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	for _, rs := range s.RootModule().Resources {
@@ -223,6 +223,7 @@ func testAccCheckMAASVLANDHCPCheckDestroy(s *terraform.State) error {
 
 	return nil
 }
+
 
 func testAccVLANDHCPConfigCore(fabricID string, rackController string, cidr string, startIP string, endIP string) string {
 	return fmt.Sprintf(`
