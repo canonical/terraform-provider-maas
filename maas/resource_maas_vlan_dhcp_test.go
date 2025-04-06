@@ -75,35 +75,6 @@ func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 	})
 }
 
-func TestAccMAASVLANDHCP_relay(t *testing.T) {
-	// Test variables
-	fabricName := acctest.RandomWithPrefix("tf-relay")
-	dummyFabricName := acctest.RandomWithPrefix("dummy")
-	cidr := testutils.GenerateRandomCIDR()
-	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
-	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
-	cidr2 := testutils.GenerateRandomCIDR()
-	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
-	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
-	rackController := "maas-dev"
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
-		Steps: []resource.TestStep{
-			// Test create.
-			{
-				Config: testAccVLANDHCPConfigRelay(fabricName, rackController, cidr, startIP, endIP, cidr2, startIP2, endIP2, dummyFabricName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test", fabricName),
-				),
-			},
-		},
-	})
-}
-
 func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("basic")
@@ -136,6 +107,35 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 			{
 				Config:      testAccVLANDHCPConfigSubnetUpdate(fabricName, rackController, cidr, startIP, endIP, startIP2, endIP2, cidr2, cidr_for_update),
 				ExpectError: regexp.MustCompile("Changing 'subnets' from .* to .* is not allowed. Please recreate the resource."),
+			},
+		},
+	})
+}
+
+func TestAccMAASVLANDHCP_relay(t *testing.T) {
+	// Test variables
+	fabricName := acctest.RandomWithPrefix("tf-relay")
+	dummyFabricName := acctest.RandomWithPrefix("dummy")
+	cidr := testutils.GenerateRandomCIDR()
+	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
+	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
+	cidr2 := testutils.GenerateRandomCIDR()
+	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
+	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
+	rackController := "maas-dev"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		Providers:    testutils.TestAccProviders,
+		ErrorCheck:   func(err error) error { return err },
+		CheckDestroy: testAccCheckMAASVLANDHCPCheckDestroy,
+		Steps: []resource.TestStep{
+			// Test create.
+			{
+				Config: testAccVLANDHCPConfigRelay(fabricName, rackController, cidr, startIP, endIP, cidr2, startIP2, endIP2, dummyFabricName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test", fabricName),
+				),
 			},
 		},
 	})
@@ -255,6 +255,38 @@ resource "maas_subnet_ip_range" "test" {
 `, fabricID, rackController, cidr, startIP, endIP)
 }
 
+func testAccVLANDHCPConfigBasic(fabricID string, rackController string, cidr string, startIP string, endIP string) string {
+	return fmt.Sprintf(`
+%s
+resource "maas_vlan_dhcp" "test" {
+  fabric                  = maas_fabric.test.id
+  vlan                    = data.maas_vlan.test.vlan
+  primary_rack_controller = data.maas_rack_controller.test.id
+  ip_ranges               = [maas_subnet_ip_range.test.id]
+}
+
+`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP))
+}
+
+func testAccVLANDHCPConfigBasicUpdate(fabricID string, rackController string, cidr string, startIP string, endIP string, startIP2 string, endIP2 string) string {
+	return fmt.Sprintf(`
+%s
+resource "maas_subnet_ip_range" "test_2" {
+  subnet   = maas_subnet.test.id
+  start_ip = %q
+  end_ip   = %q
+  type     = "dynamic"
+}
+resource "maas_vlan_dhcp" "test" {
+  fabric                  = maas_fabric.test.id
+  vlan                    = data.maas_vlan.test.vlan
+  primary_rack_controller = data.maas_rack_controller.test.id
+  ip_ranges               = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.test_2.id]
+}
+
+`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), startIP2, endIP2)
+}
+
 func testAccVLANDHCPPConfigWrongIPRange(fabricID string, fabricID2 string, rackController string, cidr string, cidr2 string, startIP string, startIP2 string, endIP string, endIP2 string) string {
 	return fmt.Sprintf(`
 %s
@@ -290,19 +322,6 @@ resource "maas_vlan_dhcp" "test" {
   ip_ranges               = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.separate_ip_range.id]
 }
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), fabricID2, cidr2, startIP2, endIP2)
-}
-
-func testAccVLANDHCPConfigBasic(fabricID string, rackController string, cidr string, startIP string, endIP string) string {
-	return fmt.Sprintf(`
-%s
-resource "maas_vlan_dhcp" "test" {
-  fabric                  = maas_fabric.test.id
-  vlan                    = data.maas_vlan.test.vlan
-  primary_rack_controller = data.maas_rack_controller.test.id
-  ip_ranges               = [maas_subnet_ip_range.test.id]
-}
-
-`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP))
 }
 
 func testAccVLANDHCPConfigSubnet(fabricID string, rackController string, cidr string, startIP string, endIP string, cidr2 string, startIP2 string, endIP2 string) string {
@@ -359,26 +378,6 @@ resource "maas_vlan_dhcp" "test" {
   subnets                 = [maas_subnet.test_subnet.id, maas_subnet.new_subnet.id]
 }
 `, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), cidr2, startIP2, endIP2, cidr3)
-}
-
-
-func testAccVLANDHCPConfigBasicUpdate(fabricID string, rackController string, cidr string, startIP string, endIP string, startIP2 string, endIP2 string) string {
-	return fmt.Sprintf(`
-%s
-resource "maas_subnet_ip_range" "test_2" {
-  subnet   = maas_subnet.test.id
-  start_ip = %q
-  end_ip   = %q
-  type     = "dynamic"
-}
-resource "maas_vlan_dhcp" "test" {
-  fabric                  = maas_fabric.test.id
-  vlan                    = data.maas_vlan.test.vlan
-  primary_rack_controller = data.maas_rack_controller.test.id
-  ip_ranges               = [maas_subnet_ip_range.test.id, maas_subnet_ip_range.test_2.id]
-}
-
-`, testAccVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP), startIP2, endIP2)
 }
 
 func testAccVLANDHCPConfigRelay(fabricID string, rackController string, cidr string, startIP string, endIP string, cidr2 string, startIP2 string, endIP2 string, dummyFabricID string) string {

@@ -3,8 +3,8 @@ package maas
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"slices"
+	"strconv"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
