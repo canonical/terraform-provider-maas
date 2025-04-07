@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/bflad/tfproviderlint v0.31.0
-	github.com/canonical/gomaasclient v0.8.0
+	github.com/canonical/gomaasclient v0.9.0
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-set/v2 v2.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.21.0
