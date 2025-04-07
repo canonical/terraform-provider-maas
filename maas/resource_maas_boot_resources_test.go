@@ -210,15 +210,16 @@ func testAccCheckMAASBootResourcesDestroy(s *terraform.State) error {
 }
 
 func findBootSourceSelection(client *client.Client, bootSource int, os string, release string) (*entity.BootSourceSelection, error) {
-	if bootSourceSelections, err := client.BootSourceSelections.Get(bootSource); err != nil {
+	bootSourceSelections, err := client.BootSourceSelections.Get(bootSource)
+	if err != nil {
 		return nil, err
-	} else {
-		for _, d := range bootSourceSelections {
-			if d.OS == os && d.Release == release {
-				return &d, nil
-			}
+	}
+
+	for _, d := range bootSourceSelections {
+		if d.OS == os && d.Release == release {
+			return &d, nil
 		}
 	}
 
-	return nil, nil
+	return nil, err
 }
