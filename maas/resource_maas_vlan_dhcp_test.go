@@ -35,11 +35,13 @@ func TestAccMAASVLANDHCP_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test", fabricName),
 					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", "0"),
-					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "fabric"),
-					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "primary_rack_controller"),
+					resource.TestCheckResourceAttrPair("maas_vlan_dhcp.test", "fabric", "maas_fabric.test", "id"),
+					resource.TestCheckResourceAttrPair("maas_vlan_dhcp.test", "primary_rack_controller", "data.maas_rack_controller.test", "id"),
+					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "ip_ranges.#", "1"),
+					resource.TestCheckResourceAttrPair("maas_vlan_dhcp.test", "ip_ranges.0", "maas_subnet_ip_range.test", "id"),
 				),
 			},
-			// Test destroy.
+			// Test destroy for just the VLAN DHCP resource.
 			{
 				Config: testAccMAASVLANDHCPConfigCore(fabricName, rackController, cidr, startIP, endIP),
 				Check: resource.ComposeTestCheckFunc(
@@ -79,7 +81,7 @@ func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
-			// Test create.
+			// Test error on create.
 			{
 				Config:      testAccMAASVLANDHCPPConfigWrongIPRange(fabricName, fabricName2, rackController, cidr, cidr2, startIP, startIP2, endIP, endIP2),
 				ExpectError: regexp.MustCompile("is not in the same VLAN as the VLAN DHCP resource."),
@@ -112,8 +114,10 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test", fabricName),
 					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "vlan", "0"),
-					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "fabric"),
-					resource.TestCheckResourceAttrSet("maas_vlan_dhcp.test", "primary_rack_controller"),
+					resource.TestCheckResourceAttrPair("maas_vlan_dhcp.test", "fabric", "maas_fabric.test", "id"),
+					resource.TestCheckResourceAttrPair("maas_vlan_dhcp.test", "primary_rack_controller", "data.maas_rack_controller.test", "id"),
+					resource.TestCheckResourceAttr("maas_vlan_dhcp.test", "subnets.#", "1"),
+					resource.TestCheckResourceAttrPair("maas_vlan_dhcp.test", "subnets.0", "maas_subnet.test_subnet", "id"),
 				),
 			},
 			// Test update.
@@ -147,7 +151,10 @@ func TestAccMAASVLANDHCP_relay(t *testing.T) {
 			{
 				Config: testAccMAASVLANDHCPConfigRelay(fabricName, rackController, cidr, startIP, endIP, cidr2, startIP2, endIP2, dummyFabricName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test", fabricName),
+					testAccCheckMAASVLANDHCPExists("maas_vlan_dhcp.test_2", dummyFabricName),
+					resource.TestCheckResourceAttr("maas_vlan_dhcp.test_2", "vlan", "0"),
+					resource.TestCheckResourceAttrPair("maas_vlan_dhcp.test_2", "fabric", "maas_fabric.dummy", "id"),
+					resource.TestCheckResourceAttrPair("maas_vlan_dhcp.test_2", "relay_vlan", "data.maas_vlan.test", "id"),
 				),
 			},
 		},
@@ -194,7 +201,9 @@ func testAccCheckMAASVLANDHCPExists(n string, fabricName string) resource.TestCh
 		}
 
 		if !vlan.DHCPOn {
-			return fmt.Errorf("VLAN DHCP is not enabled, resource failed to turn on DHCP")
+			if vlan.RelayVLAN == nil {
+				return fmt.Errorf("VLAN DHCP is not enabled and no relay VLAN set, VLAN DHCP does not exist")
+			}
 		}
 
 		return nil
@@ -242,6 +251,10 @@ func testAccCheckMAASVLANDHCPAttrsUnsetWhenDHCPOff() resource.TestCheckFunc {
 
 		if vlan.SecondaryRack != "" {
 			return fmt.Errorf("VLAN secondary rack controller is not nil, expected nil")
+		}
+
+		if vlan.RelayVLAN != nil {
+			return fmt.Errorf("VLAN relay VLAN is not nil, expected nil")
 		}
 
 		return nil
@@ -471,7 +484,7 @@ resource "maas_vlan_dhcp" "test_2" {
   fabric     = maas_fabric.dummy.id
   vlan       = data.maas_vlan.dummy.vlan
   ip_ranges  = [maas_subnet_ip_range.dummy.id]
-  relay_vlan = maas_vlan_dhcp.test.vlan
+  relay_vlan = data.maas_vlan.test.id
 }
 
 `, testAccMAASVLANDHCPConfigBasic(fabricID, rackController, cidr, startIP, endIP), dummyFabricID, cidr2, startIP2, endIP2)
