@@ -175,6 +175,7 @@ func resourceVLANDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 
 	// gomaasclient requires a pointer to an empty string in order to nil the values below
 	nilValue := ""
+
 	_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
 		PrimaryRack: &nilValue, SecondaryRack: &nilValue, RelayVLAN: &nilValue,
 	})
