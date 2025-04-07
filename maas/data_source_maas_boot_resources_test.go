@@ -73,56 +73,62 @@ func testAccCheckDataSourceMAASBootResourcesDestroy(s *terraform.State) error {
 		}
 
 		// fetch the boot source
-		bootsource, err := conn.BootSources.Get()
+		bootSource, err := conn.BootSources.Get()
 		if err != nil {
 			return fmt.Errorf("error fetching boot sources: %v", err)
 		}
-		boot_source_id := bootsource[0].ID
+
+		bootSourceID := bootSource[0].ID
 
 		// fetch all the synced resources
 		response, err := conn.BootResources.Get(&entity.BootResourcesReadParams{Type: "synced"})
 		if err != nil {
 			return fmt.Errorf("error getting synced boot resource: %s", err)
 		}
+
 		resourceMap := make(map[string]struct{})
 		for _, res := range response {
 			resourceMap[res.Name] = struct{}{}
 		}
 
-		// we need to read each resource seperately
+		// we need to read each resource separately
 		count := rs.Primary.Attributes["boot_resources.#"]
 		selectionCount, err := strconv.Atoi(count)
+
 		if err != nil {
 			return fmt.Errorf("Could not convert %v to integer: %v", count, err)
 		}
+
 		if selectionCount < 1 {
 			return fmt.Errorf("Boot Resource does not contain any selections!")
 		}
 
 		// check each resource has been deleted
-		for i := 0; i < selectionCount; i++ {
-			this_name := rs.Primary.Attributes[fmt.Sprintf("boot_resources.%d.name", i)]
-			if _, exists := resourceMap[this_name]; exists {
-				return fmt.Errorf("Boot Resource still exists for %s", this_name)
+		for i := range selectionCount {
+			thisName := rs.Primary.Attributes[fmt.Sprintf("boot_resources.%d.name", i)]
+			if _, exists := resourceMap[thisName]; exists {
+				return fmt.Errorf("Boot Resource still exists for %s", thisName)
 			}
 
-			parts := strings.SplitN(this_name, "/", 2)
+			parts := strings.SplitN(thisName, "/", 2)
 			if len(parts) < 2 {
-				return fmt.Errorf("Invalid resource name: %s", this_name)
+				return fmt.Errorf("Invalid resource name: %s", thisName)
 			}
+
 			os, release := parts[0], parts[1]
 
-			if bootsourceselection, err := findBootSourceSelection(conn, boot_source_id, os, release); err != nil {
+			if bootSourceSelection, err := findBootSourceSelection(conn, bootSourceID, os, release); err != nil {
 				// 404 means the resource was deleted already
 				if !strings.Contains(err.Error(), "404 Not Found") {
 					continue
 				}
 				// anything else is an error
-				return fmt.Errorf("error finding selection '%v': %v", this_name, err)
-			} else if bootsourceselection != nil {
-				return fmt.Errorf("boot source selection (%s) was unexpectedly found on deleted resource", this_name)
+				return fmt.Errorf("error finding selection '%v': %v", thisName, err)
+			} else if bootSourceSelection != nil {
+				return fmt.Errorf("boot source selection (%s) was unexpectedly found on deleted resource", thisName)
 			}
 		}
+
 		return nil
 	}
 

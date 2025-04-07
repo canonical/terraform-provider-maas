@@ -3,12 +3,12 @@
 page_title: "maas_boot_resources Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage MAAS bootresources.
+  Provides a resource to manage MAAS boot resources.
 ---
 
 # maas_boot_resources (Resource)
 
-Provides a resource to manage MAAS bootresources.
+Provides a resource to manage MAAS boot resources.
 
 ## Example Usage
 

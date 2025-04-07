@@ -28,8 +28,8 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{"*"}, nil
+				DefaultFunc: func() (any, error) {
+					return []any{"*"}, nil
 				},
 				Description: "The architecture list for this selection.",
 			},
@@ -43,8 +43,8 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{"*"}, nil
+				DefaultFunc: func() (any, error) {
+					return []any{"*"}, nil
 				},
 				Description: "The label list for this selection.",
 			},
@@ -62,8 +62,8 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{"*"}, nil
+				DefaultFunc: func() (any, error) {
+					return []any{"*"}, nil
 				},
 				Description: "The list of subarches for this selection.",
 			},
@@ -193,6 +193,7 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 		if strings.Contains(err.Error(), "404 Not Found") {
 			return nil
 		}
+
 		return diag.FromErr(err)
 	}
 

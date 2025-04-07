@@ -11,7 +11,7 @@ import (
 func dataSourceMAASBootResources() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMAASBootResourcesRead,
-		Description: "Provides a data source to manage MAAS bootresources.",
+		Description: "Provides a data source to fetch MAAS boot resources.",
 
 		Schema: map[string]*schema.Schema{
 			"boot_resources": {
@@ -57,7 +57,7 @@ func dataSourceMAASBootResources() *schema.Resource {
 	}
 }
 
-func dataSourceMAASBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMAASBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	err := awaitImportComplete(client)
@@ -69,27 +69,30 @@ func dataSourceMAASBootResourcesRead(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	bootsource, err := getBootSource(client)
+
+	bootSource, err := getBootSource(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
-	var foundresources []map[string]interface{}
+	d.SetId(fmt.Sprintf("%v", bootSource.ID))
+
+	var foundResources []map[string]any
+
 	for _, res := range resources {
 		if res.Name == fmt.Sprintf("%s/%s", d.Get("os"), d.Get("release")) {
-			this_resource := map[string]interface{}{
+			thisResource := map[string]any{
 				"name":          res.Name,
 				"architecture":  res.Architecture,
 				"last_deployed": res.LastDeployed,
 				"subarches":     res.Subarches,
 			}
-			foundresources = append(foundresources, this_resource)
+			foundResources = append(foundResources, thisResource)
 		}
 	}
 
-	tfState := map[string]interface{}{
-		"boot_resources": foundresources,
+	tfState := map[string]any{
+		"boot_resources": foundResources,
 		"os":             d.Get("os"),
 		"release":        d.Get("release"),
 	}
