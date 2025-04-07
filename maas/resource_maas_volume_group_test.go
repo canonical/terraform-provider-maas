@@ -114,8 +114,6 @@ resource "maas_volume_group" "test" {
   name          = %q
   block_devices = [%s]
   partitions 	= [%s]
-
-  depends_on = [maas_block_device.bd1, maas_block_device.bd2]
 }
 
 `, machine, name, strings.Join(blockDevices, ", "), strings.Join(partitions, ", "))
