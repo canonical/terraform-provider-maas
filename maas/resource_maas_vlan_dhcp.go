@@ -29,7 +29,7 @@ func resourceMAASVLANDHCP() *schema.Resource {
 			"fabric": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "Database ID of the fabric of the VLAN whose DHCP is managed.",
+				Description: "Database ID of the fabric of the VLAN whose DHCP is managed. This parameter `fabric` and `vlan` are used to identify the VLAN.",
 			},
 			"ip_ranges": {
 				Type:        schema.TypeSet,
@@ -51,7 +51,7 @@ func resourceMAASVLANDHCP() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"primary_rack_controller", "secondary_rack_controller"},
 				AtLeastOneOf:  []string{"primary_rack_controller", "relay_vlan"},
-				Description:   "VID of the VLAN to to use as a relay for DHCP.",
+				Description:   "Database ID of the VLAN to to use as a relay for DHCP.",
 			},
 			"secondary_rack_controller": {
 				Type:          schema.TypeString,
@@ -71,7 +71,7 @@ func resourceMAASVLANDHCP() *schema.Resource {
 			"vlan": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				Description: "VID of the VLAN whose DHCP is managed.",
+				Description: "VID of the VLAN whose DHCP is managed. This parameter `vlan` and `fabric` are used to identify the VLAN.",
 			},
 		},
 	}
@@ -173,8 +173,10 @@ func resourceVLANDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 	fabricID := d.Get("fabric").(int)
 	vlanID := d.Get("vlan").(int)
 
+	// gomaasclient requires a pointer to an empty string in order to nil the values below
+	nilValue := ""
 	_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
-		PrimaryRack: "", SecondaryRack: "", RelayVLAN: 0,
+		PrimaryRack: &nilValue, SecondaryRack: &nilValue, RelayVLAN: &nilValue,
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -187,15 +189,18 @@ func getVLANDHCPParams(d *schema.ResourceData) *entity.VLANParams {
 	vlanParams := entity.VLANParams{}
 	if v, ok := d.GetOk("primary_rack_controller"); ok {
 		vlanParams.DHCPOn = true
-		vlanParams.PrimaryRack = v.(string)
+		primaryRack := v.(string)
+		vlanParams.PrimaryRack = &primaryRack
 	}
 
 	if v, ok := d.GetOk("secondary_rack_controller"); ok {
-		vlanParams.SecondaryRack = v.(string)
+		secondaryRack := v.(string)
+		vlanParams.SecondaryRack = &secondaryRack
 	}
 
 	if v, ok := d.GetOk("relay_vlan"); ok {
-		vlanParams.RelayVLAN = v.(int)
+		relayVLAN := strconv.Itoa(v.(int))
+		vlanParams.RelayVLAN = &relayVLAN
 	}
 
 	return &vlanParams
