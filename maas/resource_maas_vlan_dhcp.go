@@ -19,11 +19,6 @@ func resourceMAASVLANDHCP() *schema.Resource {
 		ReadContext:   resourceVLANDHCPRead,
 		UpdateContext: resourceVLANDHCPUpdate,
 		DeleteContext: resourceVLANDHCPDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				return []*schema.ResourceData{d}, nil
-			},
-		},
 
 		Schema: map[string]*schema.Schema{
 			"fabric": {

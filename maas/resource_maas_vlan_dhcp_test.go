@@ -2,6 +2,7 @@ package maas_test
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,10 +22,10 @@ func TestAccMAASVLANDHCP_basic(t *testing.T) {
 	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
 	startIP2, endIP2 := networkPrefix+".6", networkPrefix+".10"
-	rackController := "maas-dev"
+	rackController := os.Getenv("TF_ACC_RACK_CONTROLLER_HOSTNAME")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
 		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
@@ -69,14 +70,14 @@ func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 	cidr := testutils.GenerateRandomCIDR()
 	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
-	rackController := "maas-dev"
+	rackController := os.Getenv("TF_ACC_RACK_CONTROLLER_HOSTNAME")
 	fabricName2 := acctest.RandomWithPrefix("wrong-ip-range-2")
 	cidr2 := testutils.GenerateRandomCIDR()
 	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
 		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
@@ -99,11 +100,11 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 	cidr2 := testutils.GenerateRandomCIDR()
 	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
-	rackController := "maas-dev"
+	rackController := os.Getenv("TF_ACC_RACK_CONTROLLER_HOSTNAME")
 	cidrForSubnetUpdate := testutils.GenerateRandomCIDR()
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
 		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
@@ -139,10 +140,10 @@ func TestAccMAASVLANDHCP_relay(t *testing.T) {
 	cidr2 := testutils.GenerateRandomCIDR()
 	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
-	rackController := "maas-dev"
+	rackController := os.Getenv("TF_ACC_RACK_CONTROLLER_HOSTNAME")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
 		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
