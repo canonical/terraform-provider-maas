@@ -51,7 +51,7 @@ resource "maas_boot_source_selection" "mantic" {
   boot_source = data.maas_boot_source.test.id
   os 			= "ubuntu"
   release		= "mantic"
-  arches     	= ["*"]
+  arches     	= ["s390x"]
   subarches  	= ["*"]
   labels     	= ["*"]
 }

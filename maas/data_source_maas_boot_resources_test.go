@@ -16,7 +16,7 @@ import (
 func TestAccDataSourceMAASBootResources_basic(t *testing.T) {
 	os := "ubuntu"
 	release := "kinetic"
-	arches := []string{"*"}
+	arches := []string{"arm64"}
 	subarches := []string{"*"}
 	labels := []string{"*"}
 
