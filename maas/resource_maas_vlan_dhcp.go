@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-	"strings"
+
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -106,78 +106,77 @@ func resourceVLANDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 	return resourceVLANDHCPRead(ctx, d, meta)
 }
 
-
 func resourceVLANDHCPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-	
+
 	fabricID, vlanID, err := SplitStateIDIntoInts(d.Id(), "/")
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	vlan, err := client.VLAN.Get(fabricID, vlanID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	tfState := map[string]interface{}{
 		"primary_rack_controller":   vlan.PrimaryRack,
 		"secondary_rack_controller": vlan.SecondaryRack,
 	}
 	if vlan.RelayVLAN != nil {
 		tfState["relay_vlan"] = vlan.RelayVLAN.ID
-		} else {
-			tfState["relay_vlan"] = 0
-		}
-		
-		if err := setTerraformState(d, tfState); err != nil {
-			return diag.FromErr(err)
-		}
-		
-		return nil
+	} else {
+		tfState["relay_vlan"] = 0
 	}
-	
-	func resourceVLANDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-		client := meta.(*ClientConfig).Client
-		
-		if d.HasChange("ip_ranges") {
-			oldVal, newVal := d.GetChange("ip_ranges")
-			return diag.Errorf("Changing 'ip_ranges' from %v to %v is not allowed. Please recreate the resource.", oldVal, newVal)
-		}
-		
-		if d.HasChange("subnets") {
-			oldVal, newVal := d.GetChange("subnets")
-			return diag.Errorf("Changing 'subnets' from %v to %v is not allowed. Please recreate the resource.", oldVal, newVal)
+
+	if err := setTerraformState(d, tfState); err != nil {
+		return diag.FromErr(err)
 	}
-	
+
+	return nil
+}
+
+func resourceVLANDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	if d.HasChange("ip_ranges") {
+		oldVal, newVal := d.GetChange("ip_ranges")
+		return diag.Errorf("Changing 'ip_ranges' from %v to %v is not allowed. Please recreate the resource.", oldVal, newVal)
+	}
+
+	if d.HasChange("subnets") {
+		oldVal, newVal := d.GetChange("subnets")
+		return diag.Errorf("Changing 'subnets' from %v to %v is not allowed. Please recreate the resource.", oldVal, newVal)
+	}
+
 	fabricID, vlanID, err := SplitStateIDIntoInts(d.Id(), "/")
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	if _, err := client.VLAN.Update(fabricID, vlanID, getVLANDHCPParams(d)); err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	return resourceVLANDHCPRead(ctx, d, meta)
 }
 
 func resourceVLANDHCPDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-	
+
 	fabricID := d.Get("fabric").(int)
 	vlanID := d.Get("vlan").(int)
-	
+
 	// gomaasclient requires a pointer to an empty string in order to nil the values below
 	nilValue := ""
-	
+
 	_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
 		PrimaryRack: &nilValue, SecondaryRack: &nilValue, RelayVLAN: &nilValue,
 	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	return nil
 }
 
@@ -188,17 +187,17 @@ func getVLANDHCPParams(d *schema.ResourceData) *entity.VLANParams {
 		primaryRack := v.(string)
 		vlanParams.PrimaryRack = &primaryRack
 	}
-	
+
 	if v, ok := d.GetOk("secondary_rack_controller"); ok {
 		secondaryRack := v.(string)
 		vlanParams.SecondaryRack = &secondaryRack
 	}
-	
+
 	if v, ok := d.GetOk("relay_vlan"); ok {
 		relayVLAN := strconv.Itoa(v.(int))
 		vlanParams.RelayVLAN = &relayVLAN
 	}
-	
+
 	return &vlanParams
 }
 
@@ -208,9 +207,9 @@ func confirmAllSubnetsWithADynamicIPRange(client *client.Client, d *schema.Resou
 		if err != nil {
 			return err
 		}
-		
+
 		foundDynamic := false
-		
+
 		for _, ipRange := range subnetIPRanges {
 			if slices.Contains(ipRange.Purpose, "dynamic") {
 				foundDynamic = true
@@ -232,56 +231,29 @@ func confirmAllIPRangesDynamic(client *client.Client, d *schema.ResourceData) er
 		if err != nil {
 			return err
 		}
-		
+
 		if ipRange.Type != "dynamic" {
 			return fmt.Errorf("IP range %s is not dynamic", ipRangeID)
 		}
 	}
-	
+
 	return nil
 }
 
 func confirmIPRangeSubnetsInVLAN(client *client.Client, d *schema.ResourceData) error {
 	expectedVLANVID := d.Get("vlan").(int)
 	expectedFabricID := d.Get("fabric").(int)
-	
+
 	for _, ipRangeID := range d.Get("ip_ranges").(*schema.Set).List() {
 		ipRange, err := client.IPRange.Get(ipRangeID.(int))
 		if err != nil {
 			return err
 		}
-		
+
 		if ipRange.Subnet.VLAN.FabricID != expectedFabricID || ipRange.Subnet.VLAN.VID != expectedVLANVID {
 			return fmt.Errorf("IP range id=%d in fabric id=%d, vlan vid=%d and subnet id=%d is not in the same VLAN as the VLAN DHCP resource, with fabric id=%d and vlan vid=%d", ipRangeID, ipRange.Subnet.VLAN.FabricID, ipRange.Subnet.VLAN.VID, ipRange.Subnet.ID, expectedFabricID, expectedVLANVID)
 		}
 	}
-	
+
 	return nil
-}
-
-func SplitStateIDIntoInts(stateID string, delimeter string) (int, int, error) {
-	id1, id2, err := SplitStateID(stateID, delimeter)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	id1Int, err := strconv.Atoi(id1)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	id2Int, err := strconv.Atoi(id2)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return id1Int, id2Int, nil
-}
-func SplitStateID(stateID string, delimeter string) (string, string, error) {
-	splitID := strings.SplitN(stateID, delimeter, 2)
-	if len(splitID) != 2 {
-		return "", "", fmt.Errorf("invalid resource ID: %s", stateID)
-	}
-
-	return splitID[0], splitID[1], nil
 }
