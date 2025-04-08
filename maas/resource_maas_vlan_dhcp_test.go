@@ -15,6 +15,72 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+func TestSplitStateIDIntoInts(t *testing.T) {
+	tests := []struct {
+		name      string
+		stateID   string
+		delimeter string
+		expectedID1   int
+		expectedID2   int
+		expectedErr   bool
+	}{
+		{
+			name:      "valid state ID with forward slash",
+			stateID:   "123/456",
+			delimeter: "/",
+			expectedID1:   123,
+			expectedID2:   456,
+			expectedErr:   false,
+		},
+		{
+			name:      "valid state ID with colon",
+			stateID:   "123:456", 
+			delimeter: ":",
+			expectedID1:   123,
+			expectedID2:   456,
+			expectedErr:   false,
+		},
+		{
+			name:      "invalid state ID format",
+			stateID:   "123",
+			delimeter: "/",
+			expectedErr:   true,
+		},
+		{
+			name:      "non-integer values",
+			stateID:   "abc/def",
+			delimeter: "/", 
+			expectedErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resID1, resID2, err := maas.SplitStateIDIntoInts(tt.stateID, tt.delimeter)
+			
+			if tt.expectedErr {
+				if err == nil {
+					t.Errorf("SplitStateIDIntoInts() error = nil, expectedErr %v", tt.expectedErr)
+				}
+				return
+			}
+			
+			if err != nil {
+				t.Errorf("SplitStateIDIntoInts() error = %v, expectedErr %v", err, tt.expectedErr)
+				return
+			}
+
+			if resID1 != tt.expectedID1 {
+				t.Errorf("SplitStateIDIntoInts() resID1 = %v, expected %v", resID1, tt.expectedID1)
+			}
+			
+			if resID2 != tt.expectedID2 {
+				t.Errorf("SplitStateIDIntoInts() resID2 = %v, expected %v", resID2, tt.expectedID2)
+			}
+		})
+	}
+}
+
 func TestAccMAASVLANDHCP_basic(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("tf-basic")
@@ -66,12 +132,12 @@ func TestAccMAASVLANDHCP_basic(t *testing.T) {
 
 func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 	// Test variables
-	fabricName := acctest.RandomWithPrefix("wrong-ip-range")
+	fabricName := acctest.RandomWithPrefix("tf-wrong-ip-range")
 	cidr := testutils.GenerateRandomCIDR()
 	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
 	rackController := os.Getenv("TF_ACC_RACK_CONTROLLER_HOSTNAME")
-	fabricName2 := acctest.RandomWithPrefix("wrong-ip-range-2")
+	fabricName2 := acctest.RandomWithPrefix("tf-wrong-ip-range-2")
 	cidr2 := testutils.GenerateRandomCIDR()
 	networkPrefix2 := testutils.GetNetworkPrefixFromCIDR(cidr2)
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
@@ -93,7 +159,7 @@ func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 
 func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 	// Test variables
-	fabricName := acctest.RandomWithPrefix("basic")
+	fabricName := acctest.RandomWithPrefix("tf-subnet")
 	cidr := testutils.GenerateRandomCIDR()
 	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
@@ -133,7 +199,7 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 func TestAccMAASVLANDHCP_relay(t *testing.T) {
 	// Test variables
 	fabricName := acctest.RandomWithPrefix("tf-relay")
-	dummyFabricName := acctest.RandomWithPrefix("dummy")
+	dummyFabricName := acctest.RandomWithPrefix("tf-dummy")
 	cidr := testutils.GenerateRandomCIDR()
 	networkPrefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 	startIP, endIP := networkPrefix+".2", networkPrefix+".5"
@@ -270,19 +336,13 @@ func testAccCheckMAASVLANDHCPDestroy(s *terraform.State) error {
 			continue
 		}
 		// Get the relevant IDs
-		vlanID, err := strconv.Atoi(rs.Primary.ID)
+		fabricID, vlanVID, err := maas.SplitStateIDIntoInts(rs.Primary.ID, "/")
 		if err != nil {
 			return err
 		}
 
-		fabricIDString := rs.Primary.Attributes["fabric"]
-
-		fabricID, err := strconv.Atoi(fabricIDString)
-		if err != nil {
-			return err
-		}
 		// Check the VLAN no longer has DHCP enabled
-		vlan, err := client.VLAN.Get(fabricID, vlanID)
+		vlan, err := client.VLAN.Get(fabricID, vlanVID)
 		if err != nil {
 			if strings.Contains(err.Error(), "404 Not Found") {
 				continue
@@ -292,7 +352,7 @@ func testAccCheckMAASVLANDHCPDestroy(s *terraform.State) error {
 		}
 
 		if vlan.DHCPOn {
-			return fmt.Errorf("VLAN with vid %d has DHCP still enabled", vlanID)
+			return fmt.Errorf("VLAN with vid %d has DHCP still enabled", vlanVID)
 		}
 	}
 
