@@ -38,6 +38,5 @@ data "maas_boot_resources" "default" {
 Read-Only:
 
 - `architecture` (String)
-- `last_deployed` (String)
 - `name` (String)
 - `subarches` (String)

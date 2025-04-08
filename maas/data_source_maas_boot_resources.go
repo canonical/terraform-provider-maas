@@ -25,11 +25,6 @@ func dataSourceMAASBootResources() *schema.Resource {
 							Computed:    true,
 							Description: "The architecture of this resource.",
 						},
-						"last_deployed": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The time of last deploy for this resource",
-						},
 						"name": {
 							Type:        schema.TypeString,
 							Computed:    true,
@@ -82,10 +77,9 @@ func dataSourceMAASBootResourcesRead(ctx context.Context, d *schema.ResourceData
 	for _, res := range resources {
 		if res.Name == fmt.Sprintf("%s/%s", d.Get("os"), d.Get("release")) {
 			thisResource := map[string]any{
-				"name":          res.Name,
-				"architecture":  res.Architecture,
-				"last_deployed": res.LastDeployed,
-				"subarches":     res.Subarches,
+				"name":         res.Name,
+				"architecture": res.Architecture,
+				"subarches":    res.Subarches,
 			}
 			foundResources = append(foundResources, thisResource)
 		}
