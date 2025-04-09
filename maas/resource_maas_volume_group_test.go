@@ -93,12 +93,6 @@ resource "maas_block_device" "bd1" {
   partitions {
     size_gigabytes = 20
   }
-
-  lifecycle {
-    ignore_changes = [
-      partitions[0].fs_type 
-    ]
-  }
 }
 
 resource "maas_block_device" "bd2" {

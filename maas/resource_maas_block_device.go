@@ -106,6 +106,7 @@ func resourceMAASBlockDevice() *schema.Resource {
 						"fs_type": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							Computed:    true,
 							Description: "The file system type (e.g. `ext4`). If this is not set, the partition is unformatted.",
 						},
 						"id": {
