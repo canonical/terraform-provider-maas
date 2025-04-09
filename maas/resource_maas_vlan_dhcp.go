@@ -171,7 +171,7 @@ func resourceVLANDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 	nilValue := ""
 
 	_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
-		PrimaryRack: &nilValue, SecondaryRack: &nilValue, RelayVLAN: &nilValue,
+		PrimaryRack: &nilValue, SecondaryRack: &nilValue, RelayVLAN: &nilValue, DHCPOn: false,
 	})
 	if err != nil {
 		return diag.FromErr(err)

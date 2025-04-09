@@ -114,7 +114,6 @@ func resourceVLANRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 
 	tfState := map[string]any{
 		"mtu":     vlan.MTU,
-		"dhcp_on": vlan.DHCPOn,
 		"name":    vlan.Name,
 		"space":   vlan.Space,
 	}
