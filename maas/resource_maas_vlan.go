@@ -113,9 +113,9 @@ func resourceVLANRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 	}
 
 	tfState := map[string]any{
-		"mtu":     vlan.MTU,
-		"name":    vlan.Name,
-		"space":   vlan.Space,
+		"mtu":   vlan.MTU,
+		"name":  vlan.Name,
+		"space": vlan.Space,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
