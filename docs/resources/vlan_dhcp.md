@@ -88,10 +88,10 @@ resource "maas_vlan_dhcp" "test_2" {
 
 ### Optional
 
-- `ip_ranges` (Set of Number) A set of IP range ids to server DHCP to. IP ranges must be of type dynamic.
-- `primary_rack_controller` (String) The system_id of the Rack controller to to use as primary for DHCP.
-- `relay_vlan` (Number) Database ID of the VLAN to to use as a relay for DHCP.
-- `secondary_rack_controller` (String) The system_id of the Rack controller to to use as secondary for DHCP.
+- `ip_ranges` (Set of Number) A set of IP range ids to serve DHCP to. IP ranges must be of type dynamic.
+- `primary_rack_controller` (String) The system_id of the Rack controller to use as primary for DHCP.
+- `relay_vlan` (Number) Database ID of the VLAN to use as a relay for DHCP.
+- `secondary_rack_controller` (String) The system_id of the Rack controller to use as secondary for DHCP.
 - `subnets` (Set of Number) A set of subnet ids to serve DHCP on their dynamic IP ranges.
 
 ### Read-Only
