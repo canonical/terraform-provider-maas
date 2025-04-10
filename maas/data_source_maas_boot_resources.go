@@ -65,12 +65,7 @@ func dataSourceMAASBootResourcesRead(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	bootSource, err := getBootSource(client)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(fmt.Sprintf("%v", bootSource.ID))
+	d.SetId("boot_resources")
 
 	var foundResources []map[string]any
 

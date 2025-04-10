@@ -107,10 +107,6 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 
 	d.SetId(fmt.Sprintf("%v", bootSourceSelection.ID))
 
-	if err := client.BootResources.Import(); err != nil {
-		return diag.FromErr(err)
-	}
-
 	return resourceBootSourceSelectionRead(ctx, d, meta)
 }
 
@@ -170,10 +166,6 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if _, err := client.BootSourceSelection.Update(d.Get("boot_source").(int), id, &bootSourceSelectionParams); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := client.BootResources.Import(); err != nil {
 		return diag.FromErr(err)
 	}
 
