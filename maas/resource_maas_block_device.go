@@ -106,7 +106,13 @@ func resourceMAASBlockDevice() *schema.Resource {
 						"fs_type": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							Computed:    true,
 							Description: "The file system type (e.g. `ext4`). If this is not set, the partition is unformatted.",
+						},
+						"id": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "The ID of the partition.",
 						},
 						"label": {
 							Type:        schema.TypeString,
@@ -392,6 +398,7 @@ func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[stri
 			"bootable":       p.Bootable,
 			"tags":           p.Tags,
 			"fs_type":        p.FileSystem.FSType,
+			"id":             p.ID,
 			"label":          p.FileSystem.Label,
 			"mount_point":    p.FileSystem.MountPoint,
 			"mount_options":  p.FileSystem.MountOptions,
