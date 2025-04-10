@@ -30,7 +30,7 @@ func resourceMAASVLANDHCP() *schema.Resource {
 			"ip_ranges": {
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Description: "A set of IP range ids to server DHCP to. IP ranges must be of type dynamic.",
+				Description: "A set of IP range ids to serve DHCP to. IP ranges must be of type dynamic.",
 				Elem: &schema.Schema{
 					Type: schema.TypeInt,
 				},
