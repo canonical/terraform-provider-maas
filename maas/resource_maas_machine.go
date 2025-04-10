@@ -68,6 +68,35 @@ func resourceMAASMachine() *schema.Resource {
 				Default:     "amd64/generic",
 				Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
 			},
+			"block_devices": {
+				Type: schema.TypeList,
+				Computed: true,
+				Description: "A list of block devices attached to the machine.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type: schema.TypeString,
+							Computed: true, 
+							Description: "The block device name.",
+						},
+						"size_gigabytes": {
+							Type: schema.TypeInt,
+							Computed: true,
+							Description: "The size of the block device (given in GB).",
+						},
+						"id_path": {
+							Type: schema.TypeString,
+							Computed: true,
+							Description: "The ID path of the block device. This should be a path that is fixed and doesn't change depending on the boot order or kernel version.",
+						},
+						"model": {
+							Type: schema.TypeString,
+							Computed: true,
+							Description:   "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+						},
+					},
+				},
+			},
 			"domain": {
 				Type:        schema.TypeString,
 				Optional:    true,
