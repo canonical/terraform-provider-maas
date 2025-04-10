@@ -20,12 +20,6 @@ resource "maas_block_device" "vdb2" {
   partitions {
     size_gigabytes = 30
   }
-
-  lifecycle {
-    ignore_changes = [
-      partitions[0].fs_type
-    ]
-  }
 }
 
 resource "maas_volume_group" "vg1" {
