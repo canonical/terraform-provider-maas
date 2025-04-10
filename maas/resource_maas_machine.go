@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sort"
 	"time"
 
 	"github.com/canonical/gomaasclient/client"
@@ -234,11 +235,15 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 	for i, networkInterface := range machine.InterfaceSet {
 		networkInterfaces[i] = networkInterface.MACAddress
 	}
-
 	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
 		return diag.FromErr(err)
 	}
 
+	blockDevices := getAllBlockDeviceMachineParameters(machine.BlockDeviceSet)
+	if err := d.Set("block_devices", blockDevices); err != nil {
+		return diag.FromErr(err)
+	}
+	
 	return nil
 }
 
@@ -350,3 +355,21 @@ func getMachine(client *client.Client, identifier string) (*entity.Machine, erro
 
 	return nil, fmt.Errorf("machine (%s) not found", identifier)
 }
+
+func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) ([]map[string]any) {
+	// sort block devices by ID
+	sort.Slice(blockDevices, func(i, j int) bool {
+		return blockDevices[i].ID < blockDevices[j].ID
+	})
+	blockDeviceParams := make([]map[string]any, len(blockDevices))
+	for i, blockDevice := range blockDevices {
+		blockDeviceParams[i] = map[string]any{
+			"name":           blockDevice.Name,
+			"size_gigabytes": int(blockDevice.Size / (1024 * 1024 * 1024)),
+			"id_path":        blockDevice.IDPath,
+			"model":          blockDevice.Model,
+		}
+	}
+	return blockDeviceParams
+}
+
