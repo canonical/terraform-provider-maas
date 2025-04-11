@@ -78,6 +78,7 @@ func Provider() *schema.Provider {
 			"maas_user":                       resourceMAASUser(),
 			"maas_resource_pool":              resourceMAASResourcePool(),
 			"maas_volume_group":               resourceMAASVolumeGroup(),
+			"maas_logical_volume_lvm":         resourceMAASLogicalVolumeLvm(),
 			"maas_zone":                       resourceMAASZone(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
