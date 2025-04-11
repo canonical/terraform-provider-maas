@@ -44,17 +44,46 @@ func TestAccResourceMAASLogicalVolumeLvm_basic(t *testing.T) {
 
 func testAccMAASLogicalVolumeLvm(machine string, fsType string, name string, size int) string {
 	return fmt.Sprintf(`
-%s
+data "maas_machine" "machine" {
+  hostname = %q
+}
+
+resource "maas_block_device" "lvm_bd1" {
+  machine        = data.maas_machine.machine.id
+  name           = "lvm_bd1"
+  size_gigabytes = 25
+  block_size     = 512
+  id_path        = "/dev/lvm_bd1"
+  is_boot_device = true
+
+  partitions {
+    size_gigabytes = 20
+  }
+}
+
+resource "maas_block_device" "lvm_bd2" {
+  machine        = data.maas_machine.machine.id
+  name           = "bd2"
+  size_gigabytes = 50
+  block_size     = 512
+  id_path        = "/dev/bd2"
+}
+
+resource "maas_volume_group" "lvm_vg" {
+  machine       = data.maas_machine.machine.id
+  name          = "test-vg"
+  block_devices = [maas_block_device.lvm_bd2.id]
+  partitions 	= [maas_block_device.lvm_bd1.partitions.0.id]
+}
 
 resource "maas_logical_volume_lvm" "test" {
   fs_type 		 = %q
   machine 		 = data.maas_machine.machine.id
   name 			 = %q
   size_gigabytes = %d
-  volume_group 	 = maas_volume_group.test.id
+  volume_group 	 = maas_volume_group.lvm_vg.id
 }
-`, testAccMAASVolumeGroup(machine, "test-vg", []string{"maas_block_device.bd2.id"}, []string{"maas_block_device.bd1.partitions.0.id"}),
-		fsType, name, size)
+`, machine, fsType, name, size)
 }
 
 func testAccCheckMAASLogicalVolumeLvmExists(rn string, logicalVolume *entity.BlockDevice) resource.TestCheckFunc {
