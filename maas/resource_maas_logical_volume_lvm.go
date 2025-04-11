@@ -79,6 +79,7 @@ func resourceMAASLogicalVolumeLvmCreate(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId((fmt.Sprintf("%v", formattedDevice.ID)))
 
 	return resourceMAASLogicalVolumeLvmRead(ctx, d, meta)
@@ -135,7 +136,7 @@ func resourceMAASLogicalVolumeLvmRead(ctx context.Context, d *schema.ResourceDat
 
 	// this has the format VG name-BD Name, we only want BD Name
 	name := logicalVolume.Name
-	name = strings.Replace(name, fmt.Sprintf("%s-", volumeGroup.Name), "", -1)
+	name = strings.ReplaceAll(name, fmt.Sprintf("%s-", volumeGroup.Name), "")
 
 	tfState := map[string]interface{}{
 		"fs_type":        logicalVolume.Filesystem.FSType,
