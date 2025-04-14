@@ -52,7 +52,6 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"maas_boot_resources":             ResourceMAASBootResources(),
 			"maas_boot_source_selection":      resourceMAASBootSourceSelection(),
 			"maas_boot_source":                resourceMAASBootSource(),
 			"maas_device":                     resourceMAASDevice(),
