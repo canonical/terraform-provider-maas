@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/mail"
+	"strconv"
 	"strings"
 
 	"github.com/canonical/gomaasclient/client"
@@ -180,4 +181,31 @@ func getMachineOrDeviceTypeFromSystemID(client *client.Client, systemID string) 
 	}
 
 	return "", fmt.Errorf("system ID (%s) was not found as either a device or machine", systemID)
+}
+
+func SplitStateIDIntoInts(stateID string, delimeter string) (int, int, error) {
+	id1, id2, err := SplitStateID(stateID, delimeter)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	id1Int, err := strconv.Atoi(id1)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	id2Int, err := strconv.Atoi(id2)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return id1Int, id2Int, nil
+}
+func SplitStateID(stateID string, delimeter string) (string, string, error) {
+	splitID := strings.SplitN(stateID, delimeter, 2)
+	if len(splitID) != 2 {
+		return "", "", fmt.Errorf("invalid resource ID: %s", stateID)
+	}
+
+	return splitID[0], splitID[1], nil
 }
