@@ -28,8 +28,8 @@ func resourceMaasStaticRoute() *schema.Resource {
 				}
 				tfState := map[string]interface{}{
 					"id":          fmt.Sprintf("%v", static_route.ID),
-					"source":      static_route.Source,
-					"destination": static_route.Destination,
+					"source":      static_route.Source.Name,
+					"destination": static_route.Destination.Name,
 					"gateway_ip":  static_route.GatewayIP,
 					"metric":      static_route.Metric,
 				}
@@ -44,7 +44,8 @@ func resourceMaasStaticRoute() *schema.Resource {
 			"metric": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				Description: "Weight of the route on a deployed machine.",
+				Default:     0,
+				Description: "Weight of the route on a deployed machine. Defaults to 0.",
 			},
 			"gateway_ip": {
 				Type:        schema.TypeString,
@@ -147,11 +148,16 @@ func resourceStaticRouteDelete(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func getStaticRouteParams(client *client.Client, d *schema.ResourceData) (*entity.StaticRouteParams, error) {
+	metric := 0
+	if v, ok := d.GetOk("metric"); ok {
+		metric = v.(int)
+	}
+
 	params := entity.StaticRouteParams{
 		Source:      d.Get("source").(string),
 		Destination: d.Get("destination").(string),
 		GatewayIP:   d.Get("gateway_ip").(string),
-		Metric:      d.Get("metric").(int),
+		Metric:      metric,
 	}
 	return &params, nil
 }
