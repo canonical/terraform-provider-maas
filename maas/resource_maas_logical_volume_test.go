@@ -14,8 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccResourceMAASLogicalVolumeLvm_basic(t *testing.T) {
-	var LogicalVolumeLVM entity.BlockDevice
+func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
+	var LogicalVolume entity.BlockDevice
 
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 
@@ -24,7 +24,7 @@ func TestAccResourceMAASLogicalVolumeLvm_basic(t *testing.T) {
 	size := 69
 
 	checks := []resource.TestCheckFunc{
-		testAccCheckMAASLogicalVolumeLvmExists("maas_logical_volume_lvm.test", &LogicalVolumeLVM),
+		testAccCheckMAASLogicalVolumeExists("maas_logical_volume_lvm.test", &LogicalVolume),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -35,14 +35,14 @@ func TestAccResourceMAASLogicalVolumeLvm_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
-				Config: testAccMAASLogicalVolumeLvm(machine, fsType, name, size),
+				Config: testAccMAASLogicalVolume(machine, fsType, name, size),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccMAASLogicalVolumeLvm(machine string, fsType string, name string, size int) string {
+func testAccMAASLogicalVolume(machine string, fsType string, name string, size int) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = %q
@@ -86,7 +86,7 @@ resource "maas_logical_volume_lvm" "test" {
 `, machine, fsType, name, size)
 }
 
-func testAccCheckMAASLogicalVolumeLvmExists(rn string, logicalVolume *entity.BlockDevice) resource.TestCheckFunc {
+func testAccCheckMAASLogicalVolumeExists(rn string, logicalVolume *entity.BlockDevice) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {

@@ -11,11 +11,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMAASLogicalVolumeLvm() *schema.Resource {
+func resourceMAASLogicalVolume() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceMAASLogicalVolumeLvmCreate,
-		DeleteContext: resourceMAASLogicalVolumeLvmDelete,
-		ReadContext:   resourceMAASLogicalVolumeLvmRead,
+		CreateContext: resourceMAASLogicalVolumeCreate,
+		DeleteContext: resourceMAASLogicalVolumeDelete,
+		ReadContext:   resourceMAASLogicalVolumeRead,
 
 		Schema: map[string]*schema.Schema{
 			"fs_type": {
@@ -52,7 +52,7 @@ func resourceMAASLogicalVolumeLvm() *schema.Resource {
 	}
 }
 
-func resourceMAASLogicalVolumeLvmCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMAASLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -82,10 +82,10 @@ func resourceMAASLogicalVolumeLvmCreate(ctx context.Context, d *schema.ResourceD
 
 	d.SetId((fmt.Sprintf("%v", formattedDevice.ID)))
 
-	return resourceMAASLogicalVolumeLvmRead(ctx, d, meta)
+	return resourceMAASLogicalVolumeRead(ctx, d, meta)
 }
 
-func resourceMAASLogicalVolumeLvmDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMAASLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -110,7 +110,7 @@ func resourceMAASLogicalVolumeLvmDelete(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func resourceMAASLogicalVolumeLvmRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMAASLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
