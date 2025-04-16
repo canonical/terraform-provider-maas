@@ -70,30 +70,30 @@ func resourceMAASMachine() *schema.Resource {
 				Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
 			},
 			"block_devices": {
-				Type: schema.TypeList,
-				Computed: true,
+				Type:        schema.TypeList,
+				Computed:    true,
 				Description: "A list of block devices attached to the machine.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
-							Type: schema.TypeString,
-							Computed: true, 
+							Type:        schema.TypeString,
+							Computed:    true,
 							Description: "The block device name.",
 						},
 						"size_gigabytes": {
-							Type: schema.TypeInt,
-							Computed: true,
+							Type:        schema.TypeInt,
+							Computed:    true,
 							Description: "The size of the block device (given in GB).",
 						},
 						"id_path": {
-							Type: schema.TypeString,
-							Computed: true,
+							Type:        schema.TypeString,
+							Computed:    true,
 							Description: "The ID path of the block device. This should be a path that is fixed and doesn't change depending on the boot order or kernel version.",
 						},
 						"model": {
-							Type: schema.TypeString,
-							Computed: true,
-							Description:   "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
 						},
 					},
 				},
@@ -235,6 +235,7 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 	for i, networkInterface := range machine.InterfaceSet {
 		networkInterfaces[i] = networkInterface.MACAddress
 	}
+
 	if err := d.Set("network_interfaces", networkInterfaces); err != nil {
 		return diag.FromErr(err)
 	}
@@ -243,7 +244,7 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 	if err := d.Set("block_devices", blockDevices); err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	return nil
 }
 
@@ -356,11 +357,12 @@ func getMachine(client *client.Client, identifier string) (*entity.Machine, erro
 	return nil, fmt.Errorf("machine (%s) not found", identifier)
 }
 
-func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) ([]map[string]any) {
+func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) []map[string]any {
 	// sort block devices by ID
 	sort.Slice(blockDevices, func(i, j int) bool {
 		return blockDevices[i].ID < blockDevices[j].ID
 	})
+
 	blockDeviceParams := make([]map[string]any, len(blockDevices))
 	for i, blockDevice := range blockDevices {
 		blockDeviceParams[i] = map[string]any{
@@ -370,6 +372,6 @@ func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) ([]ma
 			"model":          blockDevice.Model,
 		}
 	}
+
 	return blockDeviceParams
 }
-
