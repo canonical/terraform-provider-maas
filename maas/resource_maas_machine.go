@@ -75,16 +75,6 @@ func resourceMAASMachine() *schema.Resource {
 				Description: "A list of block devices attached to the machine.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The block device name.",
-						},
-						"size_gigabytes": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "The size of the block device (given in GB).",
-						},
 						"id_path": {
 							Type:        schema.TypeString,
 							Computed:    true,
@@ -94,6 +84,16 @@ func resourceMAASMachine() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+						},
+						"name": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The block device name.",
+						},
+						"size_gigabytes": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "The size of the block device (given in GB).",
 						},
 					},
 				},
