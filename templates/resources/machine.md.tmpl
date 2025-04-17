@@ -14,48 +14,7 @@ Provides a resource to manage MAAS machines.
 
 {{ tffile "examples/resources/maas_machine/resource.tf" }}
 
-<!-- schema generated from machine.md.tmpl. Needs to be kept up to date manually. -->
-## Schema
-
-### Required
-
-- `power_parameters` (String, Sensitive) Serialized JSON string containing the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.
-- `power_type` (String) A power management type (e.g. `ipmi`).
-- `pxe_mac_address` (String) The MAC address of the machine's PXE boot NIC.
-
-### Optional
-
-- `architecture` (String) The architecture type of the machine. Defaults to `amd64/generic`.
-- `domain` (String) The domain of the machine. This is computed if it's not set.
-- `hostname` (String) The machine hostname. This is computed if it's not set.
-- `min_hwe_kernel` (String) The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.
-- `pool` (String) The resource pool of the machine. This is computed if it's not set.
-- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `zone` (String) The zone of the machine. This is computed if it's not set.
-
-### Read-Only
-
-- `block_devices` (List of Object) A list of block devices attached to the machine. (see [below for nested schema](#nestedatt--block_devices))
-- `id` (String) The ID of this resource.
-- `network_interfaces` (Set of String) A set of MAC addresses of network interfaces attached to the machine.
-
-<a id="nestedblock--timeouts"></a>
-### Nested Schema for `timeouts`
-
-Optional:
-
-- `create` (String)
-
-
-<a id="nestedatt--block_devices"></a>
-### Nested Schema for `block_devices`
-
-Read-Only:
-
-- `id_path` (String) The ID path of the block device.
-- `model` (String) The model of the block device.
-- `name` (String) The block device name.
-- `size_gigabytes` (Number) The size of the block device (in GB).
+{{ .SchemaMarkdown }}
 
 ## Import
 
