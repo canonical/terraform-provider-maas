@@ -29,7 +29,7 @@ resource "maas_volume_group" "vg1" {
   partitions    = [maas_block_device.vdb2.partitions.0.id]
 }
 
-resource "maas_logical_volume_lvm" "lvm1" {
+resource "maas_logical_volume" "lvm1" {
   fs_type        = "ext4"
   machine        = maas_machine.virsh_vm2.id
   name           = "LVM 1"
