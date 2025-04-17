@@ -78,12 +78,12 @@ func resourceMAASMachine() *schema.Resource {
 						"id_path": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The ID path of the block device. This should be a path that is fixed and doesn't change depending on the boot order or kernel version.",
+							Description: "The ID path of the block device.",
 						},
 						"model": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "Model of the block device. Used in conjunction with `serial` argument. Conflicts with `id_path`. This argument is computed if it's not given.",
+							Description: "The model of the block device.",
 						},
 						"name": {
 							Type:        schema.TypeString,
@@ -93,7 +93,7 @@ func resourceMAASMachine() *schema.Resource {
 						"size_gigabytes": {
 							Type:        schema.TypeInt,
 							Computed:    true,
-							Description: "The size of the block device (given in GB).",
+							Description: "The size of the block device (in GB).",
 						},
 					},
 				},
