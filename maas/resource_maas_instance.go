@@ -18,6 +18,7 @@ func resourceMAASInstance() *schema.Resource {
 		CreateContext: resourceInstanceCreate,
 		ReadContext:   resourceInstanceRead,
 		DeleteContext: resourceInstanceDelete,
+		UpdateContext: resourceInstanceUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
@@ -317,6 +318,27 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 	}
 
 	return nil
+}
+
+func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	if d.HasChange("release_params") {
+		if _, ok := d.GetOk("release_params"); ok {
+			releaseParams := getReleaseParams(d)
+			releaseParamMap := map[string]any{
+				"comment":	  releaseParams.Comment,
+				"erase":        releaseParams.Erase,
+				"force": 		releaseParams.Force,
+				"quick_erase": 	releaseParams.QuickErase,
+				"secure_erase": releaseParams.SecureErase,
+			}
+			err := setTerraformState(d, releaseParamMap)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			
+		}
+	}
+	return resourceInstanceRead(ctx, d, meta)
 }
 
 func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
