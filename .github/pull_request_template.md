@@ -1,14 +1,17 @@
 ## Description of changes
 
-*A clear and concise description of your changes here.*
+<!-- A clear and concise description of your changes here. -->
 
 ## Issue or ticket link (if applicable)
 
-*A link to an issue or ticket that this PR is addressing.*
+<!-- 
+Please link the issue this PR addresses using GitHub’s keywords to automatically close related issues. See https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword
+
+e.g. Resolves: #XXX -->
 
 ## Checklist
 
-- [ ] I have written a PR title that follows the advice in DEVELOPMENT.md with the title format `type(scope): title`
+- [ ] I have written a PR title that follows the advice in DEVELOPMENT.md with the title format `type: title`
 - [ ] I have written a description of the changes in the PR that is clear and concise.
 - [ ] I have updated the documentation to reflect the changes.
 - [ ] I have added or updated the tests to reflect the changes.
