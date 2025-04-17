@@ -9,17 +9,16 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
-	"github.com/canonical/gomaasclient/entity"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
-	var LogicalVolume entity.BlockDevice
-
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
-
-	size := 70
+	blockDevice1Name := acctest.RandomWithPrefix("tf")
+	blockDevice2Name := acctest.RandomWithPrefix("tf")
+	volumeGroupName := acctest.RandomWithPrefix("tf")
 
 	fsType := "ext4"
 	name := "LVM test"
@@ -29,11 +28,6 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 	changedName := "LVM updated"
 	changedMountPoint := "/var/changed"
 
-	baseChecks := []resource.TestCheckFunc{
-		testAccCheckMAASLogicalVolumeExists("maas_logical_volume.test", &LogicalVolume),
-		resource.TestCheckResourceAttr("maas_logical_volume.test", "size_gigabytes", fmt.Sprintf("%d", size)),
-	}
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
@@ -42,27 +36,29 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
-				Config: testAccMAASLogicalVolume(machine, fsType, name, size, mountPoint),
-				Check: resource.ComposeTestCheckFunc(append(baseChecks,
+				Config: testAccMAASLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, fsType, name, mountPoint),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMAASLogicalVolumeExists("maas_logical_volume.test"),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "name", name),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "fs_type", fsType),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "mount_point", mountPoint),
-				)...),
+				),
 			},
 			// Test the update function
 			{
-				Config: testAccMAASLogicalVolume(machine, changedFsType, changedName, size, changedMountPoint),
-				Check: resource.ComposeTestCheckFunc(append(baseChecks,
+				Config: testAccMAASLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, changedFsType, changedName, changedMountPoint),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMAASLogicalVolumeExists("maas_logical_volume.test"),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "name", changedName),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "fs_type", changedFsType),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "mount_point", changedMountPoint),
-				)...),
+				),
 			},
 		},
 	})
 }
 
-func testAccMAASLogicalVolume(machine string, fsType string, name string, size int, mountPoint string) string {
+func testAccMAASLogicalVolume(bd1Name string, bd2Name string, vgName string, machine string, fsType string, name string, mountPoint string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = %q
@@ -70,28 +66,28 @@ data "maas_machine" "machine" {
 
 resource "maas_block_device" "lvm_bd1" {
   machine        = data.maas_machine.machine.id
-  name           = "lvm_bd1"
-  size_gigabytes = 25
+  name           = %q
+  size_gigabytes = 6
   block_size     = 512
   id_path        = "/dev/lvm_bd1"
   is_boot_device = true
 
   partitions {
-    size_gigabytes = 20
+    size_gigabytes = 5
   }
 }
 
 resource "maas_block_device" "lvm_bd2" {
   machine        = data.maas_machine.machine.id
-  name           = "bd2"
-  size_gigabytes = 50
+  name           = %q
+  size_gigabytes = 5
   block_size     = 512
   id_path        = "/dev/bd2"
 }
 
 resource "maas_volume_group" "lvm_vg" {
   machine       = data.maas_machine.machine.id
-  name          = "test-vg"
+  name          = %q
   block_devices = [maas_block_device.lvm_bd2.id]
   partitions 	= [maas_block_device.lvm_bd1.partitions.0.id]
 }
@@ -100,14 +96,13 @@ resource "maas_logical_volume" "test" {
   fs_type 		 = %q
   machine 		 = data.maas_machine.machine.id
   name 			 = %q
-  size_gigabytes = %d
   volume_group 	 = maas_volume_group.lvm_vg.id
   mount_point	 = %q
 }
-`, machine, fsType, name, size, mountPoint)
+`, machine, bd1Name, bd2Name, vgName, fsType, name, mountPoint)
 }
 
-func testAccCheckMAASLogicalVolumeExists(rn string, logicalVolume *entity.BlockDevice) resource.TestCheckFunc {
+func testAccCheckMAASLogicalVolumeExists(rn string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -130,12 +125,10 @@ func testAccCheckMAASLogicalVolumeExists(rn string, logicalVolume *entity.BlockD
 			return fmt.Errorf("Could not find machine id on resource")
 		}
 
-		gotLogicalVolume, err := conn.BlockDevice.Get(machine, id)
+		_, err = conn.BlockDevice.Get(machine, id)
 		if err != nil {
 			return fmt.Errorf("error getting the logical volume: %s", err)
 		}
-
-		*logicalVolume = *gotLogicalVolume
 
 		return nil
 	}

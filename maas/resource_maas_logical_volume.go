@@ -29,6 +29,7 @@ func resourceMAASLogicalVolume() *schema.Resource {
 			"machine": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "The machine identifier (system ID, hostname, or FQDN) that owns the volume group.",
 			},
 			"mount_options": {
@@ -47,13 +48,17 @@ func resourceMAASLogicalVolume() *schema.Resource {
 				Description: "The name for this logical volume",
 			},
 			"size_gigabytes": {
-				Type:        schema.TypeInt,
-				Required:    true,
+				Type: schema.TypeInt,
+				// TODO: The api doesn't currently allow setting LVM sizes, it always defaults to the size of the volume group
+				// Required:    true,
+				// ForceNew:    true,
+				Computed:    true,
 				Description: "The volume size (given in GB).",
 			},
 			"volume_group": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "The volume group identifier (ID or name) to apply this logical volume on top of.",
 			},
 		},
@@ -75,7 +80,8 @@ func resourceMAASLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData
 
 	LVMParams := &entity.LogicalVolumeParams{
 		Name: d.Get("name").(string),
-		Size: int64(d.Get("size_gigabytes").(int)) * 1024 * 1024 * 1024,
+		// TODO: The api doesn't currently allow setting LVM sizes, it always defaults to the size of the volume group
+		// Size: int64(d.Get("size_gigabytes").(int)) * 1024 * 1024 * 1024,
 	}
 
 	createdLVM, err := client.VolumeGroup.CreateLogicalVolume(machine.SystemID, volumeGroup.ID, LVMParams)
