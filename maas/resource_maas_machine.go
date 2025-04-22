@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sort"
 	"time"
 
 	"github.com/canonical/gomaasclient/client"
@@ -67,6 +68,35 @@ func resourceMAASMachine() *schema.Resource {
 				Optional:    true,
 				Default:     "amd64/generic",
 				Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
+			},
+			"block_devices": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "A list of block devices attached to the machine.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id_path": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The ID path of the block device.",
+						},
+						"model": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The model of the block device.",
+						},
+						"name": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The block device name.",
+						},
+						"size_gigabytes": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "The size of the block device (in GB).",
+						},
+					},
+				},
 			},
 			"domain": {
 				Type:        schema.TypeString,
@@ -210,6 +240,11 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 		return diag.FromErr(err)
 	}
 
+	blockDevices := getAllBlockDeviceMachineParameters(machine.BlockDeviceSet)
+	if err := d.Set("block_devices", blockDevices); err != nil {
+		return diag.FromErr(err)
+	}
+
 	return nil
 }
 
@@ -320,4 +355,24 @@ func getMachine(client *client.Client, identifier string) (*entity.Machine, erro
 	}
 
 	return nil, fmt.Errorf("machine (%s) not found", identifier)
+}
+
+func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) []map[string]any {
+	// sort block devices by ID
+	sort.Slice(blockDevices, func(i, j int) bool {
+		return blockDevices[i].ID < blockDevices[j].ID
+	})
+
+	// Create a slice of maps to hold block device parameters
+	blockDeviceParams := make([]map[string]any, len(blockDevices))
+	for i, blockDevice := range blockDevices {
+		blockDeviceParams[i] = map[string]any{
+			"name":           blockDevice.Name,
+			"size_gigabytes": int(blockDevice.Size / (1024 * 1024 * 1024)),
+			"id_path":        blockDevice.IDPath,
+			"model":          blockDevice.Model,
+		}
+	}
+
+	return blockDeviceParams
 }
