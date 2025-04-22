@@ -53,23 +53,22 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 
 func testAccMAASInstanceCheckExists(rn string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		// Get the terraform resource from state
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
 			return fmt.Errorf("not found: %s", rn)
 		}
-
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("resource id not set: %s", rn)
 		}
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
-
+		// Check if the resource exists in MAAS
 		machine, err := conn.Machine.Get(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
-
 		if machine.SystemID != rs.Primary.ID {
 			return fmt.Errorf("machine ID %s does not match expected id %s", machine.SystemID, rs.Primary.ID)
 		}
