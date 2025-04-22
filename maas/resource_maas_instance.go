@@ -353,7 +353,7 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta an
 	}
 
 	// Wait MAAS machine to be released
-	_, err = waitForMachineStatus(ctx, client, d.Id(), []string{"Releasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
+	_, err = waitForMachineStatus(ctx, client, d.Id(), []string{"Releasing", "Disk erasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return diag.FromErr(err)
 	}
