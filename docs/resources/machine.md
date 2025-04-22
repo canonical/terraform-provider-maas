@@ -66,9 +66,6 @@ Read-Only:
 - `name` (String)
 - `size_gigabytes` (Number)
 
-
-
-
 ## Import
 
 Import is supported using the following syntax:
