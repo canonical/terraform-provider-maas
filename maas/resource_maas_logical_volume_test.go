@@ -23,10 +23,12 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 	fsType := "ext4"
 	name := "LVM test"
 	mountPoint := "/var/test"
+	size := 5
 
 	changedFsType := "fat32"
 	changedName := "LVM updated"
 	changedMountPoint := "/var/changed"
+	changedSize := 2
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
@@ -36,7 +38,7 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
-				Config: testAccMAASLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, fsType, name, mountPoint),
+				Config: testAccMAASLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, fsType, name, size, mountPoint),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMAASLogicalVolumeExists("maas_logical_volume.test"),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "name", name),
@@ -46,7 +48,7 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 			},
 			// Test the update function
 			{
-				Config: testAccMAASLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, changedFsType, changedName, changedMountPoint),
+				Config: testAccMAASLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, changedFsType, changedName, changedSize, changedMountPoint),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMAASLogicalVolumeExists("maas_logical_volume.test"),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "name", changedName),
@@ -58,7 +60,7 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 	})
 }
 
-func testAccMAASLogicalVolume(bd1Name string, bd2Name string, vgName string, machine string, fsType string, name string, mountPoint string) string {
+func testAccMAASLogicalVolume(bd1Name string, bd2Name string, vgName string, machine string, fsType string, name string, size int, mountPoint string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = %q
@@ -97,9 +99,10 @@ resource "maas_logical_volume" "test" {
   machine 		 = data.maas_machine.machine.id
   name 			 = %q
   volume_group 	 = maas_volume_group.lvm_vg.id
+  size_gigabytes = %d
   mount_point	 = %q
 }
-`, machine, bd1Name, bd2Name, vgName, fsType, name, mountPoint)
+`, machine, bd1Name, bd2Name, vgName, fsType, name, size, mountPoint)
 }
 
 func testAccCheckMAASLogicalVolumeExists(rn string) resource.TestCheckFunc {

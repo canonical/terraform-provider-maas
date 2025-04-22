@@ -70,6 +70,7 @@ resource "maas_logical_volume" "lvm1" {
 
 - `machine` (String) The machine identifier (system ID, hostname, or FQDN) that owns the volume group.
 - `name` (String) The name for this logical volume
+- `size_gigabytes` (Number) The volume size (given in GB).
 - `volume_group` (String) The volume group identifier (ID or name) to apply this logical volume on top of.
 
 ### Optional
@@ -81,4 +82,3 @@ resource "maas_logical_volume" "lvm1" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `size_gigabytes` (Number) The volume size (given in GB).
