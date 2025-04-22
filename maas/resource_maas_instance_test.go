@@ -19,18 +19,22 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 	vm_host := os.Getenv("TF_ACC_VM_HOST_ID")
 	hostname := acctest.RandomWithPrefix("tf-instance")
 	comment := acctest.RandomWithPrefix("tf-instance-comment")
-	erase := true
-	force := false
-	quick_erase := true
-	secure_erase := false
+	erase := "true"
+	force := "false"
+	quick_erase := "true"
+	secure_erase := "false"
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASInstanceCheckExists("maas_instance.test"),
+		resource.TestCheckResourceAttr("maas_instance.test", "release_params.#", "1"),
 		resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.comment", comment),
-		resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.erase", "true"),
-		resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.quick_erase", "true"),
+		resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.erase", erase),
+		resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.force", force),
+		resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.quick_erase", quick_erase),
+		resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.secure_erase", secure_erase),
 		resource.TestCheckResourceAttr("maas_instance.test", "hostname", hostname),
 		resource.TestCheckResourceAttr("maas_instance.test", "memory", "4096"),
+		resource.TestCheckResourceAttr("maas_instance.test", "cpu_count", "1"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -38,6 +42,7 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 		Providers: testutils.TestAccProviders,
 		ErrorCheck: func(err error) error { return err },
 		Steps: []resource.TestStep{
+			// Test creation
 			{
 				Config: testAccMAASInstanceConfigSetup(vm_host, hostname) + testAccMAASInstanceConfig(comment, erase, force, quick_erase, secure_erase),
 				Check: resource.ComposeTestCheckFunc(checks...),
@@ -103,14 +108,14 @@ func testAccMAASInstanceConfigSetup(vm_host string, hostname string) string {
 resource "maas_vm_host_machine" "test" {
   vm_host  = %q
   cores    = 1
-  memory   = 4096 # set to above the default
+  memory   = 4096  # set to above the default
   hostname = %q
 }
 
 `, vm_host, hostname)
 	}
 
-func testAccMAASInstanceConfig(comment string, erase, force, quick_erase, secure_erase bool) string {
+func testAccMAASInstanceConfig(comment, erase, force, quick_erase, secure_erase string) string {
 	return fmt.Sprintf(
 `
 resource "maas_instance" "test" {
