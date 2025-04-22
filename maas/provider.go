@@ -82,6 +82,7 @@ func Provider() *schema.Provider {
 			"maas_zone":                       resourceMAASZone(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"maas_boot_resources":             dataSourceMAASBootResources(),
 			"maas_boot_source":                dataSourceMAASBootSource(),
 			"maas_boot_source_selection":      dataSourceMAASBootSourceSelection(),
 			"maas_fabric":                     dataSourceMAASFabric(),
