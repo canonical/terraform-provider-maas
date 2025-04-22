@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceMAASBootSourceSelection_basic(t *testing.T) {
 	os := "ubuntu"
-	release := "mantic"
+	release := "lunar"
 	arches := []string{"amd64"}
 	subarches := []string{"*"}
 	labels := []string{"*"}

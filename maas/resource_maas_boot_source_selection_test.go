@@ -18,7 +18,7 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 
 	os := "ubuntu"
 	release := "oracular"
-	arches := []string{"amd64"}
+	arches := []string{"ppc64el"}
 	subarches := []string{"*"}
 	labels := []string{"*"}
 
