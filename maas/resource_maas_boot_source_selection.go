@@ -25,9 +25,12 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"arches": {
-				Type:        schema.TypeSet,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				DefaultFunc: func() (any, error) {
+					return []any{"*"}, nil
+				},
 				Description: "The architecture list for this selection.",
 			},
 			"boot_source": {
@@ -37,9 +40,12 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Description: "The boot source database ID this selection is associated with.",
 			},
 			"labels": {
-				Type:        schema.TypeSet,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				DefaultFunc: func() (any, error) {
+					return []any{"*"}, nil
+				},
 				Description: "The label list for this selection.",
 			},
 			"os": {
@@ -53,9 +59,12 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Description: "The specific release of the operating system for this selection.",
 			},
 			"subarches": {
-				Type:        schema.TypeSet,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				DefaultFunc: func() (any, error) {
+					return []any{"*"}, nil
+				},
 				Description: "The list of subarches for this selection.",
 			},
 		},
@@ -78,6 +87,7 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 	client := meta.(*ClientConfig).Client
 
 	bootSourceSelectionParams := entity.BootSourceSelectionParams{
+
 		OS:        d.Get("os").(string),
 		Release:   d.Get("release").(string),
 		Arches:    convertToStringSlice(d.Get("arches").(*schema.Set).List()),
@@ -87,7 +97,7 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 
 	bootSourceSelection, err := client.BootSourceSelections.Create(d.Get("boot_source").(int), &bootSourceSelectionParams)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.FromErr(fmt.Errorf("error creating %s %s %s", d.Get("os"), d.Get("release"), err))
 	}
 
 	d.SetId(fmt.Sprintf("%v", bootSourceSelection.ID))
@@ -156,7 +166,16 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	return diag.FromErr(client.BootSourceSelection.Delete(d.Get("boot_source").(int), id))
+	if err := client.BootSourceSelection.Delete(d.Get("boot_source").(int), id); err != nil {
+		// 404 means the resource was deleted already
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		}
+
+		return diag.FromErr(err)
+	}
+
+	return nil
 }
 
 func getBootSourceSelection(client *client.Client, bootSource int, id int) (*entity.BootSourceSelection, error) {
