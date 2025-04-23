@@ -9,6 +9,7 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -158,7 +159,7 @@ func testAccCheckMAASLogicalVolumeDestroy(s *terraform.State) error {
 		response, err := conn.BlockDevice.Get(machine, id)
 		if err == nil {
 			if response != nil && response.ID == id {
-				return fmt.Errorf("Logical Volumep %s (%d) still exists.", response.Name, id)
+				return fmt.Errorf("Logical Volume %s (%d) still exists.", response.Name, id)
 			}
 		}
 
