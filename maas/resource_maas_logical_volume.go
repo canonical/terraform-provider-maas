@@ -50,7 +50,6 @@ func resourceMAASLogicalVolume() *schema.Resource {
 			"size_gigabytes": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				ForceNew:    true,
 				Description: "The volume size (given in GB).",
 			},
 			"volume_group": {
