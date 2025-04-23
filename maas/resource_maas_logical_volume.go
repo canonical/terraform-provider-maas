@@ -48,11 +48,9 @@ func resourceMAASLogicalVolume() *schema.Resource {
 				Description: "The name for this logical volume",
 			},
 			"size_gigabytes": {
-				Type: schema.TypeInt,
-				// TODO: The api doesn't currently allow setting LVM sizes, it always defaults to the size of the volume group
-				Required: true,
-				ForceNew: true,
-				// Computed:    true,
+				Type:        schema.TypeInt,
+				Required:    true,
+				ForceNew:    true,
 				Description: "The volume size (given in GB).",
 			},
 			"volume_group": {
@@ -80,15 +78,10 @@ func resourceMAASLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData
 
 	LVMParams := &entity.LogicalVolumeParams{
 		Name: d.Get("name").(string),
+		Size: int64(d.Get("size_gigabytes").(int)) * 1024 * 1024 * 1024,
 	}
 
 	createdLVM, err := client.VolumeGroup.CreateLogicalVolume(machine.SystemID, volumeGroup.ID, LVMParams)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// LVM by default fills the whole volume group, we need to resize after creation
-	createdLVM, err = client.BlockDevice.Update(machine.SystemID, createdLVM.ID, &entity.BlockDeviceParams{Size: int64(d.Get("size_gigabytes").(int)) * 1024 * 1024 * 1024})
 	if err != nil {
 		return diag.FromErr(err)
 	}
