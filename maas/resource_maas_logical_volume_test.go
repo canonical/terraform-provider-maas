@@ -34,13 +34,13 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASLogicalVolumeDestroy,
+		CheckDestroy: testAccCheckLogicalVolumeDestroy,
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
-				Config: testAccMAASLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, fsType, name, size, mountPoint),
+				Config: testAccLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, fsType, name, size, mountPoint),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMAASLogicalVolumeExists("maas_logical_volume.test"),
+					testAccCheckLogicalVolumeExists("maas_logical_volume.test"),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "name", name),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "fs_type", fsType),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "mount_point", mountPoint),
@@ -48,9 +48,9 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 			},
 			// Test the update function
 			{
-				Config: testAccMAASLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, changedFsType, changedName, changedSize, changedMountPoint),
+				Config: testAccLogicalVolume(blockDevice1Name, blockDevice2Name, volumeGroupName, machine, changedFsType, changedName, changedSize, changedMountPoint),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMAASLogicalVolumeExists("maas_logical_volume.test"),
+					testAccCheckLogicalVolumeExists("maas_logical_volume.test"),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "name", changedName),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "fs_type", changedFsType),
 					resource.TestCheckResourceAttr("maas_logical_volume.test", "mount_point", changedMountPoint),
@@ -60,7 +60,7 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 	})
 }
 
-func testAccMAASLogicalVolume(bd1Name string, bd2Name string, vgName string, machine string, fsType string, name string, size int, mountPoint string) string {
+func testAccLogicalVolume(bd1Name string, bd2Name string, vgName string, machine string, fsType string, name string, size int, mountPoint string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = %q
@@ -105,7 +105,7 @@ resource "maas_logical_volume" "test" {
 `, machine, bd1Name, bd2Name, vgName, fsType, name, size, mountPoint)
 }
 
-func testAccCheckMAASLogicalVolumeExists(rn string) resource.TestCheckFunc {
+func testAccCheckLogicalVolumeExists(rn string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -137,7 +137,7 @@ func testAccCheckMAASLogicalVolumeExists(rn string) resource.TestCheckFunc {
 	}
 }
 
-func testAccCheckMAASLogicalVolumeDestroy(s *terraform.State) error {
+func testAccCheckLogicalVolumeDestroy(s *terraform.State) error {
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	for _, rs := range s.RootModule().Resources {

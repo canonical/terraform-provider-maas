@@ -15,10 +15,10 @@ import (
 
 func resourceMAASLogicalVolume() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceMAASLogicalVolumeCreate,
-		ReadContext:   resourceMAASLogicalVolumeRead,
-		UpdateContext: resourceMAASLogicalVolumeUpdate,
-		DeleteContext: resourceMAASLogicalVolumeDelete,
+		CreateContext: resourceLogicalVolumeCreate,
+		ReadContext:   resourceLogicalVolumeRead,
+		UpdateContext: resourceLogicalVolumeUpdate,
+		DeleteContext: resourceLogicalVolumeDelete,
 
 		Schema: map[string]*schema.Schema{
 			"fs_type": {
@@ -35,7 +35,7 @@ func resourceMAASLogicalVolume() *schema.Resource {
 			"mount_options": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The options used for the logical volume mount.",
+				Description: "Comma seperated options used for the logical volume mount.",
 			},
 			"mount_point": {
 				Type:        schema.TypeString,
@@ -62,7 +62,7 @@ func resourceMAASLogicalVolume() *schema.Resource {
 	}
 }
 
-func resourceMAASLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -92,10 +92,10 @@ func resourceMAASLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(fmt.Sprintf("%v", formattedDevice.ID))
 
-	return resourceMAASLogicalVolumeRead(ctx, d, meta)
+	return resourceLogicalVolumeRead(ctx, d, meta)
 }
 
-func resourceMAASLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -120,7 +120,7 @@ func resourceMAASLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-func resourceMAASLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
@@ -150,10 +150,10 @@ func resourceMAASLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(fmt.Sprintf("%v", formattedDevice.ID))
 
-	return resourceMAASLogicalVolumeRead(ctx, d, meta)
+	return resourceLogicalVolumeRead(ctx, d, meta)
 }
 
-func resourceMAASLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
