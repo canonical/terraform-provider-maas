@@ -223,7 +223,6 @@ func resourceMAASInstance() *schema.Resource {
 						"quick_erase": {
 							Type:        schema.TypeBool,
 							Optional:    true,
-							
 							Description: "Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.",
 						},
 						"secure_erase": {
@@ -325,17 +324,15 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta an
 		if _, ok := d.GetOk("release_params"); ok {
 			releaseParams := getReleaseParams(d)
 			releaseParamMap := map[string]any{
-				"comment":	  releaseParams.Comment,
+				"comment":	  	releaseParams.Comment,
 				"erase":        releaseParams.Erase,
 				"force": 		releaseParams.Force,
 				"quick_erase": 	releaseParams.QuickErase,
 				"secure_erase": releaseParams.SecureErase,
 			}
-			err := setTerraformState(d, releaseParamMap)
-			if err != nil {
+			if err := d.Set("release_params", []map[string]any{releaseParamMap}); err != nil {
 				return diag.FromErr(err)
 			}
-			
 		}
 	}
 	return resourceInstanceRead(ctx, d, meta)
