@@ -102,7 +102,7 @@ func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) 
 			return fmt.Errorf("machine %s was not released as expected", hostname)
 		}
 
-		if !wasErased && erase {
+		if wasErased != erase {
 			return fmt.Errorf("machine %s did not have disks erased as expected", hostname)
 		}
 
