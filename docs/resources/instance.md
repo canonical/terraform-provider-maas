@@ -42,7 +42,7 @@ resource "maas_instance" "kvm" {
 - `allocate_params` (Block List, Max: 1) Nested argument with the constraints used to machine allocation. Defined below. (see [below for nested schema](#nestedblock--allocate_params))
 - `deploy_params` (Block List, Max: 1) Nested argument with the config used to deploy the allocated machine. Defined below. (see [below for nested schema](#nestedblock--deploy_params))
 - `network_interfaces` (Block Set) Specifies a network interface configuration done before the machine is deployed. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). (see [below for nested schema](#nestedblock--network_interfaces))
-- `release_params` (Block List, Max: 1) Parameters used to release the allocated machine. Only used when the machine is released upon resource destroy. (see [below for nested schema](#nestedblock--release_params))
+- `release_params` (Block List, Max: 1) Parameters used to release the allocated machine. Used when the machine is released upon destroy. (see [below for nested schema](#nestedblock--release_params))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
