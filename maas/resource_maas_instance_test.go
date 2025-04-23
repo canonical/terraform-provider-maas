@@ -9,8 +9,7 @@ import (
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
-
-	"github.com/canonical/gomaasclient/entity/node"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -60,28 +59,47 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 			// Test destroy leaves the machine in a ready state
 			{
 				Config: testAccMAASInstanceConfigSetup(vmHost, hostname),
-				Check:  testAccMAASInstanceCheckMachineInStatus("maas_vm_host_machine.test", node.StatusReady),
+				Check:  testAccMAASInstanceCheckMachineLogsForDestroy(hostname, erase == "true"),
 			},
 		},
 	})
 }
 
-func testAccMAASInstanceCheckMachineInStatus(rn string, status node.Status) resource.TestCheckFunc {
+// Check logs for relevant events to determine if the machine was released as expected during destroy
+func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[rn]
-		if !ok {
-			return fmt.Errorf("not found: %s", rn)
-		}
-
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
-		machine, err := conn.Machine.Get(rs.Primary.ID)
+		params := entity.EventParams{
+			Hostname: hostname,
+		}
+		events, err := conn.Events.Get(&params)
 		if err != nil {
 			return err
 		}
 
-		if machine.Status != status {
-			return fmt.Errorf("machine %s is not in the expected status %d but in status %d", rs.Primary.ID, status, machine.Status)
+		if len(events.Events) == 0 {
+			return fmt.Errorf("no events found for hostname %s", hostname)
+		}
+
+		// Check through all events to see if the machine was released as expected
+		wasErased := false
+		wasReleased := false
+		for _, event := range events.Events {
+			if event.Type == "Disks erased" {
+				wasErased = true
+			}
+			if event.Type == "Released" {
+				wasReleased = true
+			}
+		}
+
+		if !wasReleased {
+			return fmt.Errorf("machine %s was not released as expected", hostname)
+		}
+
+		if !wasErased && erase {
+			return fmt.Errorf("machine %s did not have disks erased as expected", hostname)
 		}
 
 		return nil
