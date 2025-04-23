@@ -218,7 +218,7 @@ func resourceMAASInstance() *schema.Resource {
 						"force": {
 							Type:        schema.TypeBool,
 							Optional:    true,
-							Description: "Force the release of the machine. If the machine was deployed as a KVM host, all machines inside the host will be deleted. Use with caution.",
+							Description: "Force the release of the machine.",
 						},
 						"quick_erase": {
 							Type:        schema.TypeBool,

@@ -105,7 +105,7 @@ Optional:
 
 - `comment` (String) A comment to be added to the event log when the machine is released.
 - `erase` (Boolean) Erase the disk when releasing.
-- `force` (Boolean) Force the release of the machine. If the machine was deployed as a KVM host, all machines inside the host will be deleted. Use with caution.
+- `force` (Boolean) Force the release of the machine.
 - `quick_erase` (Boolean) Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.
 - `secure_erase` (Boolean) Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.
 
