@@ -189,10 +189,6 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	if err := awaitImportComplete(client); err != nil {
-		return diag.FromErr(err)
-	}
-
 	return nil
 }
 
