@@ -202,7 +202,7 @@ func resourceMAASInstance() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "Parameters used to release the allocated machine. Only used when the machine is released upon resource destroy.",
+				Description: "Parameters used to release the allocated machine. Used when the machine is released upon destroy.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"comment": {
@@ -320,23 +320,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 }
 
 func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	if d.HasChange("release_params") {
-		if _, ok := d.GetOk("release_params"); ok {
-			releaseParams := getReleaseParams(d)
-
-			releaseParamMap := map[string]any{
-				"comment":      releaseParams.Comment,
-				"erase":        releaseParams.Erase,
-				"force":        releaseParams.Force,
-				"quick_erase":  releaseParams.QuickErase,
-				"secure_erase": releaseParams.SecureErase,
-			}
-			if err := d.Set("release_params", []map[string]any{releaseParamMap}); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	}
-
+	// Dummy update to allow release params to be updated.
 	return resourceInstanceRead(ctx, d, meta)
 }
 
