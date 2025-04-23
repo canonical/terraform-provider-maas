@@ -72,7 +72,9 @@ func testAccMAASInstanceCheckMachineInStatus(rn string, status node.Status) reso
 		if !ok {
 			return fmt.Errorf("not found: %s", rn)
 		}
+
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 		machine, err := conn.Machine.Get(rs.Primary.ID)
 		if err != nil {
 			return err
