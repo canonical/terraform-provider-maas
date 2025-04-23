@@ -10,26 +10,24 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/canonical/gomaasclient/entity"
+	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/canonical/gomaasclient/entity"
-	"github.com/canonical/gomaasclient/entity/node"
-
 )
 
 func TestAccResourceMAASInstance_basic(t *testing.T) {
 	// Required to check if the machine is released into its read state after destroy
-	var machine entity.Machine  
+	var machine entity.Machine
 
-	vm_host := os.Getenv("TF_ACC_VM_HOST_ID")
+	vmHost := os.Getenv("TF_ACC_VM_HOST_ID")
 	hostname := acctest.RandomWithPrefix("tf-instance")
 	comment := acctest.RandomWithPrefix("tf-instance-comment")
 	erase := "true"
 	force := "false"
-	quick_erase := "true"
-	secure_erase := "false"
-
+	quickErase := "true"
+	secureErase := "false"
 
 	baseChecks := []resource.TestCheckFunc{
 		testAccMAASInstanceCheckExists("maas_instance.test", &machine),
@@ -39,33 +37,34 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck: func() {testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"})},
-		Providers: testutils.TestAccProviders,
-		ErrorCheck: func(err error) error { return err },
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
+		Providers:    testutils.TestAccProviders,
+		ErrorCheck:   func(err error) error { return err },
+		CheckDestroy: testAccMAASInstanceCheckDestroy,
 		Steps: []resource.TestStep{
 			// Test creation
 			{
-				Config: testAccMAASInstanceConfigBasic(vm_host, hostname),
-				Check: resource.ComposeTestCheckFunc(baseChecks...),
+				Config: testAccMAASInstanceConfigBasic(vmHost, hostname),
+				Check:  resource.ComposeTestCheckFunc(baseChecks...),
 			},
 			// Test update
 			{
-				Config: testAccMAASInstanceConfigSetup(vm_host, hostname)  + testAccMAASInstanceConfigReleaseParams(comment, erase, force, quick_erase, secure_erase),
+				Config: testAccMAASInstanceConfigSetup(vmHost, hostname) + testAccMAASInstanceConfigReleaseParams(comment, erase, force, quickErase, secureErase),
 				Check: resource.ComposeTestCheckFunc(append(
-					baseChecks, 
+					baseChecks,
 					resource.TestCheckResourceAttr("maas_instance.test", "release_params.#", "1"),
 					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.comment", comment),
 					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.erase", erase),
 					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.force", force),
-					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.quick_erase", quick_erase),
-					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.secure_erase", secure_erase),
+					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.quick_erase", quickErase),
+					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.secure_erase", secureErase),
 				)...,
 				),
 			},
 			// Test destroy leaves the machine in a ready state
 			{
-				Config: testAccMAASInstanceConfigSetup(vm_host, hostname),
-				Check: testAccMAASInstanceCheckMachineInStatus(machine.SystemID, node.StatusReady),
+				Config: testAccMAASInstanceConfigSetup(vmHost, hostname),
+				Check:  testAccMAASInstanceCheckMachineInStatus(machine.SystemID, node.StatusReady),
 			},
 		},
 	})
@@ -88,7 +87,6 @@ func testAccMAASInstanceCheckMachineInStatus(systemID string, status node.Status
 	}
 }
 
-
 func testAccMAASInstanceCheckExists(rn string, machine *entity.Machine) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Get the terraform resource from state
@@ -96,6 +94,7 @@ func testAccMAASInstanceCheckExists(rn string, machine *entity.Machine) resource
 		if !ok {
 			return fmt.Errorf("not found: %s", rn)
 		}
+
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("resource id not set: %s", rn)
 		}
@@ -107,6 +106,7 @@ func testAccMAASInstanceCheckExists(rn string, machine *entity.Machine) resource
 		if err != nil {
 			return err
 		}
+
 		if gotMachine.SystemID != rs.Primary.ID {
 			return fmt.Errorf("machine ID %s does not match expected id %s", gotMachine.SystemID, rs.Primary.ID)
 		}
@@ -119,6 +119,7 @@ func testAccMAASInstanceCheckExists(rn string, machine *entity.Machine) resource
 
 func testAccMAASInstanceCheckDestroy(s *terraform.State) error {
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "maas_instance" {
 			continue
@@ -130,7 +131,7 @@ func testAccMAASInstanceCheckDestroy(s *terraform.State) error {
 			if response != nil && response.SystemID == rs.Primary.ID {
 				return fmt.Errorf("instance %s still exists", rs.Primary.ID)
 			}
-		} 
+		}
 
 		// If the error is equivalent to a 404, the instance was destroyed as expected.
 		if !strings.Contains(err.Error(), "404 Not Found") {
@@ -141,9 +142,9 @@ func testAccMAASInstanceCheckDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccMAASInstanceConfigSetup(vm_host, hostname string) string {
+func testAccMAASInstanceConfigSetup(vmHost, hostname string) string {
 	return fmt.Sprintf(
-`
+		`
 resource "maas_vm_host_machine" "test" {
   vm_host  = %q
   cores    = 1
@@ -151,10 +152,10 @@ resource "maas_vm_host_machine" "test" {
   hostname = %q
 }
 
-`, vm_host, hostname)
-	}
+`, vmHost, hostname)
+}
 
-func testAccMAASInstanceConfigBasic(vm_host, hostname string) string {
+func testAccMAASInstanceConfigBasic(vmHost, hostname string) string {
 	return fmt.Sprintf(`
 %s 
 
@@ -165,13 +166,12 @@ resource "maas_instance" "test" {
     min_cpu_count = 1
   }
 }
-`, testAccMAASInstanceConfigSetup(vm_host, hostname),)
+`, testAccMAASInstanceConfigSetup(vmHost, hostname))
 }
 
-
-func testAccMAASInstanceConfigReleaseParams(comment, erase, force, quick_erase, secure_erase string) string {
+func testAccMAASInstanceConfigReleaseParams(comment, erase, force, quickErase, secureErase string) string {
 	return fmt.Sprintf(
-`
+		`
 resource "maas_instance" "test" {
   release_params {
     comment      = %q
@@ -188,5 +188,5 @@ resource "maas_instance" "test" {
   }
 
 }
-`, comment, erase, force, quick_erase, secure_erase)
-	}
+`, comment, erase, force, quickErase, secureErase)
+}

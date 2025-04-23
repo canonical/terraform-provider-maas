@@ -323,11 +323,12 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta an
 	if d.HasChange("release_params") {
 		if _, ok := d.GetOk("release_params"); ok {
 			releaseParams := getReleaseParams(d)
+
 			releaseParamMap := map[string]any{
-				"comment":	  	releaseParams.Comment,
+				"comment":      releaseParams.Comment,
 				"erase":        releaseParams.Erase,
-				"force": 		releaseParams.Force,
-				"quick_erase": 	releaseParams.QuickErase,
+				"force":        releaseParams.Force,
+				"quick_erase":  releaseParams.QuickErase,
 				"secure_erase": releaseParams.SecureErase,
 			}
 			if err := d.Set("release_params", []map[string]any{releaseParamMap}); err != nil {
@@ -335,6 +336,7 @@ func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta an
 			}
 		}
 	}
+
 	return resourceInstanceRead(ctx, d, meta)
 }
 
@@ -405,11 +407,11 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 			releaseParams := releaseParamsData[0].(map[string]any)
 
 			return &entity.MachineReleaseParams{
-				Comment:      releaseParams["comment"].(string),
-				Erase:        releaseParams["erase"].(bool),
-				Force:        releaseParams["force"].(bool),
-				QuickErase:   releaseParams["quick_erase"].(bool),
-				SecureErase:  releaseParams["secure_erase"].(bool),
+				Comment:     releaseParams["comment"].(string),
+				Erase:       releaseParams["erase"].(bool),
+				Force:       releaseParams["force"].(bool),
+				QuickErase:  releaseParams["quick_erase"].(bool),
+				SecureErase: releaseParams["secure_erase"].(bool),
 			}
 		}
 	}
