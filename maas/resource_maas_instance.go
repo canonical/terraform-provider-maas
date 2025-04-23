@@ -202,7 +202,7 @@ func resourceMAASInstance() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "Parameters used to release the allocated machine. Used when the machine is released upon destroy.",
+				Description: "Parameters used to release the allocated machine when the resource is destroyed.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"comment": {
