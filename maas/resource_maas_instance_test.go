@@ -9,6 +9,7 @@ import (
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
+
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -73,6 +74,7 @@ func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) 
 		params := entity.EventParams{
 			Hostname: hostname,
 		}
+
 		events, err := conn.Events.Get(&params)
 		if err != nil {
 			return err
@@ -85,10 +87,12 @@ func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) 
 		// Check through all events to see if the machine was released as expected
 		wasErased := false
 		wasReleased := false
+
 		for _, event := range events.Events {
 			if event.Type == "Disks erased" {
 				wasErased = true
 			}
+
 			if event.Type == "Released" {
 				wasReleased = true
 			}
