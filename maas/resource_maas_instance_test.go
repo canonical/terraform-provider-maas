@@ -10,7 +10,6 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
-	"github.com/canonical/gomaasclient/entity"
 	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -18,9 +17,6 @@ import (
 )
 
 func TestAccResourceMAASInstance_basic(t *testing.T) {
-	// Required to check if the machine is released into its read state after destroy
-	var machine entity.Machine
-
 	vmHost := os.Getenv("TF_ACC_VM_HOST_ID")
 	hostname := acctest.RandomWithPrefix("tf-instance")
 	comment := acctest.RandomWithPrefix("tf-instance-comment")
@@ -30,7 +26,7 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 	secureErase := "false"
 
 	baseChecks := []resource.TestCheckFunc{
-		testAccMAASInstanceCheckExists("maas_instance.test", &machine),
+		testAccMAASInstanceCheckExists("maas_instance.test"),
 		resource.TestCheckResourceAttr("maas_instance.test", "hostname", hostname),
 		resource.TestCheckResourceAttr("maas_instance.test", "memory", "4096"),
 		resource.TestCheckResourceAttr("maas_instance.test", "cpu_count", "1"),
@@ -64,32 +60,34 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 			// Test destroy leaves the machine in a ready state
 			{
 				Config: testAccMAASInstanceConfigSetup(vmHost, hostname),
-				Check:  testAccMAASInstanceCheckMachineInStatus(machine.SystemID, node.StatusReady),
+				Check:  testAccMAASInstanceCheckMachineInStatus("maas_vm_host_machine.test", node.StatusReady),
 			},
 		},
 	})
 }
 
-func testAccMAASInstanceCheckMachineInStatus(systemID string, status node.Status) resource.TestCheckFunc {
+func testAccMAASInstanceCheckMachineInStatus(rn string, status node.Status) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[rn]
+		if !ok {
+			return fmt.Errorf("not found: %s", rn)
+		}
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-
-		machine, err := conn.Machine.Get(systemID)
+		machine, err := conn.Machine.Get(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		if machine.Status != status {
-			return fmt.Errorf("machine %s is not in the expected status %d but in status %d", systemID, status, machine.Status)
+			return fmt.Errorf("machine %s is not in the expected status %d but in status %d", rs.Primary.ID, status, machine.Status)
 		}
 
 		return nil
 	}
 }
 
-func testAccMAASInstanceCheckExists(rn string, machine *entity.Machine) resource.TestCheckFunc {
+func testAccMAASInstanceCheckExists(rn string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		// Get the terraform resource from state
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
 			return fmt.Errorf("not found: %s", rn)
@@ -101,7 +99,6 @@ func testAccMAASInstanceCheckExists(rn string, machine *entity.Machine) resource
 
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
-		// Check if the resource exists in MAAS
 		gotMachine, err := conn.Machine.Get(rs.Primary.ID)
 		if err != nil {
 			return err
@@ -110,8 +107,6 @@ func testAccMAASInstanceCheckExists(rn string, machine *entity.Machine) resource
 		if gotMachine.SystemID != rs.Primary.ID {
 			return fmt.Errorf("machine ID %s does not match expected id %s", gotMachine.SystemID, rs.Primary.ID)
 		}
-
-		*machine = *gotMachine
 
 		return nil
 	}
