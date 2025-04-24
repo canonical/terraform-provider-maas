@@ -91,16 +91,16 @@ resource "maas_volume_group" "lvm_vg" {
   machine       = data.maas_machine.machine.id
   name          = %q
   block_devices = [maas_block_device.lvm_bd2.id]
-  partitions 	= [maas_block_device.lvm_bd1.partitions.0.id]
+  partitions    = [maas_block_device.lvm_bd1.partitions.0.id]
 }
 
 resource "maas_logical_volume" "test" {
-  fs_type 		 = %q
-  machine 		 = data.maas_machine.machine.id
-  name 			 = %q
-  volume_group 	 = maas_volume_group.lvm_vg.id
+  fs_type        = %q
+  machine        = data.maas_machine.machine.id
+  name           = %q
+  volume_group   = maas_volume_group.lvm_vg.id
   size_gigabytes = %d
-  mount_point	 = %q
+  mount_point    = %q
 }
 `, machine, bd1Name, bd2Name, vgName, fsType, name, size, mountPoint)
 }
