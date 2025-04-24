@@ -42,6 +42,7 @@ resource "maas_instance" "kvm" {
 - `allocate_params` (Block List, Max: 1) Nested argument with the constraints used to machine allocation. Defined below. (see [below for nested schema](#nestedblock--allocate_params))
 - `deploy_params` (Block List, Max: 1) Nested argument with the config used to deploy the allocated machine. Defined below. (see [below for nested schema](#nestedblock--deploy_params))
 - `network_interfaces` (Block Set) Specifies a network interface configuration done before the machine is deployed. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). (see [below for nested schema](#nestedblock--network_interfaces))
+- `release_params` (Block List, Max: 1) Parameters used to release the allocated machine when the resource is destroyed. (see [below for nested schema](#nestedblock--release_params))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -95,6 +96,18 @@ Optional:
 
 **NOTE:** If both `subnet_cidr` and `ip_address` are not defined, the interface will not be configured on the allocated machine.
 - `subnet_cidr` (String) An existing subnet CIDR used to configure the network interface. Unless `ip_address` is defined, a free IP address is allocated from the subnet.
+
+
+<a id="nestedblock--release_params"></a>
+### Nested Schema for `release_params`
+
+Optional:
+
+- `comment` (String) A comment to be added to the event log when the machine is released.
+- `erase` (Boolean) Erase the disk when releasing.
+- `force` (Boolean) Force the release of the machine.
+- `quick_erase` (Boolean) Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.
+- `secure_erase` (Boolean) Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.
 
 
 <a id="nestedblock--timeouts"></a>
