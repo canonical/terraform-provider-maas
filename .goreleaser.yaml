@@ -59,7 +59,7 @@ release:
   draft: true
 changelog:
   sort: asc
-  use: github
+  use: github-native
   filters:
     exclude:
       - '^test:'
@@ -72,3 +72,4 @@ changelog:
       order: 1
     - title: Others
       order: 999
+  
