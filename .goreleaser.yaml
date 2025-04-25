@@ -59,7 +59,7 @@ release:
   draft: true
 changelog:
   sort: asc
-  use: github
+  use: git
   filters:
     exclude:
       - '^test:'
