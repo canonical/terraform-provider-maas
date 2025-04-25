@@ -90,10 +90,12 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 	client := meta.(*ClientConfig).Client
 
 	arches := convertToStringSlice(d.Get("arches").(*schema.Set).List())
+
 	subarches := convertToStringSlice(d.Get("subarches").(*schema.Set).List())
 	if len(subarches) == 0 {
 		subarches = append(subarches, "*")
 	}
+
 	labels := convertToStringSlice(d.Get("labels").(*schema.Set).List())
 	if len(labels) == 0 {
 		labels = append(labels, "*")
@@ -163,10 +165,12 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	arches := convertToStringSlice(d.Get("arches").(*schema.Set).List())
+
 	subarches := convertToStringSlice(d.Get("subarches").(*schema.Set).List())
 	if len(subarches) == 0 {
 		subarches = append(subarches, "*")
 	}
+
 	labels := convertToStringSlice(d.Get("labels").(*schema.Set).List())
 	if len(labels) == 0 {
 		labels = append(labels, "*")
