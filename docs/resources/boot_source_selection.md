@@ -30,15 +30,15 @@ resource "maas_boot_source_selection" "test" {
 
 ### Required
 
+- `arches` (Set of String) The architecture list for this selection. Valid architectures are: `["amd64", "arm64", "armhf", "i386", "ppc64el", "s390x"]`
 - `boot_source` (Number) The boot source database ID this selection is associated with.
 - `os` (String) The operating system for this selection.
 - `release` (String) The specific release of the operating system for this selection.
 
 ### Optional
 
-- `arches` (Set of String) The architecture list for this selection.
-- `labels` (Set of String) The label list for this selection.
-- `subarches` (Set of String) The list of subarches for this selection.
+- `labels` (Set of String) The label list for this selection. Default is: `["*"]`
+- `subarches` (Set of String) The list of subarches for this selection. Default is: `["*"]`
 
 ### Read-Only
 

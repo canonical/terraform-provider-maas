@@ -89,13 +89,13 @@ data "maas_boot_source" "test" {}
 resource "maas_boot_source_selection" "test" {
 	boot_source = data.maas_boot_source.test.id
 
-	os         = "%s"
-	release    = "%s"
-	arches     = ["%s"]
-	subarches  = ["%s"]
-	labels     = ["%s"]
+	os         = %q
+	release    = %q
+	arches     = %q
+	subarches  = %q
+	labels     = %q
 }
-`, os, release, arches[0], subarches[0], labels[0])
+`, os, release, arches, subarches, labels)
 }
 
 func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
