@@ -18,6 +18,7 @@ func resourceMAASInstance() *schema.Resource {
 		CreateContext: resourceInstanceCreate,
 		ReadContext:   resourceInstanceRead,
 		DeleteContext: resourceInstanceDelete,
+		UpdateContext: resourceInstanceUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
@@ -197,6 +198,41 @@ func resourceMAASInstance() *schema.Resource {
 				Computed:    true,
 				Description: "The deployed MAAS machine pool name.",
 			},
+			"release_params": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Description: "Parameters used to release the allocated machine when the resource is destroyed.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"comment": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "A comment to be added to the event log when the machine is released.",
+						},
+						"erase": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Erase the disk when releasing.",
+						},
+						"force": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Force the release of the machine.",
+						},
+						"quick_erase": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.",
+						},
+						"secure_erase": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.",
+						},
+					},
+				},
+			},
 			"tags": {
 				Type:        schema.TypeSet,
 				Computed:    true,
@@ -283,17 +319,24 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 	return nil
 }
 
+func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	// Dummy update to allow release params to be updated.
+	return resourceInstanceRead(ctx, d, meta)
+}
+
 func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	releaseParams := getReleaseParams(d)
+
 	// Release MAAS machine
-	err := client.Machines.Release([]string{d.Id()}, "Released by Terraform")
+	_, err := client.Machine.Release(d.Id(), releaseParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Wait MAAS machine to be released
-	_, err = waitForMachineStatus(ctx, client, d.Id(), []string{"Releasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
+	_, err = waitForMachineStatus(ctx, client, d.Id(), []string{"Releasing", "Disk erasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -339,6 +382,25 @@ func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams 
 	}
 
 	return &entity.MachineDeployParams{}
+}
+
+func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
+	if p, ok := d.GetOk("release_params"); ok {
+		releaseParamsData := p.([]any)
+		if releaseParamsData[0] != nil {
+			releaseParams := releaseParamsData[0].(map[string]any)
+
+			return &entity.MachineReleaseParams{
+				Comment:     releaseParams["comment"].(string),
+				Erase:       releaseParams["erase"].(bool),
+				Force:       releaseParams["force"].(bool),
+				QuickErase:  releaseParams["quick_erase"].(bool),
+				SecureErase: releaseParams["secure_erase"].(bool),
+			}
+		}
+	}
+
+	return &entity.MachineReleaseParams{}
 }
 
 func configureInstanceNetworkInterfaces(client *client.Client, d *schema.ResourceData, machine *entity.Machine) error {
