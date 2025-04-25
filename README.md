@@ -96,32 +96,27 @@ provider "maas" {
 
 The [docs](/docs) section contains details about each supported Terraform resource and data source.
 
-### Release process
+## Release process
 
-1. Create a new branch from `master` as `release-vX.X.X`
+Builds and releases are automated with GitHub Actions and GoReleaser. There are a few manual steps to complete:
 
-   ```bash
-   git branch release-vX.X.X master
-   git push -u origin release-vX.X.X
-   ```
+1. Start the release action: 
+   
+  ```shell
+  git checkout master
+  git tag vX.Y.Z
+  git push upstream tag vX.Y.Z
+  ```
 
-2. Update the `CHANGELOG.md` with your release version, date and change details and push the changes to the new branch. New changes between previous release vY.Y.Y and current one vX.X.X can be found with the following command:
+  Where `upstream` is the remote name pointing to the canonical/terraform-provider-maas repository. 
+  
+  The provider versions follow [semantic versioning](https://semver.org/), and the release action can be viewed under [Actions](https://github.com/canonical/terraform-provider-maas/actions).
 
-   ```bash
-   git log --oneline vY.Y.Y..vX.X.X
-   ```
+2. Publish the release: 
+   
+   The action creates a "draft" release. Go to [Releases](https://github.com/canonical/terraform-provider-maas/releases) to open it, select `edit` and click `Generate release notes`. Select `Publish release` when you are happy. 
 
-3. Raise a PR on Github, title of the PR should be in the following format
-   `Release vX.X.X`
-4. Merge the PR into master, taking a note of the merge commit which is created
-5. Go to [Releases](https://github.com/maas/terraform-provider-maas/releases) on Github
-6. Click [Draft a new release](https://github.com/maas/terraform-provider-maas/releases/new)
-7. On `Target` choose the latest merge commit you want to release for
-8. Set the `tag` to create a new tag for the version in the format "vX.X.X"
-9. Set the `release title` to the release version, for example `v1.0.1`
-10. Copy and paste the relevant CHANGELOG.md entries to the release description
-11. Click `Publish release`
-12. The new version should be available on the [Releases](https://github.com/maas/terraform-provider-maas/releases) page
+3. Verify the published release looks good by checking in [Releases](https://github.com/canonical/terraform-provider-maas/releases).
 
 ## Additional Info
 
