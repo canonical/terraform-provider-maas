@@ -60,6 +60,7 @@ release:
   draft: true
 changelog:
   sort: asc
+  abbrev: -1
   use: github
   filters:
     exclude:
