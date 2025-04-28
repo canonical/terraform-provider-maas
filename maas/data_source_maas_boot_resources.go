@@ -3,11 +3,9 @@ package maas
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/canonical/gomaasclient/entity"
@@ -60,11 +58,6 @@ func dataSourceMAASBootResources() *schema.Resource {
 func dataSourceMAASBootResourcesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	err := awaitImportComplete(client)
-	if err != nil {
-		return diag.Errorf("Could not await image importing: %v", err)
-	}
-
 	resources, err := getBootResources(client, "synced")
 	if err != nil {
 		return diag.FromErr(err)
@@ -110,33 +103,4 @@ func getBootResources(client *client.Client, syncType string) ([]entity.BootReso
 	}
 
 	return bootResources, nil
-}
-
-func awaitImportComplete(client *client.Client) error {
-	if err := client.BootResources.Import(); err != nil {
-		return err
-	}
-
-	timeout := 40 * time.Minute
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	result := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
-		if importing, err := client.BootResources.IsImporting(); err != nil {
-			return retry.NonRetryableError(err)
-		} else if importing {
-			return retry.RetryableError(fmt.Errorf("boot resources still importing, waiting... "))
-		}
-
-		return nil
-	})
-	// add a small delay to ensure the resources are fully updated
-	if err := retry.RetryContext(ctx, 10*time.Second, func() *retry.RetryError {
-		return nil
-	}); err != nil {
-		return fmt.Errorf("error after waiting 10 seconds: %s", err)
-	}
-
-	return result
 }
