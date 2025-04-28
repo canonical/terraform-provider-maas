@@ -71,6 +71,11 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Description: "The list of subarches for this selection. Default is: `[\"*\"]`",
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Minute),
+			Update: schema.DefaultTimeout(30 * time.Minute),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
+		},
 	}
 }
 
@@ -116,7 +121,7 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Trigger image import and wait for its completion
-	if err := awaitImportComplete(client, d.Get("os").(string), d.Get("release").(string), arches); err != nil {
+	if err := awaitImportComplete(client, d.Get("os").(string), d.Get("release").(string), arches, d.Timeout(schema.TimeoutCreate)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -190,7 +195,7 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Trigger image import and wait for its completion
-	if err := awaitImportComplete(client, d.Get("os").(string), d.Get("release").(string), arches); err != nil {
+	if err := awaitImportComplete(client, d.Get("os").(string), d.Get("release").(string), arches, d.Timeout(schema.TimeoutUpdate)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -216,7 +221,7 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Trigger image import and wait for its completion to ensure image deletion
-	if err := awaitImageDeleteComplete(client, d.Get("os").(string), d.Get("release").(string)); err != nil {
+	if err := awaitImageDeleteComplete(client, d.Get("os").(string), d.Get("release").(string), d.Timeout(schema.TimeoutDelete)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -236,22 +241,24 @@ func getBootSourceSelection(client *client.Client, bootSource int, id int) (*ent
 	return bootSourceSelection, nil
 }
 
-func awaitImportComplete(client *client.Client, os string, release string, arches []string) error {
+func awaitImportComplete(client *client.Client, os string, release string, arches []string, timeout time.Duration) error {
 	if err := client.BootResources.Import(); err != nil {
 		return err
 	}
-
-	timeout := 40 * time.Minute
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	result := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		// Retrieve all the boot resources with type synced. These resources are created when importing from a boot source selection.
 		allResources, err := getBootResources(client, "synced")
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
 
+		// Confirm that for all user provided architectures in the boot source selection there is at least one boot resource found.
+		// If any architecture is missing, then the import is still ongoing. To perform this operation, the usage of sets is required
+		// since users can provide duplicates and MAAS can accept them.
 		archesSet := set.From(arches)
 		archesFound := set.New[string](0)
 
@@ -259,19 +266,27 @@ func awaitImportComplete(client *client.Client, os string, release string, arche
 			if resource.Name == fmt.Sprintf("%s/%s", os, release) {
 				archesFound.Insert(strings.Split(resource.Architecture, "/")[0])
 
+				// To verify that all boot resources are fully synced, we need to confirm the `completed` status of all their
+				// individual files. This information is not accessible by the list read operation. Instead, we have to fetch
+				// the resources individually.
 				resourceDetails, err := client.BootResource.Get(resource.ID)
 				if err != nil {
 					return retry.NonRetryableError(err)
 				}
 
-				for _, resourceSset := range resourceDetails.Sets {
-					if !resourceSset.Complete {
+				// For each boot resource the response contains a list of sets, with each set representing a version of the boot
+				// resource. e.g., 24.04-ga-24.04-20250424. Each set has a complete boolean flag which, if set, represents the
+				// completion of the image synchronization. If not, that means that the import is still ongoing.
+				for _, resourceSet := range resourceDetails.Sets {
+					if !resourceSet.Complete {
 						return retry.RetryableError(fmt.Errorf("image still importing, waiting... "))
 					}
 				}
 			}
 		}
 
+		// There is still difference between user selected architectures set and unique boot resource architectures for the given
+		// os/release. The import is still ongoing.
 		if !archesSet.Equal(archesFound) {
 			return retry.RetryableError(fmt.Errorf("image still importing, waiting... "))
 		}
@@ -282,22 +297,22 @@ func awaitImportComplete(client *client.Client, os string, release string, arche
 	return result
 }
 
-func awaitImageDeleteComplete(client *client.Client, os string, release string) error {
+func awaitImageDeleteComplete(client *client.Client, os string, release string, timeout time.Duration) error {
 	if err := client.BootResources.Import(); err != nil {
 		return err
 	}
-
-	timeout := 40 * time.Minute
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	result := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		// Retrieve all the boot resources with type synced. These resources are created when importing from a boot source selection.
 		allResources, err := getBootResources(client, "synced")
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
 
+		// For the given os/release architecture, there are existing boot resources. The deletion is still ongoing.
 		for _, resource := range allResources {
 			if resource.Name == fmt.Sprintf("%s/%s", os, release) {
 				return retry.RetryableError(fmt.Errorf("image still deleting, waiting... "))
