@@ -59,8 +59,8 @@ release:
   draft: true
 changelog:
   sort: asc
+  abbrev: -1
   use: github
-  format: "{{ .SHA }}: {{ .Message }}{{ with .AuthorUsername }} (@{{ . }}){{ end }}"
   filters:
     exclude:
       - '^test:'
