@@ -55,8 +55,8 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(append(
 					checks,
 					resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.#", fmt.Sprintf("%v", len(updatedArches))),
-					resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.0", updatedArches[0]),
-					resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.1", updatedArches[1]),
+					resource.TestCheckTypeSetElemAttr("maas_boot_source_selection.test", "arches.*", updatedArches[0]),
+					resource.TestCheckTypeSetElemAttr("maas_boot_source_selection.test", "arches.*", updatedArches[1]),
 				)...,
 				),
 			},
