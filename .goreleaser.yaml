@@ -31,7 +31,7 @@ builds:
       goarch: '386'
   binary: '{{ .ProjectName }}_v{{ .Version }}'
 archives:
-- format: zip
+- formats: ['zip']
   name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 checksum:
   extra_files:
@@ -61,6 +61,10 @@ changelog:
   sort: asc
   abbrev: -1
   use: github
+  format: >-
+    {{.Message}}
+    {{- with .AuthorUsername}} by @{{.}}{{end}}
+    {{- with .PullRequest}} in #{{.}}{{end}}
   filters:
     exclude:
       - '^test:'
