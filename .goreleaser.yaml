@@ -57,14 +57,10 @@ release:
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
   # Manually review the release notes before publishing:
   draft: true
+  name_template: v{{ .Version }}
 changelog:
   sort: asc
-  abbrev: -1
   use: github
-  format: >-
-    {{.Message}}
-    {{- with .AuthorUsername}} by @{{.}}{{end}}
-    {{- with .PullRequest}} in #{{.}}{{end}}
   filters:
     exclude:
       - '^test:'
@@ -75,6 +71,9 @@ changelog:
     - title: "Bug fixes"
       regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
       order: 1
+    - title: "Documentation"
+      regexp: '^.*?docs(\([[:word:]]+\))??!?:.+$'
+      order: 2
     - title: Others
       order: 999
   
