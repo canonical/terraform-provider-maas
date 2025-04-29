@@ -121,7 +121,7 @@ func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	spareDevices := convertToStringSlice(d.Get("spare_devices").(*schema.Set).List())
 	sparePartitions := convertToStringSlice(d.Get("spare_partitions").(*schema.Set).List())
 
-	// MAAS has an unelpful error if you supply a block device that has partitions, so
+	// MAAS has an unhelpful error if you supply a block device that has partitions, so
 	// perform the check and turn it into a more helpful error
 	if err = verifyRAIDDevices(client, machine.SystemID, blockDevices); err != nil {
 		return diag.FromErr(err)
@@ -147,6 +147,7 @@ func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.Errorf("RAID level %v requires at least four disks", level)
 	}
 
+	// Now we can finally create the RAID
 	RAIDParams := &entity.RAIDCreateParams{
 		Name:            d.Get("name").(string),
 		Level:           fmt.Sprintf("raid-%v", level),
@@ -167,6 +168,53 @@ func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	raid, err := client.RAID.Get(machine.SystemID, id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// block devices and partitions are stored on the same object, we need to split them out
+	devices, partitions, err := splitDeviceTypes(raid.Devices)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	spareDevices, sparePartitions, err := splitDeviceTypes(raid.SpareDevices)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Update the terraform state
+	tfstate := map[string]interface{}{
+		"block_devices":    devices,
+		"fs_type":          raid.VirtualDevice.Filesystem.FSType,
+		"level":            strings.ReplaceAll(raid.Level, "raid-", ""),
+		"machine":          raid.SystemID,
+		"mount_options":    raid.VirtualDevice.Filesystem.MountOptions,
+		"mount_point":      raid.VirtualDevice.Filesystem.MountPoint,
+		"name":             raid.Name,
+		"partitions":       partitions,
+		"size_gigabytes":   int64(raid.Size / (1024 * 1024 * 1024)),
+		"spare_devices":    spareDevices,
+		"spare_partitions": sparePartitions,
+	}
+
+	if err := setTerraformState(d, tfstate); err != nil {
+		return diag.Errorf("Could not set RAID state: %v", err)
+	}
+
 	return nil
 }
 
@@ -210,4 +258,26 @@ func verifyRAIDDevices(client *client.Client, machineID string, devices []string
 	}
 
 	return nil
+}
+
+func splitDeviceTypes(devices []entity.RAIDDevice) ([]string, []string, error) {
+	// Split the partitions and block devices by reading the device type
+	var blockDevices []string
+
+	var partitions []string
+
+	for _, device := range devices {
+		id := fmt.Sprintf("%d", device.ID)
+
+		switch device.Type {
+		case "physical":
+			blockDevices = append(blockDevices, id)
+		case "partition":
+			partitions = append(partitions, id)
+		default:
+			return []string{}, []string{}, fmt.Errorf("device %v has an unknown type: %v", device.Name, device.Type)
+		}
+	}
+
+	return blockDevices, partitions, nil
 }
