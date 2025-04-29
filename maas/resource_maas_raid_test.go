@@ -22,9 +22,15 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 	blockDevice1Name := acctest.RandomWithPrefix("tf")
 	blockDevice2Name := acctest.RandomWithPrefix("tf")
 
+	level := "1"
+
 	name := "test raid"
 	fsType := "ext4"
 	mountPoint := "/var/raidtest"
+
+	changedName := "test renamed raid"
+	changedFsType := "fat32"
+	changedMountPoint := "/var/newraidtest"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
@@ -34,17 +40,32 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
-				Config: testAccRAID(machine, blockDevice1Name, blockDevice2Name, name, fsType, mountPoint),
+				Config: testAccRAID(machine, blockDevice1Name, blockDevice2Name, name, level, fsType, mountPoint),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRAIDExists("maas_raid.test", &raid),
 					resource.TestCheckResourceAttr("maas_raid.test", "name", name),
+					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
+					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", fsType),
+					resource.TestCheckResourceAttr("maas_raid.test", "mount_point", mountPoint),
 				),
 			},
+			// Test basic update
+			{
+				Config: testAccRAID(machine, blockDevice1Name, blockDevice2Name, changedName, level, changedFsType, changedMountPoint),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckRAIDExists("maas_raid.test", &raid),
+					resource.TestCheckResourceAttr("maas_raid.test", "name", changedName),
+					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
+					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", changedFsType),
+					resource.TestCheckResourceAttr("maas_raid.test", "mount_point", changedMountPoint),
+				),
+			},
+			// TODO: Test updating block devices, partitions, and spares
 		},
 	})
 }
 
-func testAccRAID(machine string, bd1Name string, bd2Name string, name string, fsType string, mountPoint string) string {
+func testAccRAID(machine string, bd1Name string, bd2Name string, name string, level string, fsType string, mountPoint string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = %q
@@ -73,7 +94,7 @@ resource "maas_block_device" "raid_bd2" {
 resource "maas_raid" "test" {
   machine     = data.maas_machine.machine.id
   name	      = %q
-  level       = 1
+  level       = %q
   fs_type     = %q
   mount_point = %q
 
@@ -85,7 +106,7 @@ resource "maas_raid" "test" {
   ]
   
 }
-`, machine, bd1Name, bd2Name, name, fsType, mountPoint)
+`, machine, bd1Name, bd2Name, name, level, fsType, mountPoint)
 }
 
 func testAccCheckRAIDExists(rn string, raid *entity.RAID) resource.TestCheckFunc {

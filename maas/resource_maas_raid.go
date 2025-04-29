@@ -16,6 +16,7 @@ import (
 
 func resourceMAASRAID() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Provides a resource to manage MAAS RAIDS, and construct them from block devices and partitions.",
 		CreateContext: resourceRAIDCreate,
 		ReadContext:   resourceRAIDRead,
 		UpdateContext: resourceRAIDUpdate,
@@ -26,7 +27,7 @@ func resourceMAASRAID() *schema.Resource {
 				Type:         schema.TypeSet,
 				Optional:     true,
 				Elem:         &schema.Schema{Type: schema.TypeString},
-				Description:  "The list of block devices to be included in the RAID.\n*Note*: For the boot disk, a partition should be supplied instead, as MAAS would otherwise automatically create one.",
+				Description:  "The list of block devices to be included in the RAID.\n*Note*: For the boot disk, a partition should be supplied instead, as MAAS would otherwise automatically create one.\n*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.",
 				AtLeastOneOf: []string{"block_devices", "partitions"},
 			},
 			"fs_type": {
@@ -80,7 +81,7 @@ func resourceMAASRAID() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "The list of spare block devices for the RAID.",
+				Description: "The list of spare block devices for the RAID.\n*Note*: For the boot disk, a partition should be supplied instead, as MAAS would otherwise automatically create one.\n*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.",
 			},
 			"spare_partitions": {
 				Type:        schema.TypeSet,
