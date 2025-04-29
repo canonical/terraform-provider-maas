@@ -162,6 +162,11 @@ func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.Errorf("Could not create RAID: %v", err)
 	}
 
+	_, err = formatAndMountVirtualBlockDevice(client, &raid.VirtualDevice, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(fmt.Sprintf("%v", raid.ID))
 
 	return nil
@@ -250,6 +255,11 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	raid, err := client.RAID.Update(machine.SystemID, id, &updateRAIDParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	_, err = formatAndMountVirtualBlockDevice(client, &raid.VirtualDevice, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
