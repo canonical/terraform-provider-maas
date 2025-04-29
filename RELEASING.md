@@ -20,4 +20,4 @@ Builds and releases are automated with GitHub Actions and GoReleaser. There are 
 
 3. Verify the release is published by: 
    1. Checking the release is now the latest published under [Releases](https://github.com/canonical/terraform-provider-maas/releases). 
-   2. Checking the [Hashicorp Registry provider page](https://registry.terraform.io/providers/canonical/maas/latest) is displaying the released version as latest. This could take approximately 30 minutes to update.
+   2. Checking the [HashiCorp Registry provider page](https://registry.terraform.io/providers/canonical/maas/latest) is displaying the released version as latest. This could take approximately 30 minutes to update.
