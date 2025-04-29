@@ -219,7 +219,44 @@ func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
+	client := meta.(*ClientConfig).Client
+
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Determine the added and removed devices
+	addBlockDevices, removeBlockDevices := getChangedDevices(d, "block_devices")
+	addSpareDevices, removeSpareDevices := getChangedDevices(d, "spare_devices")
+	addPartitions, removePartitions := getChangedDevices(d, "partitions")
+	addSparePartitions, removeSparePartitions := getChangedDevices(d, "spare_partitions")
+
+	updateRAIDParams := entity.RAIDUpdateParams{
+		Name:                  d.Get("name").(string),
+		AddBlockDevices:       addBlockDevices,
+		AddPartitions:         addPartitions,
+		AddSpareDevices:       addSpareDevices,
+		AddSparePartitions:    addSparePartitions,
+		RemoveBlockDevices:    removeBlockDevices,
+		RemovePartitions:      removePartitions,
+		RemoveSpareDevices:    removeSpareDevices,
+		RemoveSparePartitions: removeSparePartitions,
+	}
+
+	raid, err := client.RAID.Update(machine.SystemID, id, &updateRAIDParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(fmt.Sprintf("%v", raid.ID))
+
+	return resourceRAIDRead(ctx, d, meta)
 }
 
 func resourceRAIDDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -280,4 +317,32 @@ func splitDeviceTypes(devices []entity.RAIDDevice) ([]string, []string, error) {
 	}
 
 	return blockDevices, partitions, nil
+}
+
+func getChangedDevices(d *schema.ResourceData, field string) ([]string, []string) {
+	var addDevice []string
+
+	var removeDevice []string
+
+	if d.HasChange(field) {
+		oldDevices, newDevices := d.GetChange(field)
+
+		oldList := convertToStringSlice(oldDevices.(*schema.Set).List())
+		newList := convertToStringSlice(newDevices.(*schema.Set).List())
+
+		// devices not present in the old list must be newly added
+		for _, device := range newList {
+			if !slices.Contains(oldList, device) {
+				addDevice = append(addDevice, device)
+			}
+		}
+		// devices not present in the new list must be newly removed
+		for _, device := range newList {
+			if !slices.Contains(newList, device) {
+				removeDevice = append(removeDevice, device)
+			}
+		}
+	}
+
+	return addDevice, removeDevice
 }
