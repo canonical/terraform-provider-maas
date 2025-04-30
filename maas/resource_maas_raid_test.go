@@ -23,6 +23,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 	blockDevice3Name := "raid_bd3"
 	blockDevice4Name := "raid_bd4"
 
+	// RAID 1 has the smallest disk requirement that still allows testing hot spares.
 	level := "1"
 
 	name := "test raid"
@@ -42,7 +43,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 			// Test initial creation
 			{
 				Config: testAccRAIDMachine(machine) +
-					// we include a seperate unused boot disk to avoid a weird bug with partitions
+					// we include a seperate unused boot disk to avoid the boot disk/partition behaviour
 					testAccRAIDBlockDevice("boot", true) +
 					testAccRAIDBlockDevice(blockDevice1Name, false) +
 					testAccRAIDPartition(blockDevice2Name, false) +

@@ -38,9 +38,10 @@ func resourceMAASRAID() *schema.Resource {
 			"level": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The RAID Level. Valid levels are: `\"0\", \"1\", \"5\", \"6\", \"10\"`",
+				// TODO: Re-add RAID-10 once the fix for LP#2109708 is released 
+				Description: "The RAID Level. Valid levels are: `\"0\", \"1\", \"5\", \"6\"`",
 				ValidateFunc: validation.StringInSlice(
-					[]string{"0", "1", "5", "6", "10"},
+					[]string{"0", "1", "5", "6"},
 					false,
 				),
 			},
@@ -314,26 +315,35 @@ func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.
 	blockDevices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
 	spareDevices := convertToStringSlice(d.Get("spare_devices").(*schema.Set).List())
 	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
+	sparePartitions := convertToStringSlice(d.Get("spare_partitions").(*schema.Set).List())
 
 	// If any of the supplied block devices are the boot disk, MAAS will create partitions on all of the block devices
 	// We ensure, similar to Volume Group, that the boot disk is not supplied as a block device, spare or active
-	if err := verifyRAIDBootDevice(client, machine, append(blockDevices, spareDevices...)); err != nil {
+	if err := verifyRAIDBootDevice(
+		client,
+		machine,
+		append(blockDevices, spareDevices...),
+		append(partitions, sparePartitions...),
+	); err != nil {
 		return err
 	}
 
 	// MAAS has an unhelpful error if you supply a block device that has partitions, so
 	// perform the check and turn it into a more helpful error that informs the user the changes they should make
-	if err := verifyRAIDPartitionlessBlockDevices(client, machine.SystemID, blockDevices); err != nil {
+	if err := verifyRAIDPartitionlessBlockDevices(
+		client,
+		machine,
+		append(blockDevices, spareDevices...),
+	); err != nil {
 		return err
 	}
 
-	// we need to do the same check as above on spares as well as the active disks
-	if err := verifyRAIDPartitionlessBlockDevices(client, machine.SystemID, spareDevices); err != nil {
-		return err
-	}
-
-	// verify the RAID Level is valid for the number of active disks
-	if err := verifyRAIDDevicesLevel(d.Get("level").(string), len(blockDevices)+len(partitions)); err != nil {
+	// verify the RAID Level is valid for the number of active and spare disks
+	if err := verifyRAIDDevicesLevel(
+		d.Get("level").(string),
+		len(blockDevices)+len(partitions),
+		len(spareDevices)+len(sparePartitions),
+	); err != nil {
 		return err
 	}
 
@@ -341,43 +351,67 @@ func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.
 	return nil
 }
 
-func verifyRAIDBootDevice(client *client.Client, machine *entity.Machine, blockDevices []string) error {
+func verifyRAIDBootDevice(client *client.Client, machine *entity.Machine, blockDevices []string, partitions []string) error {
 	// If any of the block devices supplied to the RAID are the boot disk, MAAS will create
 	// partitions on top of all of them. To prevent a terraform error, we perform the same
 	// check as in volume groups, and ensure the boot disk is not a supplied block device.
 	bootDisk := fmt.Sprintf("%v", machine.BootDisk.ID)
-	if slices.Contains(blockDevices, bootDisk) {
-		return fmt.Errorf("cannot add the boot disk %v (%v) as a RAID block device, provide partitions on top of it instead", bootDisk, machine.BootDisk.Name)
+
+	var blockDeviceDisks []string
+
+	for _, blockDevice := range machine.BlockDeviceSet {
+		bdID := fmt.Sprintf("%d", blockDevice.ID)
+		// add unique block devices in the RAID
+		if slices.Contains(blockDevices, bdID) && !slices.Contains(blockDeviceDisks, bdID) {
+			blockDeviceDisks = append(blockDeviceDisks, bdID)
+			continue
+		}
+		// check if any partitions are present, and add the block device too
+		for _, partition := range blockDevice.Partitions {
+			partID := fmt.Sprintf("%d", partition.ID)
+			if slices.Contains(partitions, partID) && !slices.Contains(blockDeviceDisks, bdID) {
+				blockDeviceDisks = append(blockDeviceDisks, bdID)
+				break
+			}
+		}
+	}
+
+	// If the boot disk is a part of the RAID, we need to ensure there are no block devices provided too
+	if slices.Contains(blockDeviceDisks, bootDisk) && len(blockDevices) > 0 {
+		return fmt.Errorf(
+			"cannot construct a RAID with blockdevices if the boot disk %v (%v) is participating. Provide partitions on top of provided block devices instead",
+			bootDisk,
+			machine.BootDisk.Name,
+		)
 	}
 
 	return nil
 }
 
-func verifyRAIDDevicesLevel(level string, count int) error {
+func verifyRAIDDevicesLevel(level string, activeCount int, spareCount int) error {
 	// Ensure the number of provided active disks exeeds or matches what is required by the RAID level
-	if count <= 1 {
+	if activeCount <= 1 {
 		return fmt.Errorf("RAIDs require at least two active disks")
 	}
 
-	if (level == "5" || level == "10") && count < 3 {
+	if (level == "5" || level == "10") && activeCount < 3 {
 		return fmt.Errorf("RAID level %v requires at least three active disks", level)
 	}
 
-	if level == "6" && count < 4 {
+	if level == "6" && activeCount < 4 {
 		return fmt.Errorf("RAID level %v requires at least four active disks", level)
+	}
+
+	if level == "0" && spareCount > 0 {
+		return fmt.Errorf("RAID level %v cannot use hot spares, supply active disks only", level)
 	}
 
 	return nil
 }
 
-func verifyRAIDPartitionlessBlockDevices(client *client.Client, machineID string, devices []string) error {
+func verifyRAIDPartitionlessBlockDevices(client *client.Client, machine *entity.Machine, devices []string) error {
 	// Ensure no block devices that have partitions have been supplied to the RAID
-	blockDevices, err := client.BlockDevices.Get(machineID)
-	if err != nil {
-		return err
-	}
-
-	for _, blockDevice := range blockDevices {
+	for _, blockDevice := range machine.BlockDeviceSet {
 		id := fmt.Sprintf("%d", blockDevice.ID)
 		if slices.Contains(devices, id) && len(blockDevice.Partitions) > 0 {
 			return fmt.Errorf("cannot create a RAID from a block device with partitions, supply the partitions for %v instead", blockDevice.Name)
