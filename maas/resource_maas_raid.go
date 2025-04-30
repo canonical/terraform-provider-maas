@@ -90,21 +90,6 @@ func resourceMAASRAID() *schema.Resource {
 				Description: "The list of spare partitions for the RAID.",
 			},
 		},
-
-		CustomizeDiff: schema.CustomizeDiffFunc(func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
-			devices := d.Get("block_devices").(*schema.Set)
-			partitions := d.Get("partitions").(*schema.Set)
-			spareDevices := d.Get("spare_devices").(*schema.Set)
-			sparePartitions := d.Get("spare_partitions").(*schema.Set)
-
-			if devices.Len() == 0 && spareDevices.Len() > 0 {
-				return fmt.Errorf("`spare_devices` cannot be specified unless `block_devices` is also specified")
-			}
-			if partitions.Len() == 0 && sparePartitions.Len() > 0 {
-				return fmt.Errorf("`spare_partitions` cannot be specified unless `partitions` is also specified")
-			}
-			return nil
-		}),
 	}
 }
 
@@ -116,61 +101,35 @@ func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	blockDevices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
-	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
-
-	spareDevices := convertToStringSlice(d.Get("spare_devices").(*schema.Set).List())
-	sparePartitions := convertToStringSlice(d.Get("spare_partitions").(*schema.Set).List())
-
-	// MAAS has an unhelpful error if you supply a block device that has partitions, so
-	// perform the check and turn it into a more helpful error
-	if err = verifyRAIDDevices(client, machine.SystemID, blockDevices); err != nil {
+	// ensure the provided config has the correct disks for the raid level
+	// and that valid block devices have been passed
+	if err = verifyRAIDConfig(client, machine.SystemID, d); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err = verifyRAIDDevices(client, machine.SystemID, spareDevices); err != nil {
-		return diag.FromErr(err)
-	}
-
-	// validation on raid level vs disk count
-	deviceCount := len(blockDevices) + len(partitions)
-	level := d.Get("level").(string)
-
-	if deviceCount <= 1 {
-		return diag.Errorf("RAIDs require at least two disks")
-	}
-
-	if (level == "5" || level == "10") && deviceCount < 3 {
-		return diag.Errorf("RAID level %v requires at least three disks", level)
-	}
-
-	if level == "6" && deviceCount < 4 {
-		return diag.Errorf("RAID level %v requires at least four disks", level)
-	}
-
-	// Now we can finally create the RAID
-	RAIDParams := &entity.RAIDCreateParams{
+	// We *should* have a valid configuration to be able to create the RAID
+	createRAIDParams := &entity.RAIDCreateParams{
 		Name:            d.Get("name").(string),
-		Level:           fmt.Sprintf("raid-%v", level),
-		BlockDevices:    blockDevices,
-		Partitions:      partitions,
-		SpareDevices:    spareDevices,
-		SparePartitions: sparePartitions,
+		Level:           fmt.Sprintf("raid-%v", d.Get("level").(string)),
+		BlockDevices:    convertToStringSlice(d.Get("block_devices").(*schema.Set).List()),
+		Partitions:      convertToStringSlice(d.Get("partitions").(*schema.Set).List()),
+		SpareDevices:    convertToStringSlice(d.Get("spare_devices").(*schema.Set).List()),
+		SparePartitions: convertToStringSlice(d.Get("spare_partitions").(*schema.Set).List()),
 	}
 
-	raid, err := client.RAIDs.Create(machine.SystemID, RAIDParams)
+	raid, err := client.RAIDs.Create(machine.SystemID, createRAIDParams)
 	if err != nil {
 		return diag.Errorf("Could not create RAID: %v", err)
 	}
 
-	_, err = formatAndMountVirtualBlockDevice(client, &raid.VirtualDevice, d)
-	if err != nil {
+	// We perform mounting and formatting operations on the virtual block device, rather than a part of the RAID creation
+	if _, err = formatAndMountVirtualBlockDevice(client, &raid.VirtualDevice, d); err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(fmt.Sprintf("%v", raid.ID))
 
-	return nil
+	return resourceRAIDRead(ctx, d, meta)
 }
 
 func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -237,31 +196,90 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	// Determine the added and removed devices
-	addBlockDevices, removeBlockDevices := getChangedDevices(d, "block_devices")
-	addSpareDevices, removeSpareDevices := getChangedDevices(d, "spare_devices")
-	addPartitions, removePartitions := getChangedDevices(d, "partitions")
-	addSparePartitions, removeSparePartitions := getChangedDevices(d, "spare_partitions")
-
-	updateRAIDParams := entity.RAIDUpdateParams{
-		Name:                  d.Get("name").(string),
-		AddBlockDevices:       addBlockDevices,
-		AddPartitions:         addPartitions,
-		AddSpareDevices:       addSpareDevices,
-		AddSparePartitions:    addSparePartitions,
-		RemoveBlockDevices:    removeBlockDevices,
-		RemovePartitions:      removePartitions,
-		RemoveSpareDevices:    removeSpareDevices,
-		RemoveSparePartitions: removeSparePartitions,
+	// ensure the provided config has the correct disks for the raid level
+	// and that valid block devices have been passed
+	if err = verifyRAIDConfig(client, machine.SystemID, d); err != nil {
+		return diag.FromErr(err)
 	}
 
-	raid, err := client.RAID.Update(machine.SystemID, id, &updateRAIDParams)
+	// devices that are moving from active to spare or vice-versa need to be removed and then re-added in a seperate call
+	// we use the following function calls to determine the disks that have been moved vs. newly added/removed
+	newBlockDevice, movedBlockDevice, removedBlockDevice := getMovedDevices(d, "block_devices", "spare_devices")
+	newSpareDevice, movedSpareDevice, removedSpareDevice := getMovedDevices(d, "spare_devices", "block_devices")
+	newPartition, movedPartition, removedPartition := getMovedDevices(d, "partitions", "spare_partitions")
+	newSparePartition, movedSparePartition, removedSparePartition := getMovedDevices(d, "spare_partitions", "partitions")
+
+	// We need to be very careful about order of operations, so that we maintain the minimum number of active disks required for the RAID level
+	// We also need to ensure a disk is never included in both an add and a remove operation, as that will cause collisions in MAAS
+	// This requires, at most, five seperate update operations, in the worst case where active and spare are swapped:
+	// add new disks, remove spare disks, add spare->active, remove active, add active->spare
+
+	// 1. add all new active and spare disks
+	raid, err := client.RAID.Update(machine.SystemID, id,
+		&entity.RAIDUpdateParams{
+			Name:               d.Get("name").(string),
+			AddBlockDevices:    newBlockDevice,
+			AddPartitions:      newPartition,
+			AddSpareDevices:    newSpareDevice,
+			AddSparePartitions: newSparePartition,
+		},
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	_, err = formatAndMountVirtualBlockDevice(client, &raid.VirtualDevice, d)
-	if err != nil {
+	// 2. Remove any spare disks that are no longer in the RAID
+	//    (Including disks moving from spare to active, so that we do not have add/remove collisions)
+	if len(removedSpareDevice)+len(removedSparePartition) > 0 {
+		if _, err = client.RAID.Update(machine.SystemID, id,
+			&entity.RAIDUpdateParams{
+				RemoveSpareDevices:    removedSpareDevice,
+				RemoveSparePartitions: removedSparePartition,
+			},
+		); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// 3. Re-add any disks that were moved from spare to active
+	if len(movedBlockDevice)+len(movedPartition) > 0 {
+		if _, err = client.RAID.Update(machine.SystemID, id,
+			&entity.RAIDUpdateParams{
+				AddBlockDevices: movedBlockDevice,
+				AddPartitions:   movedPartition,
+			},
+		); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// 2. Remove any active disks that are no longer in the RAID
+	//    (Including disks moving from active to spare, so that we do not have add/remove collisions)
+	if len(removedBlockDevice)+len(removedPartition) > 0 {
+		if _, err = client.RAID.Update(machine.SystemID, id,
+			&entity.RAIDUpdateParams{
+				RemoveBlockDevices: removedBlockDevice,
+				RemovePartitions:   removedPartition,
+			},
+		); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// 3. Re-add any disks that were moved from active to spare
+	if len(movedSpareDevice)+len(movedSparePartition) > 0 {
+		if _, err = client.RAID.Update(machine.SystemID, id,
+			&entity.RAIDUpdateParams{
+				AddSpareDevices:    movedSpareDevice,
+				AddSparePartitions: movedSparePartition,
+			},
+		); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// We can finally perform mounting and formatting operations on the virtual block device
+	if _, err = formatAndMountVirtualBlockDevice(client, &raid.VirtualDevice, d); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -291,7 +309,50 @@ func resourceRAIDDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	return nil
 }
 
-func verifyRAIDDevices(client *client.Client, machineID string, devices []string) error {
+func verifyRAIDConfig(client *client.Client, machineID string, d *schema.ResourceData) error {
+	// Check the RAID level matches disk count, and that block devices are not provided for disks with partitions
+	blockDevices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
+	spareDevices := convertToStringSlice(d.Get("spare_devices").(*schema.Set).List())
+	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
+
+	// MAAS has an unhelpful error if you supply a block device that has partitions, so
+	// perform the check and turn it into a more helpful error
+	if err := verifyRAIDPartitionlessBlockDevices(client, machineID, blockDevices); err != nil {
+		return err
+	}
+
+	// we need to do the same check on spares
+	if err := verifyRAIDPartitionlessBlockDevices(client, machineID, spareDevices); err != nil {
+		return err
+	}
+
+	// verify the RAID Level is valid for the active disks
+	if err := verifyRAIDDevicesLevel(d.Get("level").(string), len(blockDevices)+len(partitions)); err != nil {
+		return err
+	}
+
+	// Otherwise everything is *probably* fine
+	return nil
+}
+
+func verifyRAIDDevicesLevel(level string, count int) error {
+	// Ensure the RAID level matches the disks provided to the model
+	if count <= 1 {
+		return fmt.Errorf("RAIDs require at least two active disks")
+	}
+
+	if (level == "5" || level == "10") && count < 3 {
+		return fmt.Errorf("RAID level %v requires at least three active disks", level)
+	}
+
+	if level == "6" && count < 4 {
+		return fmt.Errorf("RAID level %v requires at least four active disks", level)
+	}
+
+	return nil
+}
+
+func verifyRAIDPartitionlessBlockDevices(client *client.Client, machineID string, devices []string) error {
 	// ensure no block devices with partitions have been passed to the RAID
 	blockDevices, err := client.BlockDevices.Get(machineID)
 	if err != nil {
@@ -330,30 +391,43 @@ func splitDeviceTypes(devices []entity.RAIDDevice) ([]string, []string, error) {
 	return blockDevices, partitions, nil
 }
 
-func getChangedDevices(d *schema.ResourceData, field string) ([]string, []string) {
-	var addDevice []string
+func getMovedDevices(d *schema.ResourceData, field string, counterpartField string) ([]string, []string, []string) {
+	// we need to determine the disks that are newly added, or removed, versus those that have been moved here from the counterpart field
+	var createdDevices []string
 
-	var removeDevice []string
+	var movedDevices []string
 
+	var removeDevices []string
+
+	// if our field has no changes, evidently no devices are created, moved, or removed.
 	if d.HasChange(field) {
+		// determine the changes to our field
 		oldDevices, newDevices := d.GetChange(field)
-
 		oldList := convertToStringSlice(oldDevices.(*schema.Set).List())
 		newList := convertToStringSlice(newDevices.(*schema.Set).List())
 
-		// devices not present in the old list must be newly added
+		// we also need a list of devices removed from the counterpart field to determine if they were
+		// moved here
+		counterpartOld, _ := d.GetChange(counterpartField)
+		counterpartOldList := convertToStringSlice(counterpartOld.(*schema.Set).List())
+
+		// if a new device exists in the old counterpart, it must have been moved
+		// else, if it doesn't exist in the old list, it is newly created
 		for _, device := range newList {
-			if !slices.Contains(oldList, device) {
-				addDevice = append(addDevice, device)
+			if slices.Contains(counterpartOldList, device) {
+				movedDevices = append(movedDevices, device)
+			} else if !slices.Contains(oldList, device) {
+				createdDevices = append(createdDevices, device)
 			}
 		}
-		// devices not present in the new list must be newly removed
-		for _, device := range newList {
+
+		// if an old device doesnt exist in the new list, it must have been removed
+		for _, device := range oldList {
 			if !slices.Contains(newList, device) {
-				removeDevice = append(removeDevice, device)
+				removeDevices = append(removeDevices, device)
 			}
 		}
 	}
 
-	return addDevice, removeDevice
+	return createdDevices, movedDevices, removeDevices
 }
