@@ -103,7 +103,7 @@ func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	// ensure the provided config has the correct disks for the raid level
 	// and that valid block devices have been passed
-	if err = verifyRAIDConfig(client, machine.SystemID, d); err != nil {
+	if err = verifyRAIDConfig(client, machine, d); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -198,7 +198,7 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	// ensure the provided config has the correct disks for the raid level
 	// and that valid block devices have been passed
-	if err = verifyRAIDConfig(client, machine.SystemID, d); err != nil {
+	if err = verifyRAIDConfig(client, machine, d); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -309,20 +309,26 @@ func resourceRAIDDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	return nil
 }
 
-func verifyRAIDConfig(client *client.Client, machineID string, d *schema.ResourceData) error {
+func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.ResourceData) error {
 	// Check the RAID level matches disk count, and that block devices are not provided for disks with partitions
 	blockDevices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
 	spareDevices := convertToStringSlice(d.Get("spare_devices").(*schema.Set).List())
 	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
 
+	// If any of the supplied block devices are the boot disk, MAAS will create partitions on all of the block devices
+	// We perform validation that only partitions are supplied if any is the boot disk, similar to Volume Group
+	if err := verifyRAIDBootDevice(client, machine, append(blockDevices, spareDevices...)); err != nil {
+		return err
+	}
+
 	// MAAS has an unhelpful error if you supply a block device that has partitions, so
 	// perform the check and turn it into a more helpful error
-	if err := verifyRAIDPartitionlessBlockDevices(client, machineID, blockDevices); err != nil {
+	if err := verifyRAIDPartitionlessBlockDevices(client, machine.SystemID, blockDevices); err != nil {
 		return err
 	}
 
 	// we need to do the same check on spares
-	if err := verifyRAIDPartitionlessBlockDevices(client, machineID, spareDevices); err != nil {
+	if err := verifyRAIDPartitionlessBlockDevices(client, machine.SystemID, spareDevices); err != nil {
 		return err
 	}
 
@@ -332,6 +338,19 @@ func verifyRAIDConfig(client *client.Client, machineID string, d *schema.Resourc
 	}
 
 	// Otherwise everything is *probably* fine
+	return nil
+}
+
+func verifyRAIDBootDevice(client *client.Client, machine *entity.Machine, blockDevices []string) error {
+	// If any of the block devices supplied to the RAID are the boot disk, MAAS will create
+	// partitions on top of all of them. To prevent a terraform error, we perform the same
+	// check as in volume groups, and ensure the boot disk is not a supplied block device.
+
+	bootDisk := fmt.Sprintf("%v", machine.BootDisk.ID)
+	if slices.Contains(blockDevices, bootDisk) {
+		return fmt.Errorf("Cannot add the boot disk %v (%v) as a RAID block device, provide partitions on top of it instead.", bootDisk, machine.BootDisk.Name)
+	}
+
 	return nil
 }
 
