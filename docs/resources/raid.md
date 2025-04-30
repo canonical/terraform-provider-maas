@@ -60,7 +60,7 @@ resource "maas_raid" "raid1" {
   machine = maas_machine.virsh_vm1.id
   fs_type = "ext4"
   name    = "RAID 1"
-  level   = 0
+  level   = "1"
 
   block_devices = [
     resource.maas_block_device.raidbd1.id
@@ -79,7 +79,7 @@ resource "maas_raid" "raid1" {
 
 ### Required
 
-- `level` (String) The RAID Level. Valid levels are: `"0", "1", "5", "6", "10"`
+- `level` (String) The RAID Level. Valid levels are: `"0", "1", "5", "6"`
 - `machine` (String) The machine identifier (system ID, hostname, or FQDN) that owns the RAID.
 - `name` (String) The name for the RAID
 

@@ -26,13 +26,17 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 	// RAID 1 has the smallest disk requirement that still allows testing hot spares.
 	level := "1"
 
-	name := "test raid"
+	name := "test RAID"
 	fsType := "ext4"
 	mountPoint := "/var/raidtest"
 
-	changedName := "test renamed raid"
+	changedName := "test RAID renamed"
 	changedFsType := "fat32"
-	changedMountPoint := "/var/newraidtest"
+	changedMountPoint := "/var/raidrename"
+
+	swappedName := "test RAID swapped active/spare"
+	swappedFsType := "ext4"
+	swappedMountPoint := "/var/raidswap"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
@@ -109,7 +113,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					testAccRAIDPartition(blockDevice2Name, false) +
 					testAccRAIDPartition(blockDevice3Name, false) +
 					testAccRAIDBlockDevice(blockDevice4Name, false) +
-					testAccRAIDConfig(changedName, level, changedFsType, changedMountPoint,
+					testAccRAIDConfig(swappedName, level, swappedFsType, swappedMountPoint,
 						generateRAIDBlockDevices([]string{blockDevice4Name}),
 						generateRAIDPartitions([]string{blockDevice2Name}),
 						generateRAIDBlockDevices([]string{blockDevice1Name}),
@@ -117,10 +121,10 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRAIDExists("maas_raid.test", &raid),
-					resource.TestCheckResourceAttr("maas_raid.test", "name", changedName),
+					resource.TestCheckResourceAttr("maas_raid.test", "name", swappedName),
 					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
-					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", changedFsType),
-					resource.TestCheckResourceAttr("maas_raid.test", "mount_point", changedMountPoint),
+					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", swappedFsType),
+					resource.TestCheckResourceAttr("maas_raid.test", "mount_point", swappedMountPoint),
 
 					resource.TestCheckResourceAttr("maas_raid.test", "block_devices.#", "1"),
 					resource.TestCheckResourceAttr("maas_raid.test", "partitions.#", "1"),

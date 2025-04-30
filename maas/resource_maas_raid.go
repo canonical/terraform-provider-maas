@@ -36,9 +36,9 @@ func resourceMAASRAID() *schema.Resource {
 				Description: "The file system type (e.g. `ext4`). If this is not set, the RAID is unformatted.",
 			},
 			"level": {
-				Type:        schema.TypeString,
-				Required:    true,
-				// TODO: Re-add RAID-10 once the fix for LP#2109708 is released 
+				Type:     schema.TypeString,
+				Required: true,
+				// TODO: Re-add RAID-10 once the fix for LP#2109708 is released
 				Description: "The RAID Level. Valid levels are: `\"0\", \"1\", \"5\", \"6\"`",
 				ValidateFunc: validation.StringInSlice(
 					[]string{"0", "1", "5", "6"},
