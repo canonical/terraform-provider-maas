@@ -58,6 +58,14 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
 					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", fsType),
 					resource.TestCheckResourceAttr("maas_raid.test", "mount_point", mountPoint),
+
+					resource.TestCheckResourceAttr("maas_raid.test", "block_devices.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "partitions.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "spare_devices.#", "0"),
+					resource.TestCheckResourceAttr("maas_raid.test", "spare_partitions.#", "0"),
+
+					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice1Name), "id"),
+					resource.TestCheckResourceAttrPair("maas_raid.test", "partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice2Name), "partitions.0.id"),
 				),
 			},
 			// Test updating the fields, moving an active disk, and adding a spare
@@ -80,6 +88,16 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
 					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", changedFsType),
 					resource.TestCheckResourceAttr("maas_raid.test", "mount_point", changedMountPoint),
+
+					resource.TestCheckResourceAttr("maas_raid.test", "block_devices.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "partitions.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "spare_devices.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "spare_partitions.#", "1"),
+
+					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice1Name), "id"),
+					resource.TestCheckResourceAttrPair("maas_raid.test", "partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice3Name), "partitions.0.id"),
+					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "spare_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice4Name), "id"),
+					resource.TestCheckResourceAttrPair("maas_raid.test", "spare_partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice2Name), "partitions.0.id"),
 				),
 			},
 			// Test the worst-case operation to ensure update is working correctly: fully swapping active and spare disks
@@ -102,6 +120,16 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
 					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", changedFsType),
 					resource.TestCheckResourceAttr("maas_raid.test", "mount_point", changedMountPoint),
+
+					resource.TestCheckResourceAttr("maas_raid.test", "block_devices.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "partitions.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "spare_devices.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "spare_partitions.#", "1"),
+
+					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice4Name), "id"),
+					resource.TestCheckResourceAttrPair("maas_raid.test", "partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice2Name), "partitions.0.id"),
+					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "spare_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice1Name), "id"),
+					resource.TestCheckResourceAttrPair("maas_raid.test", "spare_partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice3Name), "partitions.0.id"),
 				),
 			},
 		},
