@@ -253,7 +253,7 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 	}
 
-	// 2. Remove any active disks that are no longer in the RAID
+	// 4. Remove any active disks that are no longer in the RAID
 	//    (Including disks moving from active to spare, so that we do not have add/remove collisions)
 	if len(removedBlockDevice)+len(removedPartition) > 0 {
 		if _, err = client.RAID.Update(machine.SystemID, id,
@@ -266,7 +266,7 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 	}
 
-	// 3. Re-add any disks that were moved from active to spare
+	// 5. Re-add any disks that were moved from active to spare
 	if len(movedSpareDevice)+len(movedSparePartition) > 0 {
 		if _, err = client.RAID.Update(machine.SystemID, id,
 			&entity.RAIDUpdateParams{
@@ -316,23 +316,23 @@ func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.
 	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
 
 	// If any of the supplied block devices are the boot disk, MAAS will create partitions on all of the block devices
-	// We perform validation that only partitions are supplied if any is the boot disk, similar to Volume Group
+	// We ensure, similar to Volume Group, that the boot disk is not supplied as a block device, spare or active
 	if err := verifyRAIDBootDevice(client, machine, append(blockDevices, spareDevices...)); err != nil {
 		return err
 	}
 
 	// MAAS has an unhelpful error if you supply a block device that has partitions, so
-	// perform the check and turn it into a more helpful error
+	// perform the check and turn it into a more helpful error that informs the user the changes they should make
 	if err := verifyRAIDPartitionlessBlockDevices(client, machine.SystemID, blockDevices); err != nil {
 		return err
 	}
 
-	// we need to do the same check on spares
+	// we need to do the same check as above on spares as well as the active disks
 	if err := verifyRAIDPartitionlessBlockDevices(client, machine.SystemID, spareDevices); err != nil {
 		return err
 	}
 
-	// verify the RAID Level is valid for the active disks
+	// verify the RAID Level is valid for the number of active disks
 	if err := verifyRAIDDevicesLevel(d.Get("level").(string), len(blockDevices)+len(partitions)); err != nil {
 		return err
 	}
@@ -354,7 +354,7 @@ func verifyRAIDBootDevice(client *client.Client, machine *entity.Machine, blockD
 }
 
 func verifyRAIDDevicesLevel(level string, count int) error {
-	// Ensure the RAID level matches the disks provided to the model
+	// Ensure the number of provided active disks exeeds or matches what is required by the RAID level
 	if count <= 1 {
 		return fmt.Errorf("RAIDs require at least two active disks")
 	}
@@ -371,7 +371,7 @@ func verifyRAIDDevicesLevel(level string, count int) error {
 }
 
 func verifyRAIDPartitionlessBlockDevices(client *client.Client, machineID string, devices []string) error {
-	// ensure no block devices with partitions have been passed to the RAID
+	// Ensure no block devices that have partitions have been supplied to the RAID
 	blockDevices, err := client.BlockDevices.Get(machineID)
 	if err != nil {
 		return err
@@ -388,7 +388,7 @@ func verifyRAIDPartitionlessBlockDevices(client *client.Client, machineID string
 }
 
 func splitDeviceTypes(devices []entity.RAIDDevice) ([]string, []string, error) {
-	// Split the partitions and block devices by reading the device type
+	// Split the disks into partitions and block devices by reading the device type
 	var blockDevices []string
 
 	var partitions []string
@@ -424,8 +424,8 @@ func getMovedDevices(d *schema.ResourceData, field string, counterpartField stri
 		oldList := convertToStringSlice(oldDevices.(*schema.Set).List())
 		newList := convertToStringSlice(newDevices.(*schema.Set).List())
 
-		// we also need a list of devices removed from the counterpart field to determine if they were
-		// moved here
+		// we also need a list of devices removed from the counterpart field to determine if
+		// they were moved here
 		counterpartOld, _ := d.GetChange(counterpartField)
 		counterpartOldList := convertToStringSlice(counterpartOld.(*schema.Set).List())
 
