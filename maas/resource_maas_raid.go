@@ -76,7 +76,7 @@ func resourceMAASRAID() *schema.Resource {
 			"size_gigabytes": {
 				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "The volume size (given in GB).",
+				Description: "The volume size (given in GiB).",
 			},
 			"spare_devices": {
 				Type:        schema.TypeSet,

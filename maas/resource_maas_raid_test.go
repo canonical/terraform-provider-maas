@@ -38,6 +38,14 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 	swappedFsType := "ext4"
 	swappedMountPoint := "/var/raidswap"
 
+	// we include a seperate unused boot disk to avoid the boot disk/partition behaviour
+	baseConfig := testAccRAIDMachine(machine) +
+		testAccRAIDBlockDevice("boot", 2, true) +
+		testAccRAIDBlockDevice(blockDevice1Name, 2, false) +
+		testAccRAIDPartition(blockDevice2Name, 2, false) +
+		testAccRAIDBlockDevice(blockDevice3Name, 2, false) +
+		testAccRAIDPartition(blockDevice4Name, 2, false)
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
@@ -46,17 +54,12 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
-				Config: testAccRAIDMachine(machine) +
-					// we include a seperate unused boot disk to avoid the boot disk/partition behaviour
-					testAccRAIDBlockDevice("boot", true) +
-					testAccRAIDBlockDevice(blockDevice1Name, false) +
-					testAccRAIDPartition(blockDevice2Name, false) +
-					testAccRAIDConfig(name, level, fsType, mountPoint,
-						generateRAIDBlockDevices([]string{blockDevice1Name}),
-						generateRAIDPartitions([]string{blockDevice2Name}),
-						[]string{},
-						[]string{},
-					),
+				Config: baseConfig + testAccRAIDConfig(name, level, fsType, mountPoint,
+					generateRAIDBlockDevices([]string{blockDevice1Name}),
+					generateRAIDPartitions([]string{blockDevice2Name}),
+					[]string{},
+					[]string{},
+				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRAIDExists("maas_raid.test", &raid),
 					resource.TestCheckResourceAttr("maas_raid.test", "name", name),
@@ -75,16 +78,11 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 			},
 			// Test updating the fields, moving an active disk, and adding a spare
 			{
-				Config: testAccRAIDMachine(machine) +
-					testAccRAIDBlockDevice("boot", true) +
-					testAccRAIDBlockDevice(blockDevice1Name, false) +
-					testAccRAIDPartition(blockDevice2Name, false) +
-					testAccRAIDPartition(blockDevice3Name, false) +
-					testAccRAIDBlockDevice(blockDevice4Name, false) +
+				Config: baseConfig +
 					testAccRAIDConfig(changedName, level, changedFsType, changedMountPoint,
 						generateRAIDBlockDevices([]string{blockDevice1Name}),
-						generateRAIDPartitions([]string{blockDevice3Name}),
-						generateRAIDBlockDevices([]string{blockDevice4Name}),
+						generateRAIDPartitions([]string{blockDevice4Name}),
+						generateRAIDBlockDevices([]string{blockDevice3Name}),
 						generateRAIDPartitions([]string{blockDevice2Name}),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -100,24 +98,19 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("maas_raid.test", "spare_partitions.#", "1"),
 
 					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice1Name), "id"),
-					resource.TestCheckResourceAttrPair("maas_raid.test", "partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice3Name), "partitions.0.id"),
-					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "spare_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice4Name), "id"),
+					resource.TestCheckResourceAttrPair("maas_raid.test", "partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice4Name), "partitions.0.id"),
+					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "spare_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice3Name), "id"),
 					resource.TestCheckResourceAttrPair("maas_raid.test", "spare_partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice2Name), "partitions.0.id"),
 				),
 			},
 			// Test the worst-case operation to ensure update is working correctly: fully swapping active and spare disks
 			{
-				Config: testAccRAIDMachine(machine) +
-					testAccRAIDBlockDevice("boot", true) +
-					testAccRAIDBlockDevice(blockDevice1Name, false) +
-					testAccRAIDPartition(blockDevice2Name, false) +
-					testAccRAIDPartition(blockDevice3Name, false) +
-					testAccRAIDBlockDevice(blockDevice4Name, false) +
+				Config: baseConfig +
 					testAccRAIDConfig(swappedName, level, swappedFsType, swappedMountPoint,
-						generateRAIDBlockDevices([]string{blockDevice4Name}),
+						generateRAIDBlockDevices([]string{blockDevice3Name}),
 						generateRAIDPartitions([]string{blockDevice2Name}),
 						generateRAIDBlockDevices([]string{blockDevice1Name}),
-						generateRAIDPartitions([]string{blockDevice3Name}),
+						generateRAIDPartitions([]string{blockDevice4Name}),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckRAIDExists("maas_raid.test", &raid),
@@ -131,10 +124,10 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("maas_raid.test", "spare_devices.#", "1"),
 					resource.TestCheckResourceAttr("maas_raid.test", "spare_partitions.#", "1"),
 
-					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice4Name), "id"),
+					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice3Name), "id"),
 					resource.TestCheckResourceAttrPair("maas_raid.test", "partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice2Name), "partitions.0.id"),
 					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "spare_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice1Name), "id"),
-					resource.TestCheckResourceAttrPair("maas_raid.test", "spare_partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice3Name), "partitions.0.id"),
+					resource.TestCheckResourceAttrPair("maas_raid.test", "spare_partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice4Name), "partitions.0.id"),
 				),
 			},
 		},
@@ -166,34 +159,34 @@ data "maas_machine" "machine" {
 `, machine)
 }
 
-func testAccRAIDBlockDevice(name string, isBoot bool) string {
+func testAccRAIDBlockDevice(name string, size int, isBoot bool) string {
 	return fmt.Sprintf(`
 resource "maas_block_device" "%v" {
   machine        = data.maas_machine.machine.id
   name           = %q
-  size_gigabytes = 2
+  size_gigabytes = %d
   block_size     = 512
   id_path        = "/dev/%v"
   is_boot_device = %t
 }
-`, name, name, name, isBoot)
+`, name, name, size, name, isBoot)
 }
 
-func testAccRAIDPartition(name string, isBoot bool) string {
+func testAccRAIDPartition(name string, size int, isBoot bool) string {
 	return fmt.Sprintf(`
 resource "maas_block_device" "%v" {
   machine        = data.maas_machine.machine.id
   name           = %q
-  size_gigabytes = 3
+  size_gigabytes = %d
   block_size     = 512
   id_path        = "/dev/%v"
   is_boot_device = %t
 
   partitions {
-    size_gigabytes = 2
+    size_gigabytes = %d
   }
 }
-`, name, name, name, isBoot)
+`, name, name, size+1, name, isBoot, size)
 }
 
 func sliceToString(devices []string) string {
