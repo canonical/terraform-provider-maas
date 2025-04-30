@@ -86,14 +86,14 @@ resource "maas_raid" "raid1" {
 ### Optional
 
 - `block_devices` (Set of String) The list of block devices to be included in the RAID.
-*Note*: For the boot disk, a partition should be supplied instead, as MAAS would otherwise automatically create one.
+*Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.
 *Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.
 - `fs_type` (String) The file system type (e.g. `ext4`). If this is not set, the RAID is unformatted.
 - `mount_options` (String) Comma seperated options used for the RAID mount.
 - `mount_point` (String) The mount point used. If this is not set, the RAID is not mounted.
 - `partitions` (Set of String) The list of partitions to be included in the RAID.
 - `spare_devices` (Set of String) The list of spare block devices for the RAID.
-*Note*: For the boot disk, a partition should be supplied instead, as MAAS would otherwise automatically create one.
+*Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.
 *Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.
 - `spare_partitions` (Set of String) The list of spare partitions for the RAID.
 

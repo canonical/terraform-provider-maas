@@ -27,7 +27,7 @@ func resourceMAASRAID() *schema.Resource {
 				Type:         schema.TypeSet,
 				Optional:     true,
 				Elem:         &schema.Schema{Type: schema.TypeString},
-				Description:  "The list of block devices to be included in the RAID.\n*Note*: For the boot disk, a partition should be supplied instead, as MAAS would otherwise automatically create one.\n*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.",
+				Description:  "The list of block devices to be included in the RAID.\n*Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.\n*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.",
 				AtLeastOneOf: []string{"block_devices", "partitions"},
 			},
 			"fs_type": {
@@ -81,7 +81,7 @@ func resourceMAASRAID() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "The list of spare block devices for the RAID.\n*Note*: For the boot disk, a partition should be supplied instead, as MAAS would otherwise automatically create one.\n*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.",
+				Description: "The list of spare block devices for the RAID.\n*Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.\n*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.",
 			},
 			"spare_partitions": {
 				Type:        schema.TypeSet,
@@ -345,10 +345,9 @@ func verifyRAIDBootDevice(client *client.Client, machine *entity.Machine, blockD
 	// If any of the block devices supplied to the RAID are the boot disk, MAAS will create
 	// partitions on top of all of them. To prevent a terraform error, we perform the same
 	// check as in volume groups, and ensure the boot disk is not a supplied block device.
-
 	bootDisk := fmt.Sprintf("%v", machine.BootDisk.ID)
 	if slices.Contains(blockDevices, bootDisk) {
-		return fmt.Errorf("Cannot add the boot disk %v (%v) as a RAID block device, provide partitions on top of it instead.", bootDisk, machine.BootDisk.Name)
+		return fmt.Errorf("cannot add the boot disk %v (%v) as a RAID block device, provide partitions on top of it instead", bootDisk, machine.BootDisk.Name)
 	}
 
 	return nil
