@@ -115,7 +115,7 @@ func resourceMAASVMHost() *schema.Resource {
 				Optional:      true,
 				ForceNew:      true,
 				ExactlyOneOf:  vmHostSources,
-				ConflictsWith: []string{"power_address", "power_user", "power_pass", "certificate", "key"},
+				ConflictsWith: []string{"power_address", "power_user", "power_pass", "lxd_certificate", "lxd_key"},
 				Description:   "The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`, `certificate`, `key`.",
 			},
 			"memory_over_commit_ratio": {
@@ -147,21 +147,14 @@ func resourceMAASVMHost() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Sensitive:     true,
-				ConflictsWith: []string{"machine", "certificate", "key"},
+				ConflictsWith: []string{"machine", "lxd_certificate", "lxd_key"},
 				Description:   "User password to use for power control of the VM host. Cannot be set if `machine`, `certificate` or `key` parameters are used.",
 			},
 			"power_user": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				ConflictsWith: []string{"machine", "certificate", "key"},
+				ConflictsWith: []string{"machine", "lxd_certificate", "lxd_key"},
 				Description:   "User name to use for power control of the VM host. Cannot be set if `machine`, `certificate` or `key` parameters are used.",
-			},
-			"project": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"machine", "power_user", "power_pass"},
-				Description:   "LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `certificate` or `key` parameters are used.",
 			},
 			"resources_cores_total": {
 				Type:        schema.TypeInt,
@@ -200,14 +193,21 @@ func resourceMAASVMHost() *schema.Resource {
 				Computed:    true,
 				Description: "The new VM host zone name. This is computed if it's not set.",
 			},
-			"certificate": {
+			"lxd_project": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `certificate` or `key` parameters are used.",
+			},
+			"lxd_certificate": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Sensitive:     true,
 				ConflictsWith: []string{"machine", "power_user", "power_pass"},
 				Description:   "Certificate to use for power control of the LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` arguments are used.",
 			},
-			"key": {
+			"lxd_key": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Sensitive:     true,
@@ -364,15 +364,15 @@ func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
 		PowerAddress:          d.Get("power_address").(string),
 		PowerUser:             d.Get("power_user").(string),
 		PowerPass:             d.Get("power_pass").(string),
-		Project:               d.Get("project").(string),
 		CPUOverCommitRatio:    d.Get("cpu_over_commit_ratio").(float64),
 		MemoryOverCommitRatio: d.Get("memory_over_commit_ratio").(float64),
 		DefaultMacvlanMode:    d.Get("default_macvlan_mode").(string),
 		Zone:                  d.Get("zone").(string),
 		Pool:                  d.Get("pool").(string),
-		Certificate:           d.Get("certificate").(string),
-		Key:                   d.Get("key").(string),
+		Certificate:           d.Get("lxd_certificate").(string),
+		Key:                   d.Get("lxd_key").(string),
 		Tags:                  strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
+		Project:               d.Get("lxd_project").(string),
 	}
 }
 
