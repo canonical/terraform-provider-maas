@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"log"
 	"slices"
 	"strconv"
 	"strings"
@@ -347,6 +348,16 @@ func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.
 		return err
 	}
 
+	// verify disks are not included in both active and spare, as that causes MAAS issues
+	if err := verifyRAIDcollision(
+		blockDevices,
+		spareDevices,
+		partitions,
+		sparePartitions,
+	); err != nil {
+		return err
+	}
+
 	// Otherwise everything is *probably* fine
 	return nil
 }
@@ -406,6 +417,20 @@ func verifyRAIDDevicesLevel(level string, activeCount int, spareCount int) error
 		return fmt.Errorf("RAID level %v cannot use hot spares, supply active disks only", level)
 	}
 
+	// We won't stop the user, but we will warn them about atypical setups
+
+	if level == "1" && spareCount > 1 {
+		log.Printf("[WARN] RAID level %v with %d spares is unusual - only one spare is used during recovery\n", level, spareCount)
+	}
+
+	if level == "5" && spareCount > 0 {
+		log.Printf("[WARN] RAID level %v with %d spares might not be the most fault tolerant topology - have you considered RAID 6 with %d spares instead?\n", level, spareCount, spareCount-1)
+	}
+
+	if spareCount > activeCount {
+		log.Printf("[WARN] RAID has more spares (%d) than active disks (%d) - is this intentional?\n", spareCount, activeCount)
+	}
+
 	return nil
 }
 
@@ -415,6 +440,23 @@ func verifyRAIDPartitionlessBlockDevices(client *client.Client, machine *entity.
 		id := fmt.Sprintf("%d", blockDevice.ID)
 		if slices.Contains(devices, id) && len(blockDevice.Partitions) > 0 {
 			return fmt.Errorf("cannot create a RAID from a block device with partitions, supply the partitions for %v instead", blockDevice.Name)
+		}
+	}
+
+	return nil
+}
+
+func verifyRAIDcollision(blockDevices []string, spareDevices []string, partitions []string, sparePartitions []string) error {
+	// Ensure disks are not specified as both active and spare
+	for _, disk := range blockDevices {
+		if slices.Contains(spareDevices, disk) {
+			return fmt.Errorf("cannot include block device %v as both active and spare, specify only a single location for the disk", disk)
+		}
+	}
+
+	for _, disk := range partitions {
+		if slices.Contains(sparePartitions, disk) {
+			return fmt.Errorf("cannot include partition %v as both active and spare, specify only a single location for the disk", disk)
 		}
 	}
 
