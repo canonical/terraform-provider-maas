@@ -379,7 +379,7 @@ func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
 		Certificate:           d.Get("certificate").(string),
 		Key:                   d.Get("key").(string),
 		Tags:                  strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
-		Project:               d.Get("lxd_project").(string),
+		Project:               d.Get("project").(string),
 		Password:              d.Get("password").(string),
 	}
 }
