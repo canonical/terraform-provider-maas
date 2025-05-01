@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
-	"slices"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
@@ -29,8 +29,8 @@ func TestAccMAASVMHost_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Test create
-			{	
-				PreConfig: func () {
+			{
+				PreConfig: func() {
 					client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 					id, err := strconv.Atoi(VMHostID)
 					if err != nil {
@@ -38,12 +38,11 @@ func TestAccMAASVMHost_basic(t *testing.T) {
 					}
 					host, err := client.VMHost.GetParameters(id)
 					if err != nil {
-						panic(fmt.Errorf("Error getting VM Host (%d): %v", VMHostID, err))
+						panic(fmt.Errorf("Error getting VM Host (%v): %v", VMHostID, err))
 					}
 					existingPowerAddr := host["power_address"]
-				
-					*poweraddress = &existingPowerAddr
 
+					*powerAddress = &existingPowerAddr
 				},
 				Config: testAccMAASVMHostConfig(VMHostName, project, powerAddress),
 				Check: resource.ComposeTestCheckFunc(
@@ -58,7 +57,7 @@ func TestAccMAASVMHost_basic(t *testing.T) {
 	})
 }
 
-func testAccMAASVMHostConfig(powerAddress, projectName, VMHostName string) string {
+func testAccMAASVMHostConfig(powerAddress, projectName, vmHostName string) string {
 	return fmt.Sprintf(`
 resource "maas_vm_host" "test" {
   type          = "lxd"
@@ -68,7 +67,7 @@ resource "maas_vm_host" "test" {
   key           = file(systemtests.key)
   name          = %q
 }
-	`, powerAddress, VMHostName)
+	`, powerAddress, projectName, vmHostName)
 }
 
 func checkMAASVMHostIsComposable(t *testing.T, resourceName string) resource.TestCheckFunc {
@@ -90,7 +89,7 @@ func checkMAASVMHostIsComposable(t *testing.T, resourceName string) resource.Tes
 			return err
 		}
 
-		if !slices.Contains(machine.Capabilities, "composable"){
+		if !slices.Contains(machine.Capabilities, "composable") {
 			return fmt.Errorf("VM host  is not composable")
 		}
 

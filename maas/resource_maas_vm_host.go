@@ -215,11 +215,11 @@ func resourceMAASVMHost() *schema.Resource {
 				Description:   "Certificate key to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, `power_pass`, or `password` arguments are used.",
 			},
 			"password": {
-				Type: 	  schema.TypeString,
-				Optional: true,
-				Sensitive: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
 				ConflictsWith: []string{"machine", "power_user", "power_pass", "certificate", "key"},
-				Description: "Password to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, `power_pass`, `certificate` or `key` arguments are used.",
+				Description:   "Password to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, `power_pass`, `certificate` or `key` arguments are used.",
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
@@ -256,6 +256,7 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta any)
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		vmHost, err = client.VMHost.Refresh(vmHost.ID)
 		if err != nil {
 			return diag.FromErr(err)
