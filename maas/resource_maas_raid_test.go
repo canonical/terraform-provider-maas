@@ -9,14 +9,11 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
-	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceMAASRAID_basic(t *testing.T) {
-	var raid entity.RAID
-
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 	blockDevice1Name := "raid_bd1"
 	blockDevice2Name := "raid_bd2"
@@ -61,7 +58,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					[]string{},
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRAIDExists("maas_raid.test", &raid),
+					testAccCheckRAIDExists("maas_raid.test"),
 					resource.TestCheckResourceAttr("maas_raid.test", "name", name),
 					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
 					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", fsType),
@@ -86,7 +83,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 						generateRAIDPartitions([]string{blockDevice2Name}),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRAIDExists("maas_raid.test", &raid),
+					testAccCheckRAIDExists("maas_raid.test"),
 					resource.TestCheckResourceAttr("maas_raid.test", "name", changedName),
 					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
 					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", changedFsType),
@@ -113,7 +110,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 						generateRAIDPartitions([]string{blockDevice4Name}),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRAIDExists("maas_raid.test", &raid),
+					testAccCheckRAIDExists("maas_raid.test"),
 					resource.TestCheckResourceAttr("maas_raid.test", "name", swappedName),
 					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
 					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", swappedFsType),
@@ -132,6 +129,66 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceMAASRAID_differentLevels(t *testing.T) {
+	// We need to test a RAID can be created for every level supported
+	// TODO: Update this when LP:2109708 is released in MAAS
+	validRAIDLevels := []string{"0", "1", "5", "6"}
+
+	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
+
+	fsType := "ext4"
+
+	for _, testLevel := range validRAIDLevels {
+		thisLevel := testLevel // capture range variable
+		t.Run(fmt.Sprintf("RAID_level_%s", thisLevel), func(t *testing.T) {
+			thisName := fmt.Sprintf("test RAID level %s", thisLevel)
+			thisMount := fmt.Sprintf("/var/test_raid_%s", thisLevel)
+			blockDevice1Name := fmt.Sprintf("raid_level_%s_test_bd1", thisLevel)
+			blockDevice2Name := fmt.Sprintf("raid_level_%s_test_bd2", thisLevel)
+			blockDevice3Name := fmt.Sprintf("raid_level_%s_test_bd3", thisLevel)
+			blockDevice4Name := fmt.Sprintf("raid_level_%s_test_bd4", thisLevel)
+
+			resource.ParallelTest(t, resource.TestCase{
+				PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+				Providers:    testutils.TestAccProviders,
+				CheckDestroy: testAccCheclMAASRAIDDestroy,
+				ErrorCheck:   func(err error) error { return err },
+				Steps: []resource.TestStep{
+					{
+						Config: testAccRAIDMachine(machine) +
+							testAccRAIDBlockDevice(fmt.Sprintf("boot_device_%s", thisLevel), 2, true) +
+							testAccRAIDBlockDevice(blockDevice1Name, 2, false) +
+							testAccRAIDBlockDevice(blockDevice2Name, 2, false) +
+							testAccRAIDPartition(blockDevice3Name, 2, false) +
+							testAccRAIDPartition(blockDevice4Name, 2, false) +
+							testAccRAIDConfig(thisName, thisLevel, fsType, thisMount,
+								generateRAIDBlockDevices([]string{blockDevice1Name, blockDevice2Name}),
+								generateRAIDPartitions([]string{blockDevice3Name, blockDevice4Name}),
+								[]string{},
+								[]string{},
+							),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckRAIDExists("maas_raid.test"),
+							resource.TestCheckResourceAttr("maas_raid.test", "name", thisName),
+							resource.TestCheckResourceAttr("maas_raid.test", "level", thisLevel),
+							resource.TestCheckResourceAttr("maas_raid.test", "fs_type", fsType),
+							resource.TestCheckResourceAttr("maas_raid.test", "mount_point", thisMount),
+							resource.TestCheckResourceAttr("maas_raid.test", "block_devices.#", "2"),
+							resource.TestCheckResourceAttr("maas_raid.test", "partitions.#", "2"),
+							resource.TestCheckResourceAttr("maas_raid.test", "spare_devices.#", "0"),
+							resource.TestCheckResourceAttr("maas_raid.test", "spare_partitions.#", "0"),
+							resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.*", fmt.Sprintf("maas_block_device.%v", blockDevice1Name), "id"),
+							resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.*", fmt.Sprintf("maas_block_device.%v", blockDevice2Name), "id"),
+							resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "partitions.*", fmt.Sprintf("maas_block_device.%v", blockDevice3Name), "partitions.0.id"),
+							resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "partitions.*", fmt.Sprintf("maas_block_device.%v", blockDevice4Name), "partitions.0.id"),
+						),
+					},
+				},
+			})
+		})
+	}
 }
 
 func generateRAIDBlockDevices(devices []string) []string {
@@ -219,7 +276,7 @@ resource "maas_raid" "test" {
 `, name, level, fsType, mountPoint, sliceToString(blockDevices), sliceToString(partitions), sliceToString(spareDevices), sliceToString(sparePartitions))
 }
 
-func testAccCheckRAIDExists(rn string, raid *entity.RAID) resource.TestCheckFunc {
+func testAccCheckRAIDExists(rn string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -242,12 +299,9 @@ func testAccCheckRAIDExists(rn string, raid *entity.RAID) resource.TestCheckFunc
 			return fmt.Errorf("Could not find machine id on resource")
 		}
 
-		gotRAID, err := conn.RAID.Get(machine, id)
-		if err != nil {
+		if _, err = conn.RAID.Get(machine, id); err != nil {
 			return fmt.Errorf("error getting the RAID: %s", err)
 		}
-
-		*raid = *gotRAID
 
 		return nil
 	}

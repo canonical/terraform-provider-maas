@@ -103,8 +103,7 @@ func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	// ensure the provided config has the correct disks for the raid level
-	// and that valid block devices have been passed
+	// Check the raid configuration is valid
 	if err = verifyRAIDConfig(client, machine, d); err != nil {
 		return diag.FromErr(err)
 	}
@@ -198,8 +197,7 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	// ensure the provided config has the correct disks for the raid level
-	// and that valid block devices have been passed
+	// Check the raid configuration is valid
 	if err = verifyRAIDConfig(client, machine, d); err != nil {
 		return diag.FromErr(err)
 	}
@@ -312,7 +310,9 @@ func resourceRAIDDelete(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.ResourceData) error {
-	// Check the RAID level matches disk count, and that block devices are not provided for disks with partitions
+	// Ensure the provided config has the correct disks for the raid level, that each block device is partitionless,
+	// that the boot-disk is not provided while block devices are (see: VolumeGroups for similar behaviour), and that
+	// provided disks are not included as both active and spare simultaneously.
 	blockDevices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
 	spareDevices := convertToStringSlice(d.Get("spare_devices").(*schema.Set).List())
 	partitions := convertToStringSlice(d.Get("partitions").(*schema.Set).List())
@@ -358,7 +358,6 @@ func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.
 		return err
 	}
 
-	// Otherwise everything is *probably* fine
 	return nil
 }
 
@@ -486,7 +485,9 @@ func splitDeviceTypes(devices []entity.RAIDDevice) ([]string, []string, error) {
 }
 
 func getMovedDevices(d *schema.ResourceData, field string, counterpartField string) ([]string, []string, []string) {
-	// we need to determine the disks that are newly added, or removed, versus those that have been moved here from the counterpart field
+	// Determine the list of disks, for a supplied field, that have been newly added, or newly removed. Additionally, determine
+	// if any of the new disks are actually new, or have been moved from the counterpart field.
+	// ie: the set of new active disks, removed active disks, or spare disks that have been moved to active.
 	var createdDevices []string
 
 	var movedDevices []string
