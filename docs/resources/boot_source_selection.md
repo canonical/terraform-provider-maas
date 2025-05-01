@@ -17,11 +17,22 @@ resource "maas_boot_source" "test_boot_source" {
   url = "http://images.maas.io/ephemeral-v3/candidate/"
 }
 
-resource "maas_boot_source_selection" "test" {
+resource "maas_boot_source_selection" "amd64" {
   boot_source = maas_boot_source.test_boot_source.id
 
   os      = "ubuntu"
   release = "jammy"
+  arches  = ["amd64"]
+}
+
+# Only Hardware Enablement kernel (HWE) image
+resource "maas_boot_source_selection" "amd64_hwe" {
+  boot_source = maas_boot_source.test_boot_source.id
+
+  os        = "ubuntu"
+  release   = "jammy"
+  arches    = ["amd64"]
+  subarches = ["hwe-22.04"]
 }
 ```
 
@@ -30,19 +41,29 @@ resource "maas_boot_source_selection" "test" {
 
 ### Required
 
+- `arches` (Set of String) The architecture list for this selection. Valid architectures are: `["amd64", "arm64", "armhf", "i386", "ppc64el", "s390x"]`
 - `boot_source` (Number) The boot source database ID this selection is associated with.
 - `os` (String) The operating system for this selection.
 - `release` (String) The specific release of the operating system for this selection.
 
 ### Optional
 
-- `arches` (Set of String) The architecture list for this selection.
-- `labels` (Set of String) The label list for this selection.
-- `subarches` (Set of String) The list of subarches for this selection.
+- `labels` (Set of String) The label list for this selection. Default is: `["*"]`
+- `subarches` (Set of String) The list of subarches for this selection. Default is: `["*"]`
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

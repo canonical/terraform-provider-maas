@@ -44,6 +44,7 @@ resource "maas_machine" "virsh_vm1" {
 
 ### Read-Only
 
+- `block_devices` (List of Object) A list of block devices attached to the machine. (see [below for nested schema](#nestedatt--block_devices))
 - `id` (String) The ID of this resource.
 - `network_interfaces` (Set of String) A set of MAC addresses of network interfaces attached to the machine.
 
@@ -53,6 +54,17 @@ resource "maas_machine" "virsh_vm1" {
 Optional:
 
 - `create` (String)
+
+
+<a id="nestedatt--block_devices"></a>
+### Nested Schema for `block_devices`
+
+Read-Only:
+
+- `id_path` (String)
+- `model` (String)
+- `name` (String)
+- `size_gigabytes` (Number)
 
 ## Import
 

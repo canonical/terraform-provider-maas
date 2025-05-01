@@ -10,10 +10,8 @@ import (
 
 func TestAccDataSourceMAASBootSourceSelection_basic(t *testing.T) {
 	os := "ubuntu"
-	release := "mantic"
+	release := "lunar"
 	arches := []string{"amd64"}
-	subarches := []string{"*"}
-	labels := []string{"*"}
 
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "boot_source"),
@@ -22,9 +20,9 @@ func TestAccDataSourceMAASBootSourceSelection_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.#", "1"),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.0", arches[0]),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "subarches.#", "1"),
-		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "subarches.0", subarches[0]),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "subarches.0", "*"),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.#", "1"),
-		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.0", labels[0]),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.0", "*"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -34,14 +32,14 @@ func TestAccDataSourceMAASBootSourceSelection_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMAASBootSourceSelection(os, release, arches, subarches, labels),
+				Config: testAccDataSourceMAASBootSourceSelection(os, release, arches),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMAASBootSourceSelection(os string, release string, arches []string, subarches []string, labels []string) string {
+func testAccDataSourceMAASBootSourceSelection(os string, release string, arches []string) string {
 	return fmt.Sprintf(`
 %s
 
@@ -51,5 +49,5 @@ data "maas_boot_source_selection" "test" {
 	os      = maas_boot_source_selection.test.os
 	release = maas_boot_source_selection.test.release
 }
-`, testAccMAASBootSourceSelection(os, release, arches, subarches, labels))
+`, testAccMAASBootSourceSelection(os, release, arches))
 }
