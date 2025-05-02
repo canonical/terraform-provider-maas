@@ -1,8 +1,11 @@
 package maas_test
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"terraform-provider-maas/maas"
@@ -191,6 +194,120 @@ func TestAccResourceMAASRAID_differentLevels(t *testing.T) {
 	}
 }
 
+func TestVerifyRAIDDevicesLevel(t *testing.T) {
+	// define the test cases
+	testMatrix := []struct {
+		name         string
+		level        string
+		activeCount  int
+		spareCount   int
+		hasError     bool
+		errorMessage string
+		hasLog       bool
+		logMessage   string
+	}{
+		// Test minimum disk requirement
+		{"RAID too few disks", "1", 1, 0, true, "require at least two active disks", false, ""},
+		// Test each RAID level
+		{"RAID 0 valid", "0", 2, 0, false, "", false, ""},
+		{"RAID 0 with spare", "0", 2, 1, true, "cannot use hot spares", false, ""},
+		{"RAID 0 too few disks", "0", 1, 0, true, "require at least two active disks", false, ""},
+		{"RAID 1 valid", "1", 2, 0, false, "", false, ""},
+		{"RAID 1 valid spares", "1", 2, 1, false, "", false, ""},
+		{"RAID 1 too few disks", "1", 1, 0, true, "require at least two active disks", false, ""},
+		{"RAID 5 valid", "5", 3, 0, false, "", false, ""},
+		{"RAID 5 valid spares", "5", 3, 1, false, "", false, ""},
+		{"RAID 5 too few disks", "5", 2, 0, true, "requires at least three active disks", false, ""},
+		{"RAID 6 valid", "6", 4, 0, false, "", false, ""},
+		{"RAID 6 valid spares", "6", 4, 4, false, "", false, ""},
+		{"RAID 6 too few disks", "6", 3, 0, true, "requires at least four active disks", false, ""},
+		// These shouldn't produce an error, only a usage warning
+		{"RAID 1 unusual spares", "1", 10, 4, false, "", true, "spares is unusual"},
+		{"RAID 5 valid spares", "5", 10, 4, false, "", true, "have you considered RAID 6"},
+		{"RAID more spares than active", "6", 4, 10, false, "", true, "more spares (10) than active disks"},
+	}
+
+	for _, thisTest := range testMatrix {
+		t.Run(thisTest.name, func(t *testing.T) {
+			// we want to capture log outputs to test warnings
+			var logBuffer bytes.Buffer
+
+			log.SetOutput(&logBuffer)
+
+			defer log.SetOutput(os.Stderr)
+
+			err := verifyRAIDDevicesLevel(thisTest.level, thisTest.activeCount, thisTest.spareCount)
+			if thisTest.hasError {
+				if err == nil {
+					t.Errorf("expected error %q, but function passed", thisTest.errorMessage)
+				} else if !strings.Contains(err.Error(), thisTest.errorMessage) {
+					t.Errorf("expected error %q, but got %q", thisTest.errorMessage, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+
+			logOutput := logBuffer.String()
+
+			if thisTest.hasLog {
+				if logOutput == "" {
+					t.Errorf("expected log message %q, but returned nothing", thisTest.logMessage)
+				} else if !strings.Contains(logOutput, thisTest.logMessage) {
+					t.Errorf("expected log message %q, but got %q", thisTest.logMessage, logBuffer.String())
+				}
+			} else if logOutput != "" {
+				t.Errorf("unexpected log message: %q", logOutput)
+			}
+		})
+	}
+}
+
+func TestVerifyRAIDCollisions(t *testing.T) {
+	// define the test cases
+	testMatrix := []struct {
+		name            string
+		blockDevices    []string
+		spareDevices    []string
+		partitions      []string
+		sparePartitions []string
+		hasError        bool
+		errorMessage    string
+	}{
+		{"no disks", []string{}, []string{}, []string{}, []string{}, false, ""},
+		{"no collisions", []string{"bd1"}, []string{"bd2"}, []string{"p1"}, []string{"p2"}, false, ""},
+		// minimum collision case
+		{"block device collision", []string{"bd1"}, []string{"bd1"}, []string{}, []string{}, true, "cannot include block device bd1 as both active and spare"},
+		{"partition collision", []string{}, []string{}, []string{"p1"}, []string{"p1"}, true, "cannot include partition p1 as both active and spare"},
+		// all unique, multiple inputs
+		{"multiple block devices", []string{"bd1", "bd2"}, []string{"bd3", "bd4"}, []string{"p1"}, []string{"p2"}, false, ""},
+		{"multiple partitions", []string{"bd1"}, []string{"bd2"}, []string{"p1", "p2"}, []string{"p3", "p4"}, false, ""},
+		// two valid entries, one collision
+		{"overlapping block device", []string{"bd1", "bd2"}, []string{"bd2", "bd3"}, []string{}, []string{}, true, "cannot include block device bd2 as both active and spare"},
+		{"overlapping partition", []string{}, []string{}, []string{"p1", "p2"}, []string{"p2", "p3"}, true, "cannot include block device bd2 as both active and spare"},
+		// The block device check occurs first, so will trigger before checking partitions
+		{"block device and partition collision", []string{"bd1"}, []string{"bd1"}, []string{"p1"}, []string{"p1"}, true, "cannot include block device bd1 as both active and spare"},
+	}
+
+	for _, thisTest := range testMatrix {
+		t.Run(thisTest.name, func(t *testing.T) {
+			err := verifyRAIDcollision(thisTest.blockDevices, thisTest.spareDevices, thisTest.partitions, thisTest.sparePartitions)
+			if thisTest.hasError {
+				if err == nil {
+					t.Errorf("expected error %q, but function passed", thisTest.errorMessage)
+				} else if !strings.Contains(err.Error(), thisTest.errorMessage) {
+					t.Errorf("expected error %q, but got %q", thisTest.errorMessage, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
 func generateRAIDBlockDevices(devices []string) []string {
 	var output []string
 	for _, device := range devices {
@@ -335,6 +452,57 @@ func testAccCheclMAASRAIDDestroy(s *terraform.State) error {
 		// 404 means destroyed, anything else is an error
 		if !strings.Contains(err.Error(), "404 Not Found") {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// TODO: Determine a way of importing these functions from the maas_raid file directly,
+// as duplication can lead to things becoming out of step
+
+func verifyRAIDDevicesLevel(level string, activeCount int, spareCount int) error {
+	if activeCount <= 1 {
+		return fmt.Errorf("RAIDs require at least two active disks")
+	}
+
+	if (level == "5" || level == "10") && activeCount < 3 {
+		return fmt.Errorf("RAID level %v requires at least three active disks", level)
+	}
+
+	if level == "6" && activeCount < 4 {
+		return fmt.Errorf("RAID level %v requires at least four active disks", level)
+	}
+
+	if level == "0" && spareCount > 0 {
+		return fmt.Errorf("RAID level %v cannot use hot spares, supply active disks only", level)
+	}
+
+	if level == "1" && spareCount > 1 {
+		log.Printf("[WARN] RAID level %v with %d spares is unusual - only one spare is used during recovery\n", level, spareCount)
+	}
+
+	if level == "5" && spareCount > 1 {
+		log.Printf("[WARN] RAID level %v with %d spares might not be the most fault tolerant topology - have you considered RAID 6 with %d spares instead?\n", level, spareCount, spareCount-1)
+	}
+
+	if spareCount > activeCount {
+		log.Printf("[WARN] RAID has more spares (%d) than active disks (%d) - is this intentional?\n", spareCount, activeCount)
+	}
+
+	return nil
+}
+
+func verifyRAIDcollision(blockDevices []string, spareDevices []string, partitions []string, sparePartitions []string) error {
+	for _, disk := range blockDevices {
+		if slices.Contains(spareDevices, disk) {
+			return fmt.Errorf("cannot include block device %v as both active and spare, specify only a single location for the disk", disk)
+		}
+	}
+
+	for _, disk := range partitions {
+		if slices.Contains(sparePartitions, disk) {
+			return fmt.Errorf("cannot include partition %v as both active and spare, specify only a single location for the disk", disk)
 		}
 	}
 

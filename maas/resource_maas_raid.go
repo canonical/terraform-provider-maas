@@ -422,7 +422,7 @@ func verifyRAIDDevicesLevel(level string, activeCount int, spareCount int) error
 		log.Printf("[WARN] RAID level %v with %d spares is unusual - only one spare is used during recovery\n", level, spareCount)
 	}
 
-	if level == "5" && spareCount > 0 {
+	if level == "5" && spareCount > 1 {
 		log.Printf("[WARN] RAID level %v with %d spares might not be the most fault tolerant topology - have you considered RAID 6 with %d spares instead?\n", level, spareCount, spareCount-1)
 	}
 
