@@ -285,7 +285,7 @@ func TestVerifyRAIDCollisions(t *testing.T) {
 		{"multiple partitions", []string{"bd1"}, []string{"bd2"}, []string{"p1", "p2"}, []string{"p3", "p4"}, false, ""},
 		// two valid entries, one collision
 		{"overlapping block device", []string{"bd1", "bd2"}, []string{"bd2", "bd3"}, []string{}, []string{}, true, "cannot include block device bd2 as both active and spare"},
-		{"overlapping partition", []string{}, []string{}, []string{"p1", "p2"}, []string{"p2", "p3"}, true, "cannot include block device bd2 as both active and spare"},
+		{"overlapping partition", []string{}, []string{}, []string{"p1", "p2"}, []string{"p2", "p3"}, true, "cannot include partition p2 as both active and spare"},
 		// The block device check occurs first, so will trigger before checking partitions
 		{"block device and partition collision", []string{"bd1"}, []string{"bd1"}, []string{"p1"}, []string{"p1"}, true, "cannot include block device bd1 as both active and spare"},
 	}
