@@ -28,7 +28,7 @@ func resourceMAASRAID() *schema.Resource {
 				Type:         schema.TypeSet,
 				Optional:     true,
 				Elem:         &schema.Schema{Type: schema.TypeString},
-				Description:  "The list of block devices to be included in the RAID.\n*Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.\n*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.",
+				Description:  "The list of block devices to be included in the RAID.\n*Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.\n*Note*: Block devices with partitions are not valid targets to construct a RAID, supply their partitions instead.",
 				AtLeastOneOf: []string{"block_devices", "partitions"},
 			},
 			"fs_type": {
@@ -37,12 +37,11 @@ func resourceMAASRAID() *schema.Resource {
 				Description: "The file system type (e.g. `ext4`). If this is not set, the RAID is unformatted.",
 			},
 			"level": {
-				Type:     schema.TypeString,
-				Required: true,
-				// TODO: Re-add RAID-10 once the fix for LP#2109708 is released
-				Description: "The RAID Level. Valid levels are: `\"0\", \"1\", \"5\", \"6\"`",
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The RAID Level. Valid levels are: `\"0\", \"1\", \"5\", \"6\", \"10\"`",
 				ValidateFunc: validation.StringInSlice(
-					[]string{"0", "1", "5", "6"},
+					[]string{"0", "1", "5", "6", "10"},
 					false,
 				),
 			},
@@ -55,7 +54,7 @@ func resourceMAASRAID() *schema.Resource {
 			"mount_options": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Comma seperated options used for the RAID mount.",
+				Description: "Comma separated options used for the RAID mount.",
 			},
 			"mount_point": {
 				Type:        schema.TypeString,
@@ -83,7 +82,7 @@ func resourceMAASRAID() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "The list of spare block devices for the RAID.\n*Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.\n*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.",
+				Description: "The list of spare block devices for the RAID.\n*Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.\n*Note*: Block devices with partitions are not valid targets to construct a RAID, supply their partitions instead.",
 			},
 			"spare_partitions": {
 				Type:        schema.TypeSet,
@@ -103,7 +102,7 @@ func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	// Check the raid configuration is valid
+	// Check the RAID configuration is valid
 	if err = verifyRAIDConfig(client, machine, d); err != nil {
 		return diag.FromErr(err)
 	}
@@ -162,7 +161,7 @@ func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		return diag.FromErr(err)
 	}
 
-	// Update the terraform state
+	// Update the Terraform state
 	tfstate := map[string]interface{}{
 		"block_devices":    devices,
 		"fs_type":          raid.VirtualDevice.Filesystem.FSType,
@@ -197,12 +196,12 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	// Check the raid configuration is valid
+	// Check the RAID configuration is valid
 	if err = verifyRAIDConfig(client, machine, d); err != nil {
 		return diag.FromErr(err)
 	}
 
-	// devices that are moving from active to spare or vice-versa need to be removed and then re-added in a seperate call
+	// devices that are moving from active to spare or vice-versa need to be removed and then re-added in a separate call
 	// we use the following function calls to determine the disks that have been moved vs. newly added/removed
 	newBlockDevice, movedBlockDevice, removedBlockDevice := getMovedDevices(d, "block_devices", "spare_devices")
 	newSpareDevice, movedSpareDevice, removedSpareDevice := getMovedDevices(d, "spare_devices", "block_devices")
@@ -211,7 +210,7 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	// We need to be very careful about order of operations, so that we maintain the minimum number of active disks required for the RAID level
 	// We also need to ensure a disk is never included in both an add and a remove operation, as that will cause collisions in MAAS
-	// This requires, at most, five seperate update operations, in the worst case where active and spare are swapped:
+	// This requires, at most, five separate update operations, in the worst case where active and spare are swapped:
 	// add new disks, remove spare disks, add spare->active, remove active, add active->spare
 
 	// 1. add all new active and spare disks
@@ -310,8 +309,8 @@ func resourceRAIDDelete(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.ResourceData) error {
-	// Ensure the provided config has the correct disks for the raid level, that each block device is partitionless,
-	// that the boot-disk is not provided while block devices are (see: VolumeGroups for similar behaviour), and that
+	// Ensure the provided config has the correct disks for the RAID level, that each block device is partition-less,
+	// that the boot-disk is not provided while block devices are (see: VolumeGroups for similar behavior), and that
 	// provided disks are not included as both active and spare simultaneously.
 	blockDevices := convertToStringSlice(d.Get("block_devices").(*schema.Set).List())
 	spareDevices := convertToStringSlice(d.Get("spare_devices").(*schema.Set).List())
@@ -319,7 +318,7 @@ func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.
 	sparePartitions := convertToStringSlice(d.Get("spare_partitions").(*schema.Set).List())
 
 	// If any of the supplied block devices are the boot disk, MAAS will create partitions on all of the block devices
-	// We ensure, similar to Volume Group, that the boot disk is not supplied as a block device, spare or active
+	// We ensure, similar to VolumeGroup, that the boot disk is not supplied as a block device, spare or active
 	if err := verifyRAIDBootDevice(
 		client,
 		machine,
@@ -329,7 +328,7 @@ func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.
 		return err
 	}
 
-	// MAAS has an unhelpful error if you supply a block device that has partitions, so
+	// MAAS returns an unhelpful error if you supply a block device that has partitions, so
 	// perform the check and turn it into a more helpful error that informs the user the changes they should make
 	if err := verifyRAIDPartitionlessBlockDevices(
 		client,
@@ -363,8 +362,8 @@ func verifyRAIDConfig(client *client.Client, machine *entity.Machine, d *schema.
 
 func verifyRAIDBootDevice(client *client.Client, machine *entity.Machine, blockDevices []string, partitions []string) error {
 	// If any of the block devices supplied to the RAID are the boot disk, MAAS will create
-	// partitions on top of all of them. To prevent a terraform error, we perform the same
-	// check as in volume groups, and ensure the boot disk is not a supplied block device.
+	// partitions on top of all of them. To prevent a Terraform error, we perform the same
+	// check as in VolumeGroups, and ensure the boot disk is not a supplied block device.
 	bootDisk := fmt.Sprintf("%v", machine.BootDisk.ID)
 
 	var blockDeviceDisks []string
@@ -389,7 +388,7 @@ func verifyRAIDBootDevice(client *client.Client, machine *entity.Machine, blockD
 	// If the boot disk is a part of the RAID, we need to ensure there are no block devices provided too
 	if slices.Contains(blockDeviceDisks, bootDisk) && len(blockDevices) > 0 {
 		return fmt.Errorf(
-			"cannot construct a RAID with blockdevices if the boot disk %v (%v) is participating. Provide partitions on top of provided block devices instead",
+			"cannot construct a RAID with block devicesif the boot disk %v (%v) is participating. Provide partitions on top of provided block devices instead",
 			bootDisk,
 			machine.BootDisk.Name,
 		)
@@ -487,7 +486,7 @@ func splitDeviceTypes(devices []entity.RAIDDevice) ([]string, []string, error) {
 func getMovedDevices(d *schema.ResourceData, field string, counterpartField string) ([]string, []string, []string) {
 	// Determine the list of disks, for a supplied field, that have been newly added, or newly removed. Additionally, determine
 	// if any of the new disks are actually new, or have been moved from the counterpart field.
-	// ie: the set of new active disks, removed active disks, or spare disks that have been moved to active.
+	// i.e.: the set of new active disks, removed active disks, or spare disks that have been moved to active.
 	var createdDevices []string
 
 	var movedDevices []string

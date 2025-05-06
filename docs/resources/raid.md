@@ -79,7 +79,7 @@ resource "maas_raid" "raid1" {
 
 ### Required
 
-- `level` (String) The RAID Level. Valid levels are: `"0", "1", "5", "6"`
+- `level` (String) The RAID Level. Valid levels are: `"0", "1", "5", "6", "10"`
 - `machine` (String) The machine identifier (system ID, hostname, or FQDN) that owns the RAID.
 - `name` (String) The name for the RAID
 
@@ -87,14 +87,14 @@ resource "maas_raid" "raid1" {
 
 - `block_devices` (Set of String) The list of block devices to be included in the RAID.
 *Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.
-*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.
+*Note*: Block devices with partitions are not valid targets to construct a RAID, supply their partitions instead.
 - `fs_type` (String) The file system type (e.g. `ext4`). If this is not set, the RAID is unformatted.
-- `mount_options` (String) Comma seperated options used for the RAID mount.
+- `mount_options` (String) Comma separated options used for the RAID mount.
 - `mount_point` (String) The mount point used. If this is not set, the RAID is not mounted.
 - `partitions` (Set of String) The list of partitions to be included in the RAID.
 - `spare_devices` (Set of String) The list of spare block devices for the RAID.
 *Note*: The boot disk cannot participate in the RAID as a block device, a partition on top of it should be supplied instead.
-*Note*: Block devices with partitions are not valid targets to construct a raid, supply their partitions instead.
+*Note*: Block devices with partitions are not valid targets to construct a RAID, supply their partitions instead.
 - `spare_partitions` (Set of String) The list of spare partitions for the RAID.
 
 ### Read-Only

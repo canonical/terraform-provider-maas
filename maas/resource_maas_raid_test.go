@@ -38,7 +38,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 	swappedFsType := "ext4"
 	swappedMountPoint := "/var/raidswap"
 
-	// we include a seperate unused boot disk to avoid the boot disk/partition behaviour
+	// we include a separate unused boot disk to avoid the boot disk/partition behavior
 	baseConfig := testAccRAIDMachine(machine) +
 		testAccRAIDBlockDevice("boot", 2, true) +
 		testAccRAIDBlockDevice(blockDevice1Name, 2, false) +
@@ -135,9 +135,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 }
 
 func TestAccResourceMAASRAID_differentLevels(t *testing.T) {
-	// We need to test a RAID can be created for every level supported
-	// TODO: Update this when LP:2109708 is released in MAAS
-	validRAIDLevels := []string{"0", "1", "5", "6"}
+	validRAIDLevels := []string{"0", "1", "5", "6", "10"}
 
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 
@@ -208,19 +206,28 @@ func TestVerifyRAIDDevicesLevel(t *testing.T) {
 	}{
 		// Test minimum disk requirement
 		{"RAID too few disks", "1", 1, 0, true, "require at least two active disks", false, ""},
+
 		// Test each RAID level
 		{"RAID 0 valid", "0", 2, 0, false, "", false, ""},
 		{"RAID 0 with spare", "0", 2, 1, true, "cannot use hot spares", false, ""},
 		{"RAID 0 too few disks", "0", 1, 0, true, "require at least two active disks", false, ""},
+
 		{"RAID 1 valid", "1", 2, 0, false, "", false, ""},
 		{"RAID 1 valid spares", "1", 2, 1, false, "", false, ""},
 		{"RAID 1 too few disks", "1", 1, 0, true, "require at least two active disks", false, ""},
+
 		{"RAID 5 valid", "5", 3, 0, false, "", false, ""},
 		{"RAID 5 valid spares", "5", 3, 1, false, "", false, ""},
 		{"RAID 5 too few disks", "5", 2, 0, true, "requires at least three active disks", false, ""},
+
 		{"RAID 6 valid", "6", 4, 0, false, "", false, ""},
 		{"RAID 6 valid spares", "6", 4, 4, false, "", false, ""},
 		{"RAID 6 too few disks", "6", 3, 0, true, "requires at least four active disks", false, ""},
+
+		{"RAID 10 valid", "10", 3, 0, false, "", false, ""},
+		{"RAID 10 valid spares", "10", 3, 2, false, "", false, ""},
+		{"RAID 10 too few disks", "10", 2, 0, true, "requires at least three active disks", false, ""},
+
 		// These shouldn't produce an error, only a usage warning
 		{"RAID 1 unusual spares", "1", 10, 4, false, "", true, "spares is unusual"},
 		{"RAID 5 valid spares", "5", 10, 4, false, "", true, "have you considered RAID 6"},
