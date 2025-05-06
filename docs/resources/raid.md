@@ -3,12 +3,12 @@
 page_title: "maas_raid Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage MAAS RAIDS, and construct them from block devices and partitions.
+  Provides a resource to manage MAAS RAIDs, and construct them from block devices and partitions.
 ---
 
 # maas_raid (Resource)
 
-Provides a resource to manage MAAS RAIDS, and construct them from block devices and partitions.
+Provides a resource to manage MAAS RAIDs, and construct them from block devices and partitions.
 
 ## Example Usage
 

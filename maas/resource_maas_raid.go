@@ -17,7 +17,7 @@ import (
 
 func resourceMAASRAID() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage MAAS RAIDS, and construct them from block devices and partitions.",
+		Description:   "Provides a resource to manage MAAS RAIDs, and construct them from block devices and partitions.",
 		CreateContext: resourceRAIDCreate,
 		ReadContext:   resourceRAIDRead,
 		UpdateContext: resourceRAIDUpdate,
@@ -388,7 +388,7 @@ func verifyRAIDBootDevice(client *client.Client, machine *entity.Machine, blockD
 	// If the boot disk is a part of the RAID, we need to ensure there are no block devices provided too
 	if slices.Contains(blockDeviceDisks, bootDisk) && len(blockDevices) > 0 {
 		return fmt.Errorf(
-			"cannot construct a RAID with block devicesif the boot disk %v (%v) is participating. Provide partitions on top of provided block devices instead",
+			"cannot construct a RAID with block devices if the boot disk %v (%v) is participating. Provide partitions on top of provided block devices instead",
 			bootDisk,
 			machine.BootDisk.Name,
 		)
