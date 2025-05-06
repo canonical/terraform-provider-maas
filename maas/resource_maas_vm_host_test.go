@@ -18,10 +18,10 @@ import (
 
 func TestAccMAASVMHost_basic(t *testing.T) {
 	VMHostName := acctest.RandomWithPrefix("tf-vm-host")
-	powerAddress := "10.241.0.1"
+	var powerAddress string
 	project := "mass"
 	VMHostID := os.Getenv("TF_ACC_VM_HOST_ID")
-
+	
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
 		Providers:    testutils.TestAccProviders,
@@ -42,7 +42,7 @@ func TestAccMAASVMHost_basic(t *testing.T) {
 					}
 					existingPowerAddr := host["power_address"]
 
-					*powerAddress = &existingPowerAddr
+					powerAddress = existingPowerAddr
 				},
 				Config: testAccMAASVMHostConfig(VMHostName, project, powerAddress),
 				Check: resource.ComposeTestCheckFunc(
