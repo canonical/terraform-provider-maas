@@ -63,18 +63,18 @@ func resourceMAASVMHost() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"cpu_over_commit_ratio": {
-				Type:        schema.TypeFloat,
-				Optional:    true,
-				Computed:    true,
-				Description: "The new VM host CPU overcommit ratio. This is computed if it's not set.",
-			},
 			"certificate": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Sensitive:     true,
 				ConflictsWith: []string{"machine", "power_user", "power_pass"},
 				Description:   "Certificate to use for power control of a LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` parameters are used.",
+			},
+			"cpu_over_commit_ratio": {
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				Computed:    true,
+				Description: "The new VM host CPU overcommit ratio. This is computed if it's not set.",
 			},
 			"default_macvlan_mode": {
 				Type:        schema.TypeString,
