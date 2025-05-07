@@ -29,6 +29,11 @@ data "maas_subnet" "vid10" {
 
 - `cidr` (String) The subnet CIDR.
 
+### Optional
+
+- `active_discovery` (Boolean) Boolean value that indicates if MAAS should detect machines on the network by actively probing for devices. Defaults to `true`.
+- `managed` (Boolean) Boolean value that indicates if MAAS should manage address reservations and static routing. Defaults to `true`.
+
 ### Read-Only
 
 - `allow_dns` (Boolean) Boolean value that indicates if the MAAS DNS resolution is enabled for this subnet.

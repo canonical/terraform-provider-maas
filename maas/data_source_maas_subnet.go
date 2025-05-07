@@ -14,6 +14,12 @@ func dataSourceMAASSubnet() *schema.Resource {
 		ReadContext: dataSourceSubnetRead,
 
 		Schema: map[string]*schema.Schema{
+			"active_discovery": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Boolean value that indicates if MAAS should detect machines on the network by actively probing for devices. Defaults to `true`.",
+			},
 			"allow_dns": {
 				Type:        schema.TypeBool,
 				Computed:    true,
@@ -46,6 +52,12 @@ func dataSourceMAASSubnet() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "Gateway IP address for the subnet.",
+			},
+			"managed": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Boolean value that indicates if MAAS should manage address reservations and static routing. Defaults to `true`.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -85,15 +97,17 @@ func dataSourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta any)
 	}
 
 	tfState := map[string]any{
-		"id":          fmt.Sprintf("%v", subnet.ID),
-		"fabric":      subnet.VLAN.Fabric,
-		"vid":         subnet.VLAN.VID,
-		"name":        subnet.Name,
-		"rdns_mode":   subnet.RDNSMode,
-		"allow_dns":   subnet.AllowDNS,
-		"allow_proxy": subnet.AllowProxy,
-		"gateway_ip":  gatewayIP,
-		"dns_servers": dnsServers,
+		"id":               fmt.Sprintf("%v", subnet.ID),
+		"fabric":           subnet.VLAN.Fabric,
+		"vid":              subnet.VLAN.VID,
+		"name":             subnet.Name,
+		"rdns_mode":        subnet.RDNSMode,
+		"allow_dns":        subnet.AllowDNS,
+		"allow_proxy":      subnet.AllowProxy,
+		"gateway_ip":       gatewayIP,
+		"dns_servers":      dnsServers,
+		"active_discovery": subnet.ActiveDiscovery,
+		"managed":          subnet.Managed,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
