@@ -16,7 +16,7 @@ resource "maas_vm_host" "lxd_no_certificate" {
   password      = "my-lxd-trust-password"
 }
 
-# New, untrusted certificates can be trusted by specifying the lxd trust password
+# New, untrusted certificates can be trusted by specifying the LXD trust password or token
 resource "maas_vm_host" "lxd_new_certificate" {
   type          = "lxd"
   power_address = "10.10.0.1"
