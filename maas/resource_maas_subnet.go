@@ -28,14 +28,16 @@ func resourceMAASSubnet() *schema.Resource {
 					return nil, err
 				}
 				tfState := map[string]any{
-					"id":          fmt.Sprintf("%v", subnet.ID),
-					"cidr":        subnet.CIDR,
-					"name":        subnet.Name,
-					"fabric":      fmt.Sprintf("%v", subnet.VLAN.FabricID),
-					"vlan":        fmt.Sprintf("%v", subnet.VLAN.VID),
-					"rdns_mode":   subnet.RDNSMode,
-					"allow_dns":   subnet.AllowDNS,
-					"allow_proxy": subnet.AllowProxy,
+					"id":               fmt.Sprintf("%v", subnet.ID),
+					"cidr":             subnet.CIDR,
+					"name":             subnet.Name,
+					"fabric":           fmt.Sprintf("%v", subnet.VLAN.FabricID),
+					"vlan":             fmt.Sprintf("%v", subnet.VLAN.VID),
+					"rdns_mode":        subnet.RDNSMode,
+					"allow_dns":        subnet.AllowDNS,
+					"allow_proxy":      subnet.AllowProxy,
+					"active_discovery": subnet.ActiveDiscovery,
+					"managed":          subnet.Managed,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -45,6 +47,12 @@ func resourceMAASSubnet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"active_discovery": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Boolean value that indicates if MAAS should detect machines on the network by actively probing for devices. Defaults to `true`.",
+			},
 			"allow_dns": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -115,6 +123,12 @@ func resourceMAASSubnet() *schema.Resource {
 						},
 					},
 				},
+			},
+			"managed": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Boolean value that indicates if MAAS should manage address reservations and static routing. Defaults to `true`.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -270,14 +284,15 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 
 func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.SubnetParams, error) {
 	params := entity.SubnetParams{
-		CIDR:       d.Get("cidr").(string),
-		Name:       d.Get("name").(string),
-		RDNSMode:   d.Get("rdns_mode").(int),
-		AllowDNS:   d.Get("allow_dns").(bool),
-		AllowProxy: d.Get("allow_proxy").(bool),
-		GatewayIP:  d.Get("gateway_ip").(string),
-		DNSServers: convertToStringSlice(d.Get("dns_servers")),
-		Managed:    true,
+		CIDR:            d.Get("cidr").(string),
+		Name:            d.Get("name").(string),
+		RDNSMode:        d.Get("rdns_mode").(int),
+		AllowDNS:        d.Get("allow_dns").(bool),
+		AllowProxy:      d.Get("allow_proxy").(bool),
+		GatewayIP:       d.Get("gateway_ip").(string),
+		DNSServers:      convertToStringSlice(d.Get("dns_servers")),
+		ActiveDiscovery: d.Get("active_discovery").(bool),
+		Managed:         d.Get("managed").(bool),
 	}
 
 	if p, ok := d.GetOk("fabric"); ok {
