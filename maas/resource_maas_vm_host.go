@@ -305,35 +305,7 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	if d.Get("type") == "lxd" {
-		if d.Get("password") != nil || d.Get("certificate") != nil || d.Get("key") != nil {
-			certificate, ok := hostParams["certificate"]
-			if ok {
-				tfState["certificate"] = stripWhitespace(certificate)
-			}
-			key, ok := hostParams["key"]
-			if ok {
-				tfState["key"] = stripWhitespace(key)
-			}
-			project, ok := hostParams["project"]
-			if ok {
-				tfState["project"] = project
-			}
-		}
-	} else if d.Get("type") == "virsh" {
-		powerUser, ok := hostParams["power_user"]
-		if ok {
-			tfState["power_user"] = powerUser
-		}
-		powerPass, ok := hostParams["power_pass"]
-		if ok {
-			tfState["power_pass"] = powerPass
-		}
-	}
-	powerAddress, ok := hostParams["power_address"]
-	if ok {
-		tfState["power_address"] = powerAddress
-	}
+	tfState, err = addVMParametersToState(d, tfState, hostParams)
 
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -342,6 +314,42 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 	return nil
 }
 
+func addVMParametersToState(d *schema.ResourceData, tfState map[string]any, hostParams map[string]string) (map[string]any, error) {
+	if d.Get("type") == "lxd" {
+		if d.Get("password") != nil || d.Get("certificate") != nil || d.Get("key") != nil {
+			certificate, ok := hostParams["certificate"]
+			if !ok {
+				return nil, fmt.Errorf("Error getting VM Host parameter 'certificate'")
+			}
+			tfState["certificate"] = stripWhitespace(certificate)
+
+			key, ok := hostParams["key"]
+			if !ok {
+				return nil, fmt.Errorf("Error getting VM Host parameter 'certificate'")
+			}
+			tfState["key"] = stripWhitespace(key)
+
+			project, ok := hostParams["project"]
+			if !ok {
+				return nil, fmt.Errorf("Error getting VM Host parameter 'project'")
+			}
+			tfState["project"] = project
+		}
+	} else if d.Get("type") == "virsh" {
+		powerUser, ok := hostParams["power_user"]
+		if !ok {
+			return nil, fmt.Errorf("Error getting VM Host parameter 'power_user'")
+		}
+		tfState["power_user"] = powerUser
+
+		powerPass, ok := hostParams["power_pass"]
+		if !ok {
+			return nil, fmt.Errorf("Error getting VM Host parameter 'power_pass'")
+		}
+		tfState["power_pass"] = powerPass
+	}
+	return tfState, nil
+}
 
 func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
