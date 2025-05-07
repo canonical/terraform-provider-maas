@@ -115,8 +115,8 @@ func resourceMAASVMHost() *schema.Resource {
 				Optional:      true,
 				ForceNew:      true,
 				ExactlyOneOf:  vmHostSources,
-				ConflictsWith: []string{"power_address", "power_user", "power_pass", "certificate", "key"},
-				Description:   "The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`, `certificate`, `key`.",
+				ConflictsWith: []string{"power_address", "power_user", "power_pass", "certificate", "key", "password"},
+				Description:   "The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`, `certificate`, `key` and `password`.",
 			},
 			"memory_over_commit_ratio": {
 				Type:        schema.TypeFloat,
@@ -212,14 +212,14 @@ func resourceMAASVMHost() *schema.Resource {
 				Optional:      true,
 				Sensitive:     true,
 				ConflictsWith: []string{"machine", "power_user", "power_pass"},
-				Description:   "Certificate key to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, `power_pass`, or `password` arguments are used.",
+				Description:   "Certificate key to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, or `power_pass` arguments are used.",
 			},
 			"password": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Sensitive:     true,
 				ConflictsWith: []string{"machine", "power_user", "power_pass"},
-				Description:   "Password to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, `power_pass`, `certificate` or `key` arguments are used.",
+				Description:   "Password to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, or `power_pass` arguments are used.",
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
