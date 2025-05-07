@@ -66,6 +66,7 @@ func resourceMAASVMHost() *schema.Resource {
 			"certificate": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Computed:      true,
 				Sensitive:     true,
 				ConflictsWith: []string{"machine", "power_user", "power_pass"},
 				Description:   "Certificate to use for power control of a LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` parameters are used.",
@@ -120,6 +121,7 @@ func resourceMAASVMHost() *schema.Resource {
 			"key": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Computed:      true,
 				Sensitive:     true,
 				ConflictsWith: []string{"machine", "power_user", "power_pass"},
 				Description:   "Certificate key to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.",
@@ -297,6 +299,42 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		"resources_memory_total":        vmHost.Total.Memory,
 		"resources_local_storage_total": vmHost.Total.LocalStorage,
 	}
+
+	hostParams, err := client.VMHost.GetParameters(vmHost.ID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if d.Get("type") == "lxd" {
+		if d.Get("password") != nil || d.Get("certificate") != nil || d.Get("key") != nil {
+			certificate, ok := hostParams["certificate"]
+			if ok {
+				tfState["certificate"] = stripWhitespace(certificate)
+			}
+			key, ok := hostParams["key"]
+			if ok {
+				tfState["key"] = stripWhitespace(key)
+			}
+			project, ok := hostParams["project"]
+			if ok {
+				tfState["project"] = project
+			}
+		}
+	} else if d.Get("type") == "virsh" {
+		powerUser, ok := hostParams["power_user"]
+		if ok {
+			tfState["power_user"] = powerUser
+		}
+		powerPass, ok := hostParams["power_pass"]
+		if ok {
+			tfState["power_pass"] = powerPass
+		}
+	}
+	powerAddress, ok := hostParams["power_address"]
+	if ok {
+		tfState["power_address"] = powerAddress
+	}
+
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
@@ -304,33 +342,34 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 	return nil
 }
 
+
 func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-
+	
 	// Get the VM host
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	
 	// Update VM host options
 	_, err = client.VMHost.Update(id, getVMHostParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	
 	return resourceVMHostRead(ctx, d, meta)
 }
 
 func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-
+	
 	// Delete VM host
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	
 	vmHost, err := client.VMHost.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
@@ -377,8 +416,8 @@ func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
 		DefaultMacvlanMode:    d.Get("default_macvlan_mode").(string),
 		Zone:                  d.Get("zone").(string),
 		Pool:                  d.Get("pool").(string),
-		Certificate:           d.Get("certificate").(string),
-		Key:                   d.Get("key").(string),
+		Certificate:           stripWhitespace(d.Get("certificate").(string)),
+		Key:                   stripWhitespace(d.Get("key").(string)),
 		Tags:                  strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
 		Project:               d.Get("project").(string),
 		Password:              d.Get("password").(string),
