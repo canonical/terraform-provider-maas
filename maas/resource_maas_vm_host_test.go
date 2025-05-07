@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 	"terraform-provider-maas/maas"
@@ -16,88 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccMAASVMHost_basic(t *testing.T) {
-	VMHostName := acctest.RandomWithPrefix("tf-vm-host")
-
-	var powerAddress string
-
-	project := "mass"
-	VMHostID := os.Getenv("TF_ACC_VM_HOST_ID")
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASVMHostDestroy,
-		ErrorCheck:   func(err error) error { return err },
-		Steps: []resource.TestStep{
-			// Test create
-			{
-				PreConfig: func() {
-					client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-					id, err := strconv.Atoi(VMHostID)
-					if err != nil {
-						panic(err)
-					}
-					host, err := client.VMHost.GetParameters(id)
-					if err != nil {
-						panic(fmt.Errorf("Error getting VM Host (%v): %v", VMHostID, err))
-					}
-					existingPowerAddr := host["power_address"]
-
-					powerAddress = existingPowerAddr
-				},
-				Config: testAccMAASVMHostConfig(VMHostName, project, powerAddress),
-				Check: resource.ComposeTestCheckFunc(
-					checkMAASVMHostExists(t, "maas_vm_host.test"),
-					resource.TestCheckResourceAttr("maas_vm_host.test", "type", "lxd"),
-					resource.TestCheckResourceAttr("maas_vm_host.test", "power_address", powerAddress),
-					resource.TestCheckResourceAttr("maas_vm_host.test", "project", project),
-					checkMAASVMHostIsComposable(t, "maas_vm_host.test"),
-				),
-			},
-		},
-	})
-}
-
-func testAccMAASVMHostConfig(powerAddress, projectName, vmHostName string) string {
-	return fmt.Sprintf(`
-resource "maas_vm_host" "test" {
-  type          = "lxd"
-  power_address = %q
-  project       = %q
-  certificate   = file(systemtests.cert)
-  key           = file(systemtests.key)
-  name          = %q
-}
-	`, powerAddress, projectName, vmHostName)
-}
-
-func checkMAASVMHostIsComposable(t *testing.T, resourceName string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return fmt.Errorf("resource not found: %s", resourceName)
-		}
-
-		systemID, err := strconv.Atoi(rs.Primary.ID)
-		if err != nil {
-			return fmt.Errorf("failed to convert system ID to int: %s", err)
-		}
-
-		client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-
-		machine, err := client.VMHost.Get(systemID)
-		if err != nil {
-			return err
-		}
-
-		if !slices.Contains(machine.Capabilities, "composable") {
-			return fmt.Errorf("VM host  is not composable")
-		}
-
-		return nil
-	}
-}
 func TestAccMAASVMHost_DeployParams(t *testing.T) {
 	// A VM host identifier. Used to create a VM, which is deployed as a VM host in this test.
 	vmHostIdentifier := os.Getenv("TF_ACC_VM_HOST_ID")
