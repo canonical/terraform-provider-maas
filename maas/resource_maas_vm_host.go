@@ -69,6 +69,13 @@ func resourceMAASVMHost() *schema.Resource {
 				Computed:    true,
 				Description: "The new VM host CPU overcommit ratio. This is computed if it's not set.",
 			},
+			"certificate": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "Certificate to use for power control of a LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` parameters are used.",
+			},
 			"default_macvlan_mode": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -110,6 +117,13 @@ func resourceMAASVMHost() *schema.Resource {
 					},
 				},
 			},
+			"key": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "Certificate key to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.",
+			},
 			"machine": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -130,11 +144,25 @@ func resourceMAASVMHost() *schema.Resource {
 				Computed:    true,
 				Description: "The new VM host name. This is computed if it's not set.",
 			},
+			"password": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "LXD trust password to use for power control of a LXD VM Host. If parameters `certificate` and `key` are used, the trust password will be used to trust the certificate-key pair. If no `certificate` and `key` are specified, MAAS will generate a trusted certificate and key for the VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.",
+			},
 			"pool": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 				Description: "The new VM host pool name. This is computed if it's not set.",
+			},
+			"project": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `power_user` or `power_pass` parameters are used.",
 			},
 			"power_address": {
 				Type:          schema.TypeString,
@@ -192,34 +220,6 @@ func resourceMAASVMHost() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Description: "The new VM host zone name. This is computed if it's not set.",
-			},
-			"project": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"machine", "power_user", "power_pass"},
-				Description:   "LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `power_user` or `power_pass` parameters are used.",
-			},
-			"certificate": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Sensitive:     true,
-				ConflictsWith: []string{"machine", "power_user", "power_pass"},
-				Description:   "Certificate to use for power control of a LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` parameters are used.",
-			},
-			"key": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Sensitive:     true,
-				ConflictsWith: []string{"machine", "power_user", "power_pass"},
-				Description:   "Certificate key to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.",
-			},
-			"password": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Sensitive:     true,
-				ConflictsWith: []string{"machine", "power_user", "power_pass"},
-				Description:   "LXD trust password to use for power control of a LXD VM Host. If parameters `certificate` and `key` are used, the trust password will be used to trust the certificate-key pair. If no `certificate` and `key` are specified, MAAS will generate a trusted certificate and key for the VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.",
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
