@@ -157,13 +157,6 @@ func resourceMAASVMHost() *schema.Resource {
 				Computed:    true,
 				Description: "The new VM host pool name. This is computed if it's not set.",
 			},
-			"project": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"machine", "power_user", "power_pass"},
-				Description:   "LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `power_user` or `power_pass` parameters are used.",
-			},
 			"power_address": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -183,6 +176,13 @@ func resourceMAASVMHost() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"machine", "certificate", "key", "password"},
 				Description:   "User name to use for power control of a Virsh VM host. Cannot be set if `machine`, `certificate`, `key` or `password` parameters are used.",
+			},
+			"project": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `power_user` or `power_pass` parameters are used.",
 			},
 			"resources_cores_total": {
 				Type:        schema.TypeInt,
