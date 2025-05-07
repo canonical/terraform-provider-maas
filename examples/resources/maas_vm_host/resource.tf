@@ -12,7 +12,7 @@ resource "maas_vm_host" "kvm_virsh" {
 resource "maas_vm_host" "lxd_no_certificate" {
   type          = "lxd"
   power_address = "10.10.0.1"
-  project   = "test-project"
+  project       = "test-project"
   password      = "my-lxd-trust-password"
 }
 
@@ -20,7 +20,7 @@ resource "maas_vm_host" "lxd_no_certificate" {
 resource "maas_vm_host" "lxd_new_certificate" {
   type          = "lxd"
   power_address = "10.10.0.1"
-  project   = "test-project"
+  project       = "test-project"
   password      = "my-lxd-trust-password"
   certificate   = "-----BEGIN CERTIFICATE-----\n certificate-goes-here =\n-----END CERTIFICATE-----\n"
   key           = "-----BEGIN PRIVATE KEY-----\n key-goes-here ==\n-----END PRIVATE KEY-----\n"
@@ -30,7 +30,7 @@ resource "maas_vm_host" "lxd_new_certificate" {
 resource "maas_vm_host" "lxd_pre_trusted_certificate" {
   type          = "lxd"
   power_address = "10.10.0.1"
-  project   = "test-project"
+  project       = "test-project"
   certificate   = "-----BEGIN CERTIFICATE-----\n certificate-goes-here =\n-----END CERTIFICATE-----\n"
   key           = "-----BEGIN PRIVATE KEY-----\n key-goes-here ==\n-----END PRIVATE KEY-----\n"
 }
