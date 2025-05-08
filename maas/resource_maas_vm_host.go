@@ -322,7 +322,8 @@ func addVMParametersToState(vmHostType string, tfState map[string]any, hostParam
 		tfState["power_address"] = powerAddress
 	}
 
-	if vmHostType == "lxd" {
+	switch vmHostType {
+	case "lxd":
 		if cert, ok := hostParams["certificate"]; ok {
 			tfState["certificate"] = stripWhitespace(cert)
 		}
@@ -338,7 +339,7 @@ func addVMParametersToState(vmHostType string, tfState map[string]any, hostParam
 		if project, ok := hostParams["project"]; ok {
 			tfState["project"] = project
 		}
-	} else if vmHostType == "virsh" {
+	case "virsh":
 		if powerPass, ok := hostParams["power_pass"]; ok {
 			tfState["power_pass"] = powerPass
 		}
