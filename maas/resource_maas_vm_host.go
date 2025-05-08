@@ -306,6 +306,9 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 	}
 
 	tfState, err = addVMParametersToState(d, tfState, hostParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -319,65 +322,71 @@ func addVMParametersToState(d *schema.ResourceData, tfState map[string]any, host
 		if d.Get("password") != nil || d.Get("certificate") != nil || d.Get("key") != nil {
 			certificate, ok := hostParams["certificate"]
 			if !ok {
-				return nil, fmt.Errorf("Error getting VM Host parameter 'certificate'")
+				return nil, fmt.Errorf("error getting VM Host parameter 'certificate'")
 			}
+
 			tfState["certificate"] = stripWhitespace(certificate)
 
 			key, ok := hostParams["key"]
 			if !ok {
-				return nil, fmt.Errorf("Error getting VM Host parameter 'certificate'")
+				return nil, fmt.Errorf("error getting VM Host parameter 'certificate'")
 			}
+
 			tfState["key"] = stripWhitespace(key)
 
 			project, ok := hostParams["project"]
 			if !ok {
-				return nil, fmt.Errorf("Error getting VM Host parameter 'project'")
+				return nil, fmt.Errorf("error getting VM Host parameter 'project'")
 			}
+
 			tfState["project"] = project
 		}
 	} else if d.Get("type") == "virsh" {
 		powerUser, ok := hostParams["power_user"]
 		if !ok {
-			return nil, fmt.Errorf("Error getting VM Host parameter 'power_user'")
+			return nil, fmt.Errorf("error getting VM Host parameter 'power_user'")
 		}
+
 		tfState["power_user"] = powerUser
 
 		powerPass, ok := hostParams["power_pass"]
 		if !ok {
-			return nil, fmt.Errorf("Error getting VM Host parameter 'power_pass'")
+			return nil, fmt.Errorf("error getting VM Host parameter 'power_pass'")
 		}
+
 		tfState["power_pass"] = powerPass
 	}
+
 	return tfState, nil
 }
 
 func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-	
+
 	// Get the VM host
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	// Update VM host options
 	_, err = client.VMHost.Update(id, getVMHostParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	return resourceVMHostRead(ctx, d, meta)
 }
 
 func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-	
+
 	// Delete VM host
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	
+
 	vmHost, err := client.VMHost.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
