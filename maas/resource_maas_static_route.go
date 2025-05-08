@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceMaasStaticRoute() *schema.Resource {
+func resourceMAASStaticRoute() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS static routes.",
 		CreateContext: resourceStaticRouteCreate,
@@ -22,16 +22,16 @@ func resourceMaasStaticRoute() *schema.Resource {
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				cfg := meta.(*ClientConfig)
 				client := cfg.Client
-				static_route, err := getStaticRoute(client, d.Id())
+				staticRoute, err := getStaticRoute(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
 				tfState := map[string]interface{}{
-					"id":          fmt.Sprintf("%v", static_route.ID),
-					"source":      static_route.Source.Name,
-					"destination": static_route.Destination.Name,
-					"gateway_ip":  static_route.GatewayIP,
-					"metric":      static_route.Metric,
+					"id":          fmt.Sprintf("%v", staticRoute.ID),
+					"source":      staticRoute.Source.Name,
+					"destination": staticRoute.Destination.Name,
+					"gateway_ip":  staticRoute.GatewayIP,
+					"metric":      staticRoute.Metric,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -41,21 +41,21 @@ func resourceMaasStaticRoute() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"metric": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     0,
-				Description: "Weight of the route on a deployed machine. Defaults to 0.",
+			"destination": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Destination subnet name for the route.",
 			},
 			"gateway_ip": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "IP address of the gateway on the source subnet.",
 			},
-			"destination": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Destination subnet name for the route.",
+			"metric": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     0,
+				Description: "Weight of the route on a deployed machine. Defaults to 0.",
 			},
 			"source": {
 				Type:        schema.TypeString,
@@ -74,11 +74,13 @@ func resourceStaticRouteCreate(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	static_route, err := client.StaticRoutes.Create(params)
+
+	staticRoute, err := client.StaticRoutes.Create(params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("%v", static_route.ID))
+
+	d.SetId(fmt.Sprintf("%v", staticRoute.ID))
 
 	return resourceStaticRouteUpdate(ctx, d, meta)
 }
@@ -91,19 +93,21 @@ func resourceStaticRouteRead(ctx context.Context, d *schema.ResourceData, meta i
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	static_route, err := client.StaticRoute.Get(id)
+
+	staticRoute, err := client.StaticRoute.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	source := static_route.Source.Name
-	destination := static_route.Destination.Name
-	gatewayIp := static_route.GatewayIP
-	metric := static_route.Metric
+
+	source := staticRoute.Source.Name
+	destination := staticRoute.Destination.Name
+	gatewayIP := staticRoute.GatewayIP
+	metric := staticRoute.Metric
 
 	tfState := map[string]interface{}{
 		"destination": destination,
 		"source":      source,
-		"gateway_ip":  gatewayIp,
+		"gateway_ip":  gatewayIP,
 		"metric":      metric,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
@@ -121,10 +125,12 @@ func resourceStaticRouteUpdate(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	params, err := getStaticRouteParams(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if _, err := client.StaticRoute.Update(id, params); err != nil {
 		return diag.FromErr(err)
 	}
@@ -140,6 +146,7 @@ func resourceStaticRouteDelete(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	if err := client.StaticRoute.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -159,29 +166,34 @@ func getStaticRouteParams(client *client.Client, d *schema.ResourceData) (*entit
 		GatewayIP:   d.Get("gateway_ip").(string),
 		Metric:      metric,
 	}
+
 	return &params, nil
 }
 
 func findStaticRoute(client *client.Client, identifier string) (*entity.StaticRoute, error) {
-	static_routes, err := client.StaticRoutes.Get()
+	staticRoutes, err := client.StaticRoutes.Get()
 	if err != nil {
 		return nil, err
 	}
-	for _, s := range static_routes {
+
+	for _, s := range staticRoutes {
 		if fmt.Sprintf("%v", s.ID) == identifier {
 			return &s, nil
 		}
 	}
+
 	return nil, nil
 }
 
 func getStaticRoute(client *client.Client, identifier string) (*entity.StaticRoute, error) {
-	static_route, err := findStaticRoute(client, identifier)
+	staticRoute, err := findStaticRoute(client, identifier)
 	if err != nil {
 		return nil, err
 	}
-	if static_route == nil {
-		return nil, fmt.Errorf("static_route (%s) was not found", identifier)
+
+	if staticRoute == nil {
+		return nil, fmt.Errorf("staticRoute (%s) was not found", identifier)
 	}
-	return static_route, nil
+
+	return staticRoute, nil
 }
