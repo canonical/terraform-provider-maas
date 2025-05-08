@@ -85,7 +85,7 @@ func resourceLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	formattedDevice, err := formatAndMountLVM(client, createdLVM, d)
+	formattedDevice, err := formatAndMountVirtualBlockDevice(client, createdLVM, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -143,7 +143,7 @@ func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	formattedDevice, err := formatAndMountLVM(client, updatedLVM, d)
+	formattedDevice, err := formatAndMountVirtualBlockDevice(client, updatedLVM, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -198,7 +198,7 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 	return nil
 }
 
-func formatAndMountLVM(client *client.Client, virtualBlockDevice *entity.BlockDevice, d *schema.ResourceData) (*entity.BlockDevice, error) {
+func formatAndMountVirtualBlockDevice(client *client.Client, virtualBlockDevice *entity.BlockDevice, d *schema.ResourceData) (*entity.BlockDevice, error) {
 	var err error
 	if d.Get("fs_type") != nil {
 		virtualBlockDevice, err = client.BlockDevice.Format(virtualBlockDevice.SystemID, virtualBlockDevice.ID, d.Get("fs_type").(string))
