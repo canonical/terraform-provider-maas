@@ -93,9 +93,10 @@ func resourceMAASSubnet() *schema.Resource {
 				Description:      "Gateway IP address for the new subnet. This argument is computed if it's not set.",
 			},
 			"ip_ranges": {
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Description: "A set of IP ranges configured on the new subnet. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
+				Type:          schema.TypeSet,
+				Optional:      true,
+				ConflictsWith: []string{"managed"},
+				Description:   "A set of IP ranges configured on the new subnet. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"comment": {
@@ -125,10 +126,11 @@ func resourceMAASSubnet() *schema.Resource {
 				},
 			},
 			"managed": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Description: "Boolean value that indicates if MAAS should manage address reservations and static routing. Defaults to `true`.",
+				Type:          schema.TypeBool,
+				Optional:      true,
+				Default:       true,
+				ConflictsWith: []string{"ip_ranges"},
+				Description:   "Boolean value that indicates if MAAS should manage address reservations and static routing. Defaults to `true`.",
 			},
 			"name": {
 				Type:        schema.TypeString,
