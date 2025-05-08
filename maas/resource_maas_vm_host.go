@@ -318,43 +318,32 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 }
 
 func addVMParametersToState(d *schema.ResourceData, tfState map[string]any, hostParams map[string]string) (map[string]any, error) {
+	if powerAddress, ok := hostParams["power_address"]; ok {
+		tfState["power_address"] = powerAddress
+	}
+
 	if d.Get("type") == "lxd" {
 		if d.Get("password") != nil || d.Get("certificate") != nil || d.Get("key") != nil {
-			certificate, ok := hostParams["certificate"]
-			if !ok {
-				return nil, fmt.Errorf("error getting VM Host parameter 'certificate'")
+			if cert, ok := hostParams["certificate"]; ok {
+				tfState["certificate"] = stripWhitespace(cert)
 			}
 
-			tfState["certificate"] = stripWhitespace(certificate)
-
-			key, ok := hostParams["key"]
-			if !ok {
-				return nil, fmt.Errorf("error getting VM Host parameter 'certificate'")
+			if key, ok := hostParams["key"]; ok {
+				tfState["key"] = stripWhitespace(key)
 			}
 
-			tfState["key"] = stripWhitespace(key)
-
-			project, ok := hostParams["project"]
-			if !ok {
-				return nil, fmt.Errorf("error getting VM Host parameter 'project'")
+			if password, ok := hostParams["password"]; ok {
+				tfState["password"] = password
 			}
 
-			tfState["project"] = project
+			if project, ok := hostParams["project"]; ok {
+				tfState["project"] = project
+			}
 		}
 	} else if d.Get("type") == "virsh" {
-		powerUser, ok := hostParams["power_user"]
-		if !ok {
-			return nil, fmt.Errorf("error getting VM Host parameter 'power_user'")
+		if powerPass, ok := hostParams["power_pass"]; ok {
+			tfState["power_pass"] = powerPass
 		}
-
-		tfState["power_user"] = powerUser
-
-		powerPass, ok := hostParams["power_pass"]
-		if !ok {
-			return nil, fmt.Errorf("error getting VM Host parameter 'power_pass'")
-		}
-
-		tfState["power_pass"] = powerPass
 	}
 
 	return tfState, nil
