@@ -305,7 +305,7 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	tfState, err = addVMParametersToState(d, tfState, hostParams)
+	tfState, err = addVMParametersToState(vmHost.Type, tfState, hostParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -317,30 +317,28 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 	return nil
 }
 
-func addVMParametersToState(d *schema.ResourceData, tfState map[string]any, hostParams map[string]string) (map[string]any, error) {
+func addVMParametersToState(vmHostType string, tfState map[string]any, hostParams map[string]string) (map[string]any, error) {
 	if powerAddress, ok := hostParams["power_address"]; ok {
 		tfState["power_address"] = powerAddress
 	}
 
-	if d.Get("type") == "lxd" {
-		if d.Get("password") != nil || d.Get("certificate") != nil || d.Get("key") != nil {
-			if cert, ok := hostParams["certificate"]; ok {
-				tfState["certificate"] = stripWhitespace(cert)
-			}
-
-			if key, ok := hostParams["key"]; ok {
-				tfState["key"] = stripWhitespace(key)
-			}
-
-			if password, ok := hostParams["password"]; ok {
-				tfState["password"] = password
-			}
-
-			if project, ok := hostParams["project"]; ok {
-				tfState["project"] = project
-			}
+	if vmHostType == "lxd" {
+		if cert, ok := hostParams["certificate"]; ok {
+			tfState["certificate"] = stripWhitespace(cert)
 		}
-	} else if d.Get("type") == "virsh" {
+
+		if key, ok := hostParams["key"]; ok {
+			tfState["key"] = stripWhitespace(key)
+		}
+
+		if password, ok := hostParams["password"]; ok {
+			tfState["password"] = password
+		}
+
+		if project, ok := hostParams["project"]; ok {
+			tfState["project"] = project
+		}
+	} else if vmHostType == "virsh" {
 		if powerPass, ok := hostParams["power_pass"]; ok {
 			tfState["power_pass"] = powerPass
 		}
