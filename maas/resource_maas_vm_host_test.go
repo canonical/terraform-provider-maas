@@ -31,9 +31,6 @@ func TestAccMAASVMHost_DeployParams(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					t.Log("PreConfig, about to create VM host machine")
-				},
 				Config: testAccMAASVMHostDeployParamsConfig(vmHostIdentifier, testMachineName, testVMHostName),
 				Check: resource.ComposeTestCheckFunc(
 					checkMAASVMHostExists(t, resourceName),
