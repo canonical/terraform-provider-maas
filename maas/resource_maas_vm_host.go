@@ -162,6 +162,7 @@ func resourceMAASVMHost() *schema.Resource {
 			"power_address": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Computed:      true,
 				ExactlyOneOf:  vmHostSources,
 				ConflictsWith: []string{"machine"},
 				Description:   "Address that gives MAAS access to the VM host power control. For example: `qemu+ssh://172.16.99.2/system`. The address given here must reachable by the MAAS server. It can't be set if `machine` argument is used.",
@@ -401,7 +402,7 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta any)
 		return diag.FromErr(err)
 	}
 	// Wait machine to be released
-	_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
+	_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing", "Disk erasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return diag.FromErr(err)
 	}
