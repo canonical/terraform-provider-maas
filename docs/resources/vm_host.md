@@ -13,7 +13,7 @@ Provides a resource to manage MAAS VM hosts.
 ## Example Usage
 
 ```terraform
-resource "maas_vm_host" "kvm" {
+resource "maas_vm_host" "kvm_virsh" {
   type          = "virsh"
   power_address = "qemu+ssh://ubuntu@10.113.1.24/system"
   tags = [
@@ -21,6 +21,33 @@ resource "maas_vm_host" "kvm" {
     "virtual",
     "kvm",
   ]
+}
+
+# A LXD VM host. A certificate will be generated if not provided
+resource "maas_vm_host" "lxd_no_certificate" {
+  type          = "lxd"
+  power_address = "10.10.0.1"
+  project       = "test-project"
+  password      = "my-lxd-trust-password"
+}
+
+# New, untrusted certificates can be trusted by specifying the LXD trust password or token
+resource "maas_vm_host" "lxd_new_certificate" {
+  type          = "lxd"
+  power_address = "10.10.0.1"
+  project       = "test-project"
+  password      = "my-lxd-trust-password"
+  certificate   = "-----BEGIN CERTIFICATE-----\n certificate-goes-here =\n-----END CERTIFICATE-----\n"
+  key           = "-----BEGIN PRIVATE KEY-----\n key-goes-here ==\n-----END PRIVATE KEY-----\n"
+}
+
+# If the certificate is already trusted by your LXD cluster, the trust password can be omitted
+resource "maas_vm_host" "lxd_pre_trusted_certificate" {
+  type          = "lxd"
+  power_address = "10.10.0.1"
+  project       = "test-project"
+  certificate   = "-----BEGIN CERTIFICATE-----\n certificate-goes-here =\n-----END CERTIFICATE-----\n"
+  key           = "-----BEGIN PRIVATE KEY-----\n key-goes-here ==\n-----END PRIVATE KEY-----\n"
 }
 ```
 
@@ -33,16 +60,20 @@ resource "maas_vm_host" "kvm" {
 
 ### Optional
 
+- `certificate` (String, Sensitive) Certificate to use for power control of a LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` parameters are used.
 - `cpu_over_commit_ratio` (Number) The new VM host CPU overcommit ratio. This is computed if it's not set.
 - `default_macvlan_mode` (String) The new VM host default macvlan mode. Supported values are: `bridge`, `passthru`, `private`, `vepa`. This is computed if it's not set.
 - `deploy_params` (Block List, Max: 1) Nested argument with the config used to deploy the machine specified using `machine`. (see [below for nested schema](#nestedblock--deploy_params))
-- `machine` (String) The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`.
+- `key` (String, Sensitive) Certificate key to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.
+- `machine` (String) The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`, `certificate`, `key` and `password`.
 - `memory_over_commit_ratio` (Number) The new VM host RAM memory overcommit ratio. This is computed if it's not set.
 - `name` (String) The new VM host name. This is computed if it's not set.
+- `password` (String, Sensitive) LXD trust password to use for power control of a LXD VM Host. If parameters `certificate` and `key` are used, the trust password will be used to trust the certificate-key pair. If no `certificate` and `key` are specified, MAAS will generate a trusted certificate and key for the VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.
 - `pool` (String) The new VM host pool name. This is computed if it's not set.
 - `power_address` (String) Address that gives MAAS access to the VM host power control. For example: `qemu+ssh://172.16.99.2/system`. The address given here must reachable by the MAAS server. It can't be set if `machine` argument is used.
-- `power_pass` (String, Sensitive) User password to use for power control of the VM host. Cannot be set if `machine` parameter is used.
-- `power_user` (String) User name to use for power control of the VM host. Cannot be set if `machine` parameter is used.
+- `power_pass` (String, Sensitive) User password to use for power control of a Virsh VM host. Cannot be set if `machine`, `certificate`, `key` or `password` parameters are used.
+- `power_user` (String) User name to use for power control of a Virsh VM host. Cannot be set if `machine`, `certificate`, `key` or `password` parameters are used.
+- `project` (String) LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `power_user` or `power_pass` parameters are used.
 - `tags` (Set of String) A set of tag names to assign to the new VM host. This is computed if it's not set.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `zone` (String) The new VM host zone name. This is computed if it's not set.

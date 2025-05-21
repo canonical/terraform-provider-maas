@@ -209,3 +209,8 @@ func SplitStateID(stateID string, delimeter string) (string, string, error) {
 
 	return splitID[0], splitID[1], nil
 }
+
+// Remove leading and trailing whitespace, as defined by unicode, from a string.
+func stripWhitespace(s string) string {
+	return strings.TrimSpace(s)
+}

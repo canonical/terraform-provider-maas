@@ -63,6 +63,14 @@ func resourceMAASVMHost() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"certificate": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "Certificate to use for power control of a LXD VM host. It can't be set if `machine`, `power_user` or `power_pass` parameters are used.",
+			},
 			"cpu_over_commit_ratio": {
 				Type:        schema.TypeFloat,
 				Optional:    true,
@@ -110,13 +118,21 @@ func resourceMAASVMHost() *schema.Resource {
 					},
 				},
 			},
+			"key": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "Certificate key to use for power control of a LXD VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.",
+			},
 			"machine": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
 				ExactlyOneOf:  vmHostSources,
-				ConflictsWith: []string{"power_address", "power_user", "power_pass"},
-				Description:   "The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`.",
+				ConflictsWith: []string{"power_address", "power_user", "power_pass", "certificate", "key", "password"},
+				Description:   "The identifier (hostname, FQDN or system ID) of a registered ready MAAS machine. This is going to be deployed and registered as a new VM host. This argument conflicts with: `power_address`, `power_user`, `power_pass`, `certificate`, `key` and `password`.",
 			},
 			"memory_over_commit_ratio": {
 				Type:        schema.TypeFloat,
@@ -130,6 +146,13 @@ func resourceMAASVMHost() *schema.Resource {
 				Computed:    true,
 				Description: "The new VM host name. This is computed if it's not set.",
 			},
+			"password": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "LXD trust password to use for power control of a LXD VM Host. If parameters `certificate` and `key` are used, the trust password will be used to trust the certificate-key pair. If no `certificate` and `key` are specified, MAAS will generate a trusted certificate and key for the VM host. It can't be set if `machine`, `power_user`, or `power_pass` parameters are used.",
+			},
 			"pool": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -139,6 +162,7 @@ func resourceMAASVMHost() *schema.Resource {
 			"power_address": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Computed:      true,
 				ExactlyOneOf:  vmHostSources,
 				ConflictsWith: []string{"machine"},
 				Description:   "Address that gives MAAS access to the VM host power control. For example: `qemu+ssh://172.16.99.2/system`. The address given here must reachable by the MAAS server. It can't be set if `machine` argument is used.",
@@ -147,14 +171,21 @@ func resourceMAASVMHost() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Sensitive:     true,
-				ConflictsWith: []string{"machine"},
-				Description:   "User password to use for power control of the VM host. Cannot be set if `machine` parameter is used.",
+				ConflictsWith: []string{"machine", "certificate", "key", "password"},
+				Description:   "User password to use for power control of a Virsh VM host. Cannot be set if `machine`, `certificate`, `key` or `password` parameters are used.",
 			},
 			"power_user": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				ConflictsWith: []string{"machine"},
-				Description:   "User name to use for power control of the VM host. Cannot be set if `machine` parameter is used.",
+				ConflictsWith: []string{"machine", "certificate", "key", "password"},
+				Description:   "User name to use for power control of a Virsh VM host. Cannot be set if `machine`, `certificate`, `key` or `password` parameters are used.",
+			},
+			"project": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"machine", "power_user", "power_pass"},
+				Description:   "LXD project to be used by VM host to deploy machines to. Cannot be set if `machine`, `power_user` or `power_pass` parameters are used.",
 			},
 			"resources_cores_total": {
 				Type:        schema.TypeInt,
@@ -228,6 +259,11 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta any)
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
+		vmHost, err = client.VMHost.Refresh(vmHost.ID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Save Id
@@ -264,11 +300,53 @@ func resourceVMHostRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		"resources_memory_total":        vmHost.Total.Memory,
 		"resources_local_storage_total": vmHost.Total.LocalStorage,
 	}
+
+	hostParams, err := client.VMHost.GetParameters(vmHost.ID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	tfState, err = addVMParametersToState(vmHost.Type, tfState, hostParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
 
 	return nil
+}
+
+func addVMParametersToState(vmHostType string, tfState map[string]any, hostParams map[string]string) (map[string]any, error) {
+	if powerAddress, ok := hostParams["power_address"]; ok {
+		tfState["power_address"] = powerAddress
+	}
+
+	switch vmHostType {
+	case "lxd":
+		if cert, ok := hostParams["certificate"]; ok {
+			tfState["certificate"] = stripWhitespace(cert)
+		}
+
+		if key, ok := hostParams["key"]; ok {
+			tfState["key"] = stripWhitespace(key)
+		}
+
+		if password, ok := hostParams["password"]; ok {
+			tfState["password"] = password
+		}
+
+		if project, ok := hostParams["project"]; ok {
+			tfState["project"] = project
+		}
+	case "virsh":
+		if powerPass, ok := hostParams["power_pass"]; ok {
+			tfState["power_pass"] = powerPass
+		}
+	}
+
+	return tfState, nil
 }
 
 func resourceVMHostUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -324,7 +402,7 @@ func resourceVMHostDelete(ctx context.Context, d *schema.ResourceData, meta any)
 		return diag.FromErr(err)
 	}
 	// Wait machine to be released
-	_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
+	_, err = waitForMachineStatus(ctx, client, vmHost.Host.SystemID, []string{"Releasing", "Disk erasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -344,7 +422,11 @@ func getVMHostParams(d *schema.ResourceData) *entity.VMHostParams {
 		DefaultMacvlanMode:    d.Get("default_macvlan_mode").(string),
 		Zone:                  d.Get("zone").(string),
 		Pool:                  d.Get("pool").(string),
+		Certificate:           stripWhitespace(d.Get("certificate").(string)),
+		Key:                   stripWhitespace(d.Get("key").(string)),
 		Tags:                  strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
+		Project:               d.Get("project").(string),
+		Password:              d.Get("password").(string),
 	}
 }
 
