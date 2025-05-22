@@ -98,15 +98,15 @@ func testAccSubnetConfig(
 	return fmt.Sprintf(`
 resource "maas_subnet" "test" {
 	active_discovery = %t
-	allow_dns		 = %t
-	allow_proxy		 = %t
-	cidr			 = %q
-	dns_servers		 = ["8.8.8.8"]
-	gateway_ip		 = %q
-	managed			 = %t
-	name			 = %q
-	fabric			 = "0"
-	vlan			 = "0"
+	allow_dns        = %t
+	allow_proxy      = %t
+	cidr             = %q
+	dns_servers      = ["8.8.8.8"]
+	gateway_ip       = %q
+	managed          = %t
+	name             = %q
+	fabric           = "0"
+	vlan             = "0"
 }`, activeDiscovery, allowDNS, allowProxy, cidr, gatewayIP, managed, name)
 }
 
