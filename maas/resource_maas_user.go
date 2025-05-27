@@ -29,6 +29,7 @@ func resourceMAASUser() *schema.Resource {
 					"name":     user.UserName,
 					"email":    user.Email,
 					"is_admin": user.IsSuperUser,
+					"is_local": user.IsLocal,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -52,6 +53,12 @@ func resourceMAASUser() *schema.Resource {
 				ForceNew:    true,
 				Description: "Boolean value indicating if the user is a MAAS administrator. Defaults to `false`.",
 			},
+			"is_local": {
+				Type:        schema.TypeBool,
+				Default:     true,
+				Computed:    true,
+				Description: "Boolean value indicating if the user is a local MAAS account. Defaults to `true`.",
+			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -64,6 +71,11 @@ func resourceMAASUser() *schema.Resource {
 				Sensitive:   true,
 				ForceNew:    true,
 				Description: "The user password.",
+			},
+			"transfer_to_user": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "If provided, resources owned by the deleted user will be transfered to this user. ",
 			},
 		},
 	}
@@ -79,14 +91,27 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta any) d
 
 	d.SetId(user.UserName)
 
-	return nil
+	return resourceUserRead(ctx, d, meta)
 }
 
 func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	if _, err := client.User.Get(d.Id()); err != nil {
+	userName := d.Id()
+
+	user, err := client.User.Get(userName)
+	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	tfState := map[string]interface{}{
+		"email":    user.Email,
+		"is_admin": user.IsSuperUser,
+		"is_local": user.IsLocal,
+		"name":     user.UserName,
+	}
+	if err := setTerraformState(d, tfState); err != nil {
+		return diag.Errorf("Could not set user state: %v", err)
 	}
 
 	return nil
@@ -95,7 +120,24 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	if err := client.User.Delete(d.Id()); err != nil {
+	deleteParams := entity.UserDeleteParams{
+		UserName: d.Id(),
+	}
+
+	if user, ok := d.GetOk("transfer_to_user"); ok {
+		transferUserName := user.(string)
+		if transferUserName != "" {
+
+			transferUser, err := getUser(client, transferUserName)
+			if err != nil {
+				return diag.Errorf("user %q to transfer resources to doesn't exist: %v", transferUserName, err)
+			}
+
+			deleteParams.TransferResourcesTo = transferUser.UserName
+		}
+	}
+
+	if err := client.User.Delete(&deleteParams); err != nil {
 		return diag.FromErr(err)
 	}
 
