@@ -55,7 +55,6 @@ func resourceMAASUser() *schema.Resource {
 			},
 			"is_local": {
 				Type:        schema.TypeBool,
-				Default:     true,
 				Computed:    true,
 				Description: "Boolean value indicating if the user is a local MAAS account. Defaults to `true`.",
 			},
@@ -75,6 +74,7 @@ func resourceMAASUser() *schema.Resource {
 			"transfer_to_user": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				ForceNew:    true,
 				Description: "If provided, resources owned by the deleted user will be transfered to this user. ",
 			},
 		},
@@ -127,7 +127,6 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta any) d
 	if user, ok := d.GetOk("transfer_to_user"); ok {
 		transferUserName := user.(string)
 		if transferUserName != "" {
-
 			transferUser, err := getUser(client, transferUserName)
 			if err != nil {
 				return diag.Errorf("user %q to transfer resources to doesn't exist: %v", transferUserName, err)

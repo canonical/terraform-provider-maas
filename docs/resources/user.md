@@ -13,11 +13,19 @@ Provides a resource to manage MAAS users.
 ## Example Usage
 
 ```terraform
-resource "maas_user" "cloudbase" {
-  name     = "cloudbase"
-  password = "Passw0rd123"
-  email    = "admin@cloudbase.local"
+resource "maas_user" "maas_admin" {
+  name     = "maas_admin"
+  password = "P8ssw0rd12"
+  email    = "admin@maas.com"
   is_admin = true
+}
+
+resource "maas_user" "cloudbase" {
+  name             = "cloudbase"
+  password         = "Passw0rd123"
+  email            = "admin@cloudbase.local"
+  is_admin         = true
+  transfer_to_user = maas_admin.name
 }
 ```
 
@@ -33,10 +41,12 @@ resource "maas_user" "cloudbase" {
 ### Optional
 
 - `is_admin` (Boolean) Boolean value indicating if the user is a MAAS administrator. Defaults to `false`.
+- `transfer_to_user` (String) If provided, resources owned by the deleted user will be transfered to this user.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `is_local` (Boolean) Boolean value indicating if the user is a local MAAS account. Defaults to `true`.
 
 ## Import
 
