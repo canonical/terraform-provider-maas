@@ -14,7 +14,7 @@ import (
 
 func resourceMAASSSHKeys() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage one or more SSH keys in MAAS.",
+		Description:   "Provides a resource to manage one or many SSH keys in MAAS.",
 		CreateContext: resourceSSHKeyCreate,
 		ReadContext:   resourceSSHKeyRead,
 		DeleteContext: resourceSSHKeyDelete,
@@ -36,13 +36,13 @@ func resourceMAASSSHKeys() *schema.Resource {
 				Optional:     true,
 				ForceNew:     true,
 				ExactlyOneOf: []string{"keys", "keysource"},
-				Description: `The source of the SSH key. Can be used to import a requesting user's SSH key 
-				from a source for a specific user, specified in the format source:user. Valid sources 
+				Description: `The source of the SSH key(s). Can be used to 'import' a requesting user's SSH keys 
+				from a source for a specific user into MAAS, specified in the format source:user. Valid sources 
 				include 'lp' for Launchpad and 'gh' for GitHub. E.g. 'lp:my_launchpad_username'. 
-
-				Note that all keys from the source will be imported into MAAS, and all keys will be managed by this resource.
 				
-				Keysources are not supported for import. Specify the expected keys using the 'keys' field.`,
+	Note that all keys from the source will be imported into MAAS, and all keys will be managed by this resource.
+	
+	Keysources are not supported for import. Specify the expected keys using the 'keys' field.`,
 			},
 		},
 	}
