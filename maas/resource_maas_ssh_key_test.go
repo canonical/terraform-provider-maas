@@ -99,20 +99,20 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASSSHKeyConfig(sshKeys),
-				Check:  resource.ComposeTestCheckFunc(multiKeyChecks...),
-			},
-			// {
-			// 	ResourceName:      "maas_ssh_keys.test",
-			// 	ImportState:       true,
-			// 	ImportStateVerify: true,
-			// },
-			{
 				Config: testAccMAASSSHKeyConfig(singleKey),
 				Check:  resource.ComposeTestCheckFunc(singleKeyChecks...),
 			},
 			// {
 			// 	ResourceName:      "maas_ssh_keys.test", 
+			// 	ImportState:       true,
+			// 	ImportStateVerify: true,
+			// },
+			{
+				Config: testAccMAASSSHKeyConfig(sshKeys),
+				Check:  resource.ComposeTestCheckFunc(multiKeyChecks...),
+			},
+			// {
+			// 	ResourceName:      "maas_ssh_keys.test",
 			// 	ImportState:       true,
 			// 	ImportStateVerify: true,
 			// },
