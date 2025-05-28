@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -18,19 +19,7 @@ func resourceMAASSSHKeys() *schema.Resource {
 		ReadContext:   resourceSSHKeyRead,
 		DeleteContext: resourceSSHKeyDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
-				client := meta.(*ClientConfig).Client
-				sshKeyID, err := strconv.Atoi(d.Id())
-				if err != nil {
-					return nil, fmt.Errorf("error converting SSH key id to int: %v", err)
-				}
-				sshKey, err := client.SSHKey.Get(sshKeyID)
-				if err != nil {
-					return nil, fmt.Errorf("error importing SSH key with id: %s error: %v", d.Id(), err)
-				}
-				d.SetId(fmt.Sprintf("%d", sshKey.ID))
-				return []*schema.ResourceData{d}, nil
-			},
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"keys": {
@@ -51,7 +40,9 @@ func resourceMAASSSHKeys() *schema.Resource {
 				from a source for a specific user, specified in the format source:user. Valid sources 
 				include 'lp' for Launchpad and 'gh' for GitHub. E.g. 'lp:my_launchpad_username'. 
 
-				Note that all keys from the source will be imported into MAAS, and all keys will be managed by this resource.`,
+				Note that all keys from the source will be imported into MAAS, and all keys will be managed by this resource.
+				
+				Keysources are not supported for import. Specify the expected keys using the 'keys' field.`,
 			},
 		},
 	}
@@ -68,22 +59,14 @@ func resourceSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta any)
 	
 	switch {
 		case keySpecified:
-			keyVals := convertToStringSlice(keySet.(*schema.Set).List())
-			for _, key := range keyVals {
-				sshKey, err := client.SSHKeys.Create(key)
-				if err != nil {
-					return diag.FromErr(fmt.Errorf("error creating SSH key: %v", err))
-				}
-				keys = append(keys, *sshKey)
+			keys, err = createSSHKeysFromKeySet(keySet.(*schema.Set), client)
+			if err != nil {
+				return diag.FromErr(fmt.Errorf("error creating SSH keys from key set: %v", err))
 			}
 		case keysourceSpecified:
-			// Importing from a keysource can import multiple keys, which is why a user may want to manage multiple keys together.
-			keys, err = client.SSHKeys.Import(keysource.(string))
+			keys, err = importSSHKeysFromKeysource(keysource.(string), client)
 			if err != nil {
-				return diag.FromErr(fmt.Errorf("error importing SSH key from source '%s': %v", keysource, err))
-			}
-			if len(keys) == 0 {
-				return diag.FromErr(fmt.Errorf("no SSH keys imported from source '%s'", keysource))
+				return diag.FromErr(fmt.Errorf("error importing SSH keys from keysource: %v", err))
 			}
 		default:
 			return diag.FromErr(fmt.Errorf("either 'keys' or 'keysource' must be specified to create an SSH key"))
@@ -92,33 +75,6 @@ func resourceSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta any)
 	d.SetId(CreateIDFromKeys(keys))
 	
 	return resourceSSHKeyRead(ctx, d, meta)
-}
-
-// Create a SSH key state id from a list of SSH keys of the format id1/id2/id3.
-func CreateIDFromKeys(keys []entity.SSHKey) string {
-	sshKeyValues := make([]string, len(keys))
-	for i, key := range keys {
-		sshKeyValues[i] = fmt.Sprintf("%d", key.ID)
-	}
-	return strings.Join(sshKeyValues, "/")
-}
-
-// Split the state ID of a SSH key resource in the format "id1/id2/id3" into its component ids, where id1, id2, id3 are int Ids.
-func SplitSSHKeyStateID(stateID string) ([]int, error) {
-	splitID := strings.Split(stateID, "/")
-
-	ids := make([]int, len(splitID))
-	var err error
-	
-	// Convert each string id to an int
-	for i, id := range splitID {
-		ids[i], err = strconv.Atoi(id)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return ids, nil
 }
 
 func resourceSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -170,4 +126,57 @@ func resourceSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta any)
 	}
 
 	return nil
+}
+
+// Create SSH keys in MAAS from a set of keys as strings.
+func createSSHKeysFromKeySet(keySet *schema.Set, client *client.Client) ([]entity.SSHKey, error) {
+	keyVals := convertToStringSlice(keySet.List())
+	keys := make([]entity.SSHKey, len(keyVals))
+	for i, key := range keyVals {
+		sshKey, err := client.SSHKeys.Create(key)
+		if err != nil {
+			return nil, fmt.Errorf("error creating SSH key: %v", err)
+		}
+		keys[i] = *sshKey
+	}
+	return keys, nil
+}
+
+// 'Import' SSH keys from a keysource, e.g. launchpad or github, into MAAS. This can import multiple keys. 
+func importSSHKeysFromKeysource(keysource string, client *client.Client) ([]entity.SSHKey, error) {
+	keys, err := client.SSHKeys.Import(keysource)
+	if err != nil {
+		return nil, fmt.Errorf("error importing SSH key from source '%s': %v", keysource, err)
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("no SSH keys imported from source '%s'", keysource)
+	}
+	return keys, nil
+}
+
+// Create a SSH key state id from a list of SSH keys of the format id1/id2/id3.
+func CreateIDFromKeys(keys []entity.SSHKey) string {
+	sshKeyValues := make([]string, len(keys))
+	for i, key := range keys {
+		sshKeyValues[i] = fmt.Sprintf("%d", key.ID)
+	}
+	return strings.Join(sshKeyValues, "/")
+}
+
+// Split the state ID of a SSH key resource in the format "id1/id2/id3" into its component ids, where id1, id2, id3 are int ids.
+func SplitSSHKeyStateID(stateID string) ([]int, error) {
+	splitID := strings.Split(stateID, "/")
+
+	ids := make([]int, len(splitID))
+	var err error
+	
+	// Convert each string id to an int
+	for i, id := range splitID {
+		ids[i], err = strconv.Atoi(id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ids, nil
 }

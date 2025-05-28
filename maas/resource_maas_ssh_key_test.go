@@ -76,20 +76,19 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 		t.Fatalf("failed to generate ed25519 key: %v", err)
 	}
 
-	sshKeys := []string{sshKey1, sshKey2}
 	singleKey := []string{sshKey1}
-
-	multiKeyChecks := []resource.TestCheckFunc{
-		testAccCheckMAASSSHKeyExists("maas_ssh_keys.test", sshKeys),
-		resource.TestCheckResourceAttr("maas_ssh_keys.test", "keys.#", "2"),
-		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey1),
-		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey2),
-	}
+	sshKeys := []string{sshKey1, sshKey2}
 
 	singleKeyChecks := []resource.TestCheckFunc{
 		testAccCheckMAASSSHKeyExists("maas_ssh_keys.test", singleKey),
 		resource.TestCheckResourceAttr("maas_ssh_keys.test", "keys.#", "1"),
 		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey1),
+	}
+	multiKeyChecks := []resource.TestCheckFunc{
+		testAccCheckMAASSSHKeyExists("maas_ssh_keys.test", sshKeys),
+		resource.TestCheckResourceAttr("maas_ssh_keys.test", "keys.#", "2"),
+		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey1),
+		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey2),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -102,20 +101,20 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 				Config: testAccMAASSSHKeyConfig(singleKey),
 				Check:  resource.ComposeTestCheckFunc(singleKeyChecks...),
 			},
-			// {
-			// 	ResourceName:      "maas_ssh_keys.test", 
-			// 	ImportState:       true,
-			// 	ImportStateVerify: true,
-			// },
+			{
+				ResourceName:      "maas_ssh_keys.test", 
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 			{
 				Config: testAccMAASSSHKeyConfig(sshKeys),
 				Check:  resource.ComposeTestCheckFunc(multiKeyChecks...),
 			},
-			// {
-			// 	ResourceName:      "maas_ssh_keys.test",
-			// 	ImportState:       true,
-			// 	ImportStateVerify: true,
-			// },
+			{
+				ResourceName:      "maas_ssh_keys.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
