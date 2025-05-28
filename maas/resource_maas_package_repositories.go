@@ -194,6 +194,8 @@ func listAsString(stringList []interface{}) string {
 	if len(stringList) == 0 {
 		return ""
 	}
+
 	asList, _ := json.Marshal(stringList)
+
 	return string(asList)
 }

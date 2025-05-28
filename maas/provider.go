@@ -76,6 +76,7 @@ func Provider() *schema.Provider {
 			"maas_block_device_tag":           resourceMAASBlockDeviceTag(),
 			"maas_tag":                        resourceMAASTag(),
 			"maas_network_interface_tag":      resourceMAASNetworkInterfaceTag(),
+			"maas_package_repository":         resourceMAASPackageRepositories(),
 			"maas_user":                       resourceMAASUser(),
 			"maas_resource_pool":              resourceMAASResourcePool(),
 			"maas_raid":                       resourceMAASRAID(),
