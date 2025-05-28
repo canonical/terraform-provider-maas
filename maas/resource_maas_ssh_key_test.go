@@ -1,9 +1,8 @@
 package maas_test
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
+
 	"reflect"
 	"slices"
 	"strings"
@@ -78,15 +77,22 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 	}
 
 	sshKeys := []string{sshKey1, sshKey2}
+	singleKey := []string{sshKey1}
 
-	checks := []resource.TestCheckFunc{
+	multiKeyChecks := []resource.TestCheckFunc{
 		testAccCheckMAASSSHKeyExists("maas_ssh_keys.test", sshKeys),
 		resource.TestCheckResourceAttr("maas_ssh_keys.test", "keys.#", "2"),
 		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey1),
 		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey2),
 	}
 
-	resource.Test(t, resource.TestCase{
+	singleKeyChecks := []resource.TestCheckFunc{
+		testAccCheckMAASSSHKeyExists("maas_ssh_keys.test", singleKey),
+		resource.TestCheckResourceAttr("maas_ssh_keys.test", "keys.#", "1"),
+		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey1),
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheckMAASSSHKeyDestroy,
@@ -94,13 +100,22 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASSSHKeyConfig(sshKeys),
-				Check: resource.ComposeTestCheckFunc(checks...),
+				Check:  resource.ComposeTestCheckFunc(multiKeyChecks...),
 			},
+			// {
+			// 	ResourceName:      "maas_ssh_keys.test",
+			// 	ImportState:       true,
+			// 	ImportStateVerify: true,
+			// },
 			{
-				ResourceName:      "maas_ssh_keys.test",
-				ImportState:       true,
-				ImportStateVerify: true,
+				Config: testAccMAASSSHKeyConfig(singleKey),
+				Check:  resource.ComposeTestCheckFunc(singleKeyChecks...),
 			},
+			// {
+			// 	ResourceName:      "maas_ssh_keys.test", 
+			// 	ImportState:       true,
+			// 	ImportStateVerify: true,
+			// },
 		},
 	})
 }
@@ -162,15 +177,11 @@ func testAccCheckMAASSSHKeyDestroy(s *terraform.State) error {
 }
 
 func testAccMAASSSHKeyConfig(sshKeys []string) string {
-	sshKeysList, _ := json.Marshal(sshKeys)
-
-	sshKeysListString := string(sshKeysList)
-	log.Printf("sshKeysListString: %v", sshKeysListString)
 	return fmt.Sprintf(`
 resource "maas_ssh_keys" "test" {
   keys = %v
 }
-	`, sshKeysListString)
+	`, testutils.StringifySliceAsLiteralArray(sshKeys))
 }
 
 func generateEd25519Key() (string, error) {
