@@ -1,28 +1,89 @@
 package maas_test
 
 import (
+	"encoding/json"
 	"fmt"
-	"strconv"
+	"log"
+	"reflect"
+	"slices"
 	"strings"
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
 	"crypto/ed25519"
-	"golang.org/x/crypto/ssh"
+
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"golang.org/x/crypto/ssh"
 )
 
+func TestSplitSSHKeyStateID(t *testing.T) {
+	testCases := []struct {
+		id string
+		expected []int
+	}{
+		{
+			id: "1/2/3",
+			expected: []int{1, 2, 3},
+		},
+		{
+			id: "1", 
+			expected: []int{1},
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual, err := maas.SplitSSHKeyStateID(testCase.id)
+		if err != nil {
+			t.Fatalf("error splitting SSH key state ID: %v", err)
+		}
+		if !reflect.DeepEqual(actual, testCase.expected) {
+			t.Fatalf("expected %v, got %v", testCase.expected, actual)
+		}
+	}
+}
+
+func TestCreateIDFromKeys(t *testing.T) {
+	testCases := []struct {
+		keys []entity.SSHKey
+		expected string
+	}{
+		{
+			keys: []entity.SSHKey{{ID: 1}, {ID: 2}, {ID: 3}},
+			expected: "1/2/3",
+		},
+		{
+			keys: []entity.SSHKey{{ID: 10}},
+			expected: "10",
+		},
+	}
+	for _, testCase := range testCases {
+		actual := maas.CreateIDFromKeys(testCase.keys)
+		if actual != testCase.expected {
+			t.Fatalf("expected %v, got %v", testCase.expected, actual)
+		}
+	}
+}
+
 func TestAccResourceMAASSSHKey_basic(t *testing.T) {
-	sshKey, err := generateEd25519Key()
+	sshKey1, err := generateEd25519Key()
+	if err != nil {
+		t.Fatalf("failed to generate ed25519 key: %v", err)
+	}
+	sshKey2, err := generateEd25519Key()
 	if err != nil {
 		t.Fatalf("failed to generate ed25519 key: %v", err)
 	}
 
+	sshKeys := []string{sshKey1, sshKey2}
+
 	checks := []resource.TestCheckFunc{
-		testAccCheckMAASSSHKeyExists("maas_ssh_key.test", sshKey),
-		resource.TestCheckResourceAttr("maas_ssh_key.test", "key", sshKey),
+		testAccCheckMAASSSHKeyExists("maas_ssh_keys.test", sshKeys),
+		resource.TestCheckResourceAttr("maas_ssh_keys.test", "keys.#", "2"),
+		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey1),
+		resource.TestCheckTypeSetElemAttr("maas_ssh_keys.test", "keys.*", sshKey2),
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -32,11 +93,11 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASSSHKeyConfig(sshKey),
+				Config: testAccMAASSSHKeyConfig(sshKeys),
 				Check: resource.ComposeTestCheckFunc(checks...),
 			},
 			{
-				ResourceName:      "maas_ssh_key.test",
+				ResourceName:      "maas_ssh_keys.test",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -44,25 +105,29 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckMAASSSHKeyExists(resourceName string, expectedSSHKey string) resource.TestCheckFunc {
+func testAccCheckMAASSSHKeyExists(resourceName string, expectedSSHKeys []string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("not found: %s", resourceName)
 		}
+
 		client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		
-		sshKeyID, err := strconv.Atoi(rs.Primary.ID)
+		allKeys, err := maas.SplitSSHKeyStateID(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("error converting SSH key id to int: %v", err)
+			return fmt.Errorf("error splitting SSH key state ID: %v", err)
 		}
-		sshKeyMAAS, err := client.SSHKey.Get(sshKeyID)
-		if err != nil {
-			return fmt.Errorf("error getting SSH key with id: %s error: %v", rs.Primary.ID, err)
+		for _, sshKeyID := range allKeys {
+			sshKeyMAAS, err := client.SSHKey.Get(sshKeyID)
+			if err != nil {
+				return fmt.Errorf("error getting SSH key with id: %s error: %v", rs.Primary.ID, err)
+			}
+			if !slices.Contains(expectedSSHKeys, sshKeyMAAS.Key) {
+				return fmt.Errorf("SSH key does not match expected value")
+			}
 		}
-		if expectedSSHKey != sshKeyMAAS.Key {
-			return fmt.Errorf("SSH key does not match expected value")
-		}
+
 		return nil
 	}
 }
@@ -70,34 +135,42 @@ func testAccCheckMAASSSHKeyExists(resourceName string, expectedSSHKey string) re
 func testAccCheckMAASSSHKeyDestroy(s *terraform.State) error {
 	client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "maas_ssh_key" {
+		if rs.Type != "maas_ssh_keys" {
 			continue
 		}
-		sshKeyId, err := strconv.Atoi(rs.Primary.ID)
+
+		sshKeyIDs, err := maas.SplitSSHKeyStateID(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("error converting SSH key id to int: %v", err)
+			return fmt.Errorf("error splitting SSH key state ID: %v", err)
 		}
-		response, err := client.SSHKey.Get(sshKeyId)
-		if err == nil {
-			if response != nil && response.ID == sshKeyId {
-				return fmt.Errorf("MAAS SSH Key (%s) still exists.", rs.Primary.ID)
+
+		for _, sshKeyID := range sshKeyIDs {
+			response, err := client.SSHKey.Get(sshKeyID)
+			if err == nil {
+				if response != nil && response.ID == sshKeyID {
+					return fmt.Errorf("MAAS SSH Key (%d) still exists.", sshKeyID)
+				}
 			}
-		}
-		// If the error is not a 404, the interface has not been destroyed as it should have been
-		if !strings.Contains(err.Error(), "404 Not Found") {
-			return err
+			// If the error is not a 404, the interface has not been destroyed as it should have been
+			if !strings.Contains(err.Error(), "404 Not Found") {
+				return err
+			}
 		}
 		
 	}
 	return nil
 }
 
-func testAccMAASSSHKeyConfig(sshKey string) string {
+func testAccMAASSSHKeyConfig(sshKeys []string) string {
+	sshKeysList, _ := json.Marshal(sshKeys)
+
+	sshKeysListString := string(sshKeysList)
+	log.Printf("sshKeysListString: %v", sshKeysListString)
 	return fmt.Sprintf(`
-resource "maas_ssh_key" "test" {
-  key = %q
+resource "maas_ssh_keys" "test" {
+  keys = %v
 }
-	`, sshKey)
+	`, sshKeysListString)
 }
 
 func generateEd25519Key() (string, error) {
@@ -109,5 +182,5 @@ func generateEd25519Key() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(ssh.MarshalAuthorizedKey(sshKey)), nil
+	return strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshKey))), nil
 }
