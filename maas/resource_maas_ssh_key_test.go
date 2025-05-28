@@ -20,15 +20,15 @@ import (
 
 func TestSplitSSHKeyStateID(t *testing.T) {
 	testCases := []struct {
-		id string
+		id       string
 		expected []int
 	}{
 		{
-			id: "1/2/3",
+			id:       "1/2/3",
 			expected: []int{1, 2, 3},
 		},
 		{
-			id: "1", 
+			id:       "1",
 			expected: []int{1},
 		},
 	}
@@ -38,6 +38,7 @@ func TestSplitSSHKeyStateID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error splitting SSH key state ID: %v", err)
 		}
+
 		if !reflect.DeepEqual(actual, testCase.expected) {
 			t.Fatalf("expected %v, got %v", testCase.expected, actual)
 		}
@@ -46,15 +47,15 @@ func TestSplitSSHKeyStateID(t *testing.T) {
 
 func TestCreateIDFromKeys(t *testing.T) {
 	testCases := []struct {
-		keys []entity.SSHKey
+		keys     []entity.SSHKey
 		expected string
 	}{
 		{
-			keys: []entity.SSHKey{{ID: 1}, {ID: 2}, {ID: 3}},
+			keys:     []entity.SSHKey{{ID: 1}, {ID: 2}, {ID: 3}},
 			expected: "1/2/3",
 		},
 		{
-			keys: []entity.SSHKey{{ID: 10}},
+			keys:     []entity.SSHKey{{ID: 10}},
 			expected: "10",
 		},
 	}
@@ -71,6 +72,7 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to generate ed25519 key: %v", err)
 	}
+
 	sshKey2, err := generateEd25519Key()
 	if err != nil {
 		t.Fatalf("failed to generate ed25519 key: %v", err)
@@ -102,7 +104,7 @@ func TestAccResourceMAASSSHKey_basic(t *testing.T) {
 				Check:  resource.ComposeTestCheckFunc(singleKeyChecks...),
 			},
 			{
-				ResourceName:      "maas_ssh_keys.test", 
+				ResourceName:      "maas_ssh_keys.test",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -127,16 +129,18 @@ func testAccCheckMAASSSHKeyExists(resourceName string, expectedSSHKeys []string)
 		}
 
 		client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-		
+
 		allKeys, err := maas.SplitSSHKeyStateID(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error splitting SSH key state ID: %v", err)
 		}
+
 		for _, sshKeyID := range allKeys {
 			sshKeyMAAS, err := client.SSHKey.Get(sshKeyID)
 			if err != nil {
 				return fmt.Errorf("error getting SSH key with id: %s error: %v", rs.Primary.ID, err)
 			}
+
 			if !slices.Contains(expectedSSHKeys, sshKeyMAAS.Key) {
 				return fmt.Errorf("SSH key does not match expected value")
 			}
@@ -148,6 +152,7 @@ func testAccCheckMAASSSHKeyExists(resourceName string, expectedSSHKeys []string)
 
 func testAccCheckMAASSSHKeyDestroy(s *terraform.State) error {
 	client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "maas_ssh_keys" {
 			continue
@@ -170,8 +175,8 @@ func testAccCheckMAASSSHKeyDestroy(s *terraform.State) error {
 				return err
 			}
 		}
-		
 	}
+
 	return nil
 }
 
@@ -188,9 +193,11 @@ func generateEd25519Key() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	sshKey, err := ssh.NewPublicKey(pub)
 	if err != nil {
 		return "", err
 	}
+
 	return strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshKey))), nil
 }
