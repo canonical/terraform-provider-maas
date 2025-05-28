@@ -2,9 +2,9 @@ package maas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -31,7 +31,6 @@ func resourceMAASPackageRepositories() *schema.Resource {
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				Description:   "The list of components to enable. Only applicable to custom repositories.",
-				ConflictsWith: []string{"disabled_components", "disabled_pockets"},
 			},
 			"disable_sources": {
 				Type:        schema.TypeBool,
@@ -43,21 +42,18 @@ func resourceMAASPackageRepositories() *schema.Resource {
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				Description:   "The list of components to disable. Only applicable to the default Ubuntu repositories.",
-				ConflictsWith: []string{"components", "distributions"},
 			},
 			"disabled_pockets": {
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				Description:   "The list of pockets to disable.",
-				ConflictsWith: []string{"components", "distributions"},
 			},
 			"distributions": {
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				Description:   "Which package distributions to include.",
-				ConflictsWith: []string{"disabled_components", "disabled_pockets"},
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
@@ -99,6 +95,8 @@ func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceDa
 		DisableSources:     d.Get("disable_sources").(bool),
 		Enabled:            d.Get("enabled").(bool),
 	}
+
+	fmt.Printf("%+v", params)
 
 	repo, err := client.PackageRepositories.Create(params)
 	if err != nil {
@@ -194,8 +192,9 @@ func listAsString(stringList []interface{}) string {
 	if len(stringList) == 0 {
 		return ""
 	}
-
-	asList, _ := json.Marshal(stringList)
-
-	return string(asList)
+	var asList []string
+	for _, listItem := range stringList {
+		asList = append(asList, listItem.(string))
+	}
+	return strings.Join(asList, ",")
 }
