@@ -20,14 +20,11 @@ func resourceMAASUser() *schema.Resource {
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
-				if err := verifyUserValid(client, d); err != nil {
-					return nil, err
-				}
-
-				user, err := getUser(client, d.Id())
+				user, err := getValidUser(client, d)
 				if err != nil {
 					return nil, err
 				}
+
 				tfState := map[string]any{
 					"id":       user.UserName,
 					"name":     user.UserName,
@@ -81,10 +78,6 @@ func resourceMAASUser() *schema.Resource {
 
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-
-	if err := verifyUserValid(client, d); err != nil {
-		return diag.FromErr(err)
-	}
 
 	user, err := client.Users.Create(getUserParams(d))
 	if err != nil {
@@ -168,21 +161,27 @@ func getUser(client *client.Client, userName string) (*entity.User, error) {
 	return nil, fmt.Errorf("user (%s) was not found", userName)
 }
 
-func verifyUserValid(client *client.Client, d *schema.ResourceData) error {
+func getValidUser(client *client.Client, d *schema.ResourceData) (*entity.User, error) {
 	// ensure the user is a valid target for import
+	user, err := getUser(client, d.Id())
+	if err != nil {
+		return nil, err
+	}
+
 	me, err := client.Users.Whoami()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	name := d.Get("name").(string)
-	if name == me.UserName {
-		return fmt.Errorf("cannot operate on the currently logged in user %q", me.UserName)
+	// terraform cannot import non-local users
+	if !user.IsLocal {
+		return nil, fmt.Errorf("cannot operate on non-local users, use the user service providing the user account instead")
 	}
 
-	if !me.IsLocal {
-		return fmt.Errorf("cannot operate on non-local users, use the user service providing the user account instead")
+	// and we also don't allow modifying ourselves
+	if user.UserName == me.UserName {
+		return nil, fmt.Errorf("cannot operate on the currently logged in user %q", me.UserName)
 	}
 
-	return nil
+	return user, nil
 }

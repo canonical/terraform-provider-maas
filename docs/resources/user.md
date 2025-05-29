@@ -3,12 +3,12 @@
 page_title: "maas_user Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage MAAS users. Note You cannot use this to modify the logged in terraform user.
+  Provides a resource to manage MAAS users. Note You cannot use this to modify the logged in terraform user, or any users not managed by MAAS.
 ---
 
 # maas_user (Resource)
 
-Provides a resource to manage MAAS users. *Note* You cannot use this to modify the logged in terraform user.
+Provides a resource to manage MAAS users. *Note* You cannot use this to modify the logged in terraform user, or any users not managed by MAAS.
 
 ## Example Usage
 
@@ -41,7 +41,7 @@ resource "maas_user" "cloudbase" {
 ### Optional
 
 - `is_admin` (Boolean) Boolean value indicating if the user is a MAAS administrator. Defaults to `false`.
-- `transfer_to_user` (String) If provided, resources owned by the deleted user will be transfered to this user.
+- `transfer_to_user` (String) If provided, resources owned by the deleted user will be transferred to this user.
 
 ### Read-Only
 
