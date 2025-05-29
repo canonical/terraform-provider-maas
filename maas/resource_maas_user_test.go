@@ -35,14 +35,12 @@ func TestAccResourceMAASUser_basic(t *testing.T) {
 
 					resource.TestCheckResourceAttr("maas_user.test_testUser1", "name", username1),
 					resource.TestCheckResourceAttr("maas_user.test_testUser1", "is_admin", fmt.Sprintf("%t", true)),
-					resource.TestCheckResourceAttr("maas_user.test_testUser1", "is_local", fmt.Sprintf("%t", true)),
 					resource.TestCheckResourceAttr("maas_user.test_testUser1", "email", email1),
 					resource.TestCheckResourceAttr("maas_user.test_testUser1", "password", password1),
 					resource.TestCheckNoResourceAttr("maas_user.test_testUser1", "transfer_to_user"),
 
 					resource.TestCheckResourceAttr("maas_user.test_testUser2", "name", username2),
 					resource.TestCheckResourceAttr("maas_user.test_testUser2", "is_admin", fmt.Sprintf("%t", false)),
-					resource.TestCheckResourceAttr("maas_user.test_testUser2", "is_local", fmt.Sprintf("%t", true)),
 					resource.TestCheckResourceAttr("maas_user.test_testUser2", "email", email2),
 					resource.TestCheckResourceAttr("maas_user.test_testUser2", "password", password2),
 					resource.TestCheckResourceAttr("maas_user.test_testUser2", "transfer_to_user", username1),
@@ -56,7 +54,6 @@ func TestAccResourceMAASUser_basic(t *testing.T) {
 
 					resource.TestCheckResourceAttr("maas_user.test_testUser1", "name", username1),
 					resource.TestCheckResourceAttr("maas_user.test_testUser1", "is_admin", fmt.Sprintf("%t", true)),
-					resource.TestCheckResourceAttr("maas_user.test_testUser1", "is_local", fmt.Sprintf("%t", true)),
 					resource.TestCheckResourceAttr("maas_user.test_testUser1", "email", email1),
 					resource.TestCheckResourceAttr("maas_user.test_testUser1", "password", password1),
 					resource.TestCheckNoResourceAttr("maas_user.test_testUser1", "transfer_to_user"),

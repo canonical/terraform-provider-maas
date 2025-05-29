@@ -12,7 +12,7 @@ import (
 
 func resourceMAASUser() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage MAAS users. *Note* You cannot use this to modify the logged in terraform user.",
+		Description:   "Provides a resource to manage MAAS users. *Note* You cannot use this to modify the logged in terraform user, or any users not managed by MAAS.",
 		CreateContext: resourceUserCreate,
 		ReadContext:   resourceUserRead,
 		DeleteContext: resourceUserDelete,
@@ -33,7 +33,6 @@ func resourceMAASUser() *schema.Resource {
 					"name":     user.UserName,
 					"email":    user.Email,
 					"is_admin": user.IsSuperUser,
-					"is_local": user.IsLocal,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
@@ -56,11 +55,6 @@ func resourceMAASUser() *schema.Resource {
 				Default:     false,
 				ForceNew:    true,
 				Description: "Boolean value indicating if the user is a MAAS administrator. Defaults to `false`.",
-			},
-			"is_local": {
-				Type:        schema.TypeBool,
-				Computed:    true,
-				Description: "Boolean value indicating if the user is a local MAAS account. Defaults to `true`.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -115,7 +109,6 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 	tfState := map[string]interface{}{
 		"email":    user.Email,
 		"is_admin": user.IsSuperUser,
-		"is_local": user.IsLocal,
 		"name":     user.UserName,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
@@ -185,6 +178,10 @@ func verifyUserValid(client *client.Client, d *schema.ResourceData) error {
 	name := d.Get("name").(string)
 	if name == me.UserName {
 		return fmt.Errorf("cannot operate on the currently logged in user %q", me.UserName)
+	}
+
+	if !me.IsLocal {
+		return fmt.Errorf("cannot operate on non-local users, use the user service providing the user account instead")
 	}
 
 	return nil

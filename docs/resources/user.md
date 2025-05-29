@@ -46,7 +46,6 @@ resource "maas_user" "cloudbase" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `is_local` (Boolean) Boolean value indicating if the user is a local MAAS account. Defaults to `true`.
 
 ## Import
 
