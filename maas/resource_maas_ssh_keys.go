@@ -148,7 +148,7 @@ func createSSHKeysFromKeySet(keySet *schema.Set, client *client.Client) ([]entit
 	return keys, nil
 }
 
-// importSSHKeysFromKeysource 'imports' SSH keys from a keysource, e.g. launchpad or github, into MAAS. This can import multiple keys.
+// importSSHKeysFromKeysource 'imports' SSH keys from a keysource, e.g. Launchpad or GitHub, into MAAS. This can import multiple keys.
 func importSSHKeysFromKeysource(keysource string, client *client.Client) ([]entity.SSHKey, error) {
 	keys, err := client.SSHKeys.Import(keysource)
 	if err != nil {
