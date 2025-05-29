@@ -12,7 +12,7 @@ import (
 
 func resourceMAASUser() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage MAAS users.",
+		Description:   "Provides a resource to manage MAAS users. *Note* You cannot use this to modify the logged in terraform user.",
 		CreateContext: resourceUserCreate,
 		ReadContext:   resourceUserRead,
 		DeleteContext: resourceUserDelete,
@@ -84,6 +84,10 @@ func resourceMAASUser() *schema.Resource {
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	if err := verifyUserValid(client, d); err != nil {
+		return diag.FromErr(err)
+	}
+
 	user, err := client.Users.Create(getUserParams(d))
 	if err != nil {
 		return diag.FromErr(err)
@@ -119,6 +123,10 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
+
+	if err := verifyUserValid(client, d); err != nil {
+		return diag.FromErr(err)
+	}
 
 	deleteParams := entity.UserDeleteParams{
 		UserName: d.Id(),
@@ -165,4 +173,19 @@ func getUser(client *client.Client, userName string) (*entity.User, error) {
 	}
 
 	return nil, fmt.Errorf("user (%s) was not found", userName)
+}
+
+func verifyUserValid(client *client.Client, d *schema.ResourceData) error {
+	// ensure the user is a valid target for create/delete
+	me, err := client.Users.Whoami()
+	if err != nil {
+		return err
+	}
+
+	name := d.Get("name").(string)
+	if name == me.UserName {
+		return fmt.Errorf("cannot operate on the currently logged in user %q", me.UserName)
+	}
+
+	return nil
 }

@@ -3,12 +3,12 @@
 page_title: "maas_user Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage MAAS users.
+  Provides a resource to manage MAAS users. Note You cannot use this to modify the logged in terraform user.
 ---
 
 # maas_user (Resource)
 
-Provides a resource to manage MAAS users.
+Provides a resource to manage MAAS users. *Note* You cannot use this to modify the logged in terraform user.
 
 ## Example Usage
 
