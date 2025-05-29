@@ -10,7 +10,7 @@ resource "maas_ssh_keys" "from_launchpad" {
   keysource = "lp:mylaunchpadid"
 }
 
-# Import all keys from a github user and manage them together
+# Import all keys from a GitHub user and manage them together
 resource "maas_ssh_keys" "from_github" {
   keysource = "gh:mygithubusername"
 }
