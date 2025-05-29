@@ -169,7 +169,7 @@ func getUser(client *client.Client, userName string) (*entity.User, error) {
 }
 
 func verifyUserValid(client *client.Client, d *schema.ResourceData) error {
-	// ensure the user is a valid target for create/delete
+	// ensure the user is a valid target for import
 	me, err := client.Users.Whoami()
 	if err != nil {
 		return err
