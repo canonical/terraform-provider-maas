@@ -182,7 +182,7 @@ func findStaticRoute(client *client.Client, identifier string) (*entity.StaticRo
 		}
 	}
 
-	return nil, nil
+	return nil, err
 }
 
 func getStaticRoute(client *client.Client, identifier string) (*entity.StaticRoute, error) {
