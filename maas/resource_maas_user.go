@@ -20,6 +20,10 @@ func resourceMAASUser() *schema.Resource {
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
+				if err := verifyUserValid(client, d); err != nil {
+					return nil, err
+				}
+
 				user, err := getUser(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -123,10 +127,6 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-
-	if err := verifyUserValid(client, d); err != nil {
-		return diag.FromErr(err)
-	}
 
 	deleteParams := entity.UserDeleteParams{
 		UserName: d.Id(),
