@@ -31,7 +31,7 @@ func TestAccResourceMAASPackageRepository_basic(t *testing.T) {
 		"test_ubuntu",
 		"ubuntu repo",
 		"secretKey",
-		"http://ports.ubuntu.com/ubuntu-ports",
+		"http://ports.ubuntu.com/",
 		true,
 		true,
 		[]string{"amd64"},
@@ -60,25 +60,7 @@ func TestAccResourceMAASPackageRepository_basic(t *testing.T) {
 	)
 }
 
-func testAccCustomPackageRepository(resourceName string, name string, key string, url string, disableSources bool, enabled bool, arches []string, disabledComponents []string, disabledPockets []string, distributions []string) string {
-	return fmt.Sprintf(`
-resource "maas_package_repository" %q {
-  name = %q
-  key  = %q
-  url  = %q
-
-  disable_sources = %t
-  enabled         = %t
-
-  arches = %v
-  disabled_components = %v
-  disabled_pockets = %v
-  distributions = %v
-}
-`, resourceName, name, key, url, disableSources, enabled, listAsString(arches), listAsString(disabledComponents), listAsString(disabledPockets), listAsString(distributions))
-}
-
-func testAccUbuntuPackageRepository(resourceName string, name string, key string, url string, disableSources bool, enabled bool, arches []string, components []string, disabledPockets []string, distributions []string) string {
+func testAccCustomPackageRepository(resourceName string, name string, key string, url string, disableSources bool, enabled bool, arches []string, components []string, disabledPockets []string, distributions []string) string {
 	return fmt.Sprintf(`
 resource "maas_package_repository" %q {
   name = %q
@@ -94,6 +76,24 @@ resource "maas_package_repository" %q {
   distributions = %v
 }
 `, resourceName, name, key, url, disableSources, enabled, listAsString(arches), listAsString(components), listAsString(disabledPockets), listAsString(distributions))
+}
+
+func testAccUbuntuPackageRepository(resourceName string, name string, key string, url string, disableSources bool, enabled bool, arches []string, disabledComponents []string, disabledPockets []string, distributions []string) string {
+	return fmt.Sprintf(`
+resource "maas_package_repository" %q {
+  name = %q
+  key  = %q
+  url  = %q
+
+  disable_sources = %t
+  enabled         = %t
+
+  arches = %v
+  disabled_components = %v
+  disabled_pockets = %v
+  distributions = %v
+}
+`, resourceName, name, key, url, disableSources, enabled, listAsString(arches), listAsString(disabledComponents), listAsString(disabledPockets), listAsString(distributions))
 }
 
 func testAccPackageRepositoryCheckExists(rn string) resource.TestCheckFunc {

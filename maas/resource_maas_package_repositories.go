@@ -9,6 +9,7 @@ import (
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceMAASPackageRepositories() *schema.Resource {
@@ -21,16 +22,28 @@ func resourceMAASPackageRepositories() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"arches": {
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: validation.StringInSlice(
+						[]string{"amd64", "arm64", "armhf", "i386", "ppc64el", "s390x"},
+						false,
+					),
+				},
 				Description: "The list of supported architectures.",
 			},
 			"components": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				Description:   "The list of components to enable. Only applicable to custom repositories.",
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: validation.StringInSlice(
+						[]string{"main", "restricted", "universe", "multiverse"},
+						false,
+					),
+				},
+				Description: "The list of components to enable. Only applicable to custom repositories.",
 			},
 			"disable_sources": {
 				Type:        schema.TypeBool,
@@ -38,22 +51,36 @@ func resourceMAASPackageRepositories() *schema.Resource {
 				Description: "Disable deb-src lines.",
 			},
 			"disabled_components": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				Description:   "The list of components to disable. Only applicable to the default Ubuntu repositories.",
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: validation.StringInSlice(
+						[]string{"restricted", "universe", "multiverse"},
+						false,
+					),
+				},
+				Description: "The list of components to disable. Only applicable to the default Ubuntu repositories.",
 			},
 			"disabled_pockets": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				Description:   "The list of pockets to disable.",
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: validation.StringInSlice(
+						[]string{"updates", "security", "backports"},
+						false,
+					),
+				},
+				Description: "The list of pockets to disable.",
 			},
 			"distributions": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				Description:   "Which package distributions to include.",
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Which package distributions to include.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
@@ -192,9 +219,11 @@ func listAsString(stringList []interface{}) string {
 	if len(stringList) == 0 {
 		return ""
 	}
+
 	var asList []string
 	for _, listItem := range stringList {
 		asList = append(asList, listItem.(string))
 	}
+
 	return strings.Join(asList, ",")
 }
