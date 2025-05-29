@@ -73,7 +73,7 @@ func resourceMAASUser() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				Description: "If provided, resources owned by the deleted user will be transfered to this user. ",
+				Description: "If provided, resources owned by the deleted user will be transferred to this user.",
 			},
 		},
 	}
