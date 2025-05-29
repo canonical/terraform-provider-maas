@@ -73,6 +73,16 @@ func resourceMAASUser() *schema.Resource {
 				Description: "If provided, resources owned by the deleted user will be transferred to this user.",
 			},
 		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			name := d.Get("name").(string)
+			transferTo := d.Get("transfer_to_user").(string)
+
+			if transferTo != "" && name == transferTo {
+				return fmt.Errorf("`transfer_to_user` cannot have the same value as `name` (%q). Specify another user to transfer resources to on delete", name)
+			}
+
+			return nil
+		},
 	}
 }
 
