@@ -5,7 +5,7 @@ resource "maas_ssh_keys" "single_key" {
   ]
 }
 
-# Import all keys from a launchpad user and manage them together
+# Import all keys from a Launchpad user and manage them together
 resource "maas_ssh_keys" "from_launchpad" {
   keysource = "lp:mylaunchpadid"
 }
