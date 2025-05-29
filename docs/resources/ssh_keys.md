@@ -20,12 +20,12 @@ resource "maas_ssh_keys" "single_key" {
   ]
 }
 
-# Import all keys from a launchpad user and manage them together
+# Import all keys from a Launchpad user and manage them together
 resource "maas_ssh_keys" "from_launchpad" {
   keysource = "lp:mylaunchpadid"
 }
 
-# Import all keys from a github user and manage them together
+# Import all keys from a GitHub user and manage them together
 resource "maas_ssh_keys" "from_github" {
   keysource = "gh:mygithubusername"
 }
@@ -45,13 +45,7 @@ resource "maas_ssh_keys" "multiple_keys" {
 ### Optional
 
 - `keys` (Set of String) Valid SSH public keys. If specified, these keys will be uploaded to MAAS. Otherwise this field will be computed.
-- `keysource` (String) The source of the SSH key(s). Can be used to 'import' a requesting user's SSH keys 
-				from a source for a specific user into MAAS, specified in the format source:user. Valid sources 
-				include 'lp' for Launchpad and 'gh' for GitHub. E.g. 'lp:my_launchpad_username'. 
-				
-	Note that all keys from the source will be imported into MAAS, and all keys will be managed by this resource.
-	
-	Keysources are not supported for import. Specify the expected keys using the 'keys' field.
+- `keysource` (String) The source of the SSH key(s). Can be used to 'import' a requesting user's SSH keys from a source for a specific user into MAAS, specified in the format source:user. Valid sources include 'lp' for Launchpad and 'gh' for GitHub. E.g. 'lp:my_launchpad_username'. **Note** all keys from the source will be imported into MAAS, and all keys will be managed by this resource. Keysources are not supported for import, so the expected keys must be specified using the `keys` field.
 
 ### Read-Only
 
