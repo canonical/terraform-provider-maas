@@ -76,38 +76,24 @@ func TestAccResourceMAASPackageRepository_basic(t *testing.T) {
 			},
 			// Test import using ID
 			{
-				Config:            ubuntuRepo,
-				ResourceName:      "maas_package_repository.test_ubuntu",
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateId:     "1",
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					rs, ok := s.RootModule().Resources["maas_package_repository.test_ubuntu"]
-					if !ok {
-						return "", fmt.Errorf("resource not found: %s", "maas_package_repository.test_ubuntu")
-					}
-
-					if rs.Primary.ID == "" {
-						return "", fmt.Errorf("resource id not set")
-					}
-					return rs.Primary.ID, nil
-				},
+				Config:        ubuntuRepo,
+				ResourceName:  "maas_package_repository.test_ubuntu",
+				ImportState:   true,
+				ImportStateId: "1",
 			},
 			// Test importing with Name
 			{
-				Config:            ubuntuRepo,
-				ResourceName:      "maas_package_repository.test_ubuntu",
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateId:     "main_archive",
+				Config:        ubuntuRepo,
+				ResourceName:  "maas_package_repository.test_ubuntu",
+				ImportState:   true,
+				ImportStateId: "main_archive",
 			},
 			// Test importing with url
 			{
-				Config:            ubuntuRepo,
-				ResourceName:      "maas_package_repository.test_ubuntu",
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateId:     "http://archive.ubuntu.com/ubuntu",
+				Config:        ubuntuRepo,
+				ResourceName:  "maas_package_repository.test_ubuntu",
+				ImportState:   true,
+				ImportStateId: "http://archive.ubuntu.com/ubuntu",
 			},
 		},
 	},
