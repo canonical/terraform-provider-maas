@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -19,6 +20,20 @@ func resourceMAASPackageRepositories() *schema.Resource {
 		ReadContext:   resourcePackageRepositoriesRead,
 		UpdateContext: resourcePackageRepositoriesUpdate,
 		DeleteContext: resourcePackageRepositoriesDelete,
+
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
+				client := meta.(*ClientConfig).Client
+
+				repo, err := getRepo(client, d.Id())
+				if err != nil {
+					return nil, err
+				}
+
+				d.SetId(fmt.Sprintf("%v", repo.ID))
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"arches": {
@@ -110,20 +125,25 @@ func resourceMAASPackageRepositories() *schema.Resource {
 func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	disabledComponents := d.Get("disabled_components").(*schema.Set).List()
+	components := d.Get("components").(*schema.Set).List()
+
+	if len(disabledComponents) > 0 {
+		return diag.Errorf("`disabled_components` are used for Ubuntu repos, which cannot be created, only imported. Specify `components` for custom repos instead.")
+	}
+
 	params := &entity.PackageRepositoryParams{
 		Name:               d.Get("name").(string),
 		URL:                d.Get("url").(string),
 		Distributions:      listAsString(d.Get("distributions").(*schema.Set).List()),
 		DisabledPockets:    listAsString(d.Get("disabled_pockets").(*schema.Set).List()),
-		DisabledComponents: listAsString(d.Get("disabled_components").(*schema.Set).List()),
-		Components:         listAsString(d.Get("components").(*schema.Set).List()),
+		DisabledComponents: listAsString(disabledComponents),
+		Components:         listAsString(components),
 		Arches:             listAsString(d.Get("arches").(*schema.Set).List()),
 		Key:                d.Get("key").(string),
 		DisableSources:     d.Get("disable_sources").(bool),
 		Enabled:            d.Get("enabled").(bool),
 	}
-
-	fmt.Printf("%+v", params)
 
 	repo, err := client.PackageRepositories.Create(params)
 	if err != nil {
@@ -179,13 +199,20 @@ func resourcePackageRepositoriesUpdate(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
+	disabledComponents := d.Get("disabled_components").(*schema.Set).List()
+	components := d.Get("components").(*schema.Set).List()
+
+	if len(components) > 0 && len(disabledComponents) > 0 {
+		return diag.Errorf("Cannot specify both `components` and `disabled_components`")
+	}
+
 	params := &entity.PackageRepositoryParams{
 		Name:               d.Get("name").(string),
 		URL:                d.Get("url").(string),
-		Distributions:      d.Get("distributions").(string),
+		Distributions:      listAsString(d.Get("distributions").(*schema.Set).List()),
 		DisabledPockets:    listAsString(d.Get("disabled_pockets").(*schema.Set).List()),
-		DisabledComponents: listAsString(d.Get("disabled_components").(*schema.Set).List()),
-		Components:         listAsString(d.Get("components").(*schema.Set).List()),
+		DisabledComponents: listAsString(disabledComponents),
+		Components:         listAsString(components),
 		Arches:             listAsString(d.Get("arches").(*schema.Set).List()),
 		Key:                d.Get("key").(string),
 		DisableSources:     d.Get("disable_sources").(bool),
@@ -215,9 +242,24 @@ func resourcePackageRepositoriesDelete(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
+func getRepo(client *client.Client, identifier string) (*entity.PackageRepository, error) {
+	repos, err := client.PackageRepositories.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, repo := range repos {
+		if repo.URL == identifier || repo.Name == identifier || fmt.Sprintf("%d", repo.ID) == identifier {
+			return &repo, nil
+		}
+	}
+
+	return nil, fmt.Errorf("could not find repo with identifier %q", identifier)
+}
+
 func listAsString(stringList []interface{}) string {
 	if len(stringList) == 0 {
-		return ""
+		return "[]"
 	}
 
 	var asList []string

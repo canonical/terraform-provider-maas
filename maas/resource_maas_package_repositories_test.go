@@ -26,18 +26,30 @@ func TestAccResourceMAASPackageRepository_basic(t *testing.T) {
 		[]string{"updates"},
 		[]string{"jammy-prod"},
 	)
+	customChangedRepo := testAccCustomPackageRepository(
+		"test_custom",
+		"custom changed repo",
+		"secretKey2",
+		"https://test2.com",
+		true,
+		true,
+		[]string{"armhf"},
+		[]string{"restricted"},
+		[]string{"security"},
+		[]string{"jammy-prod"},
+	)
 
 	ubuntuRepo := testAccUbuntuPackageRepository(
 		"test_ubuntu",
-		"ubuntu repo",
-		"secretKey",
-		"http://ports.ubuntu.com/",
+		"main_archive",
+		"",
+		"http://archive.ubuntu.com/ubuntu",
+		false,
 		true,
-		true,
-		[]string{"amd64"},
-		[]string{"universe"},
-		[]string{"updates"},
-		[]string{"jammy-prod"},
+		[]string{"amd64", "i386"},
+		[]string{},
+		[]string{},
+		[]string{},
 	)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -46,15 +58,57 @@ func TestAccResourceMAASPackageRepository_basic(t *testing.T) {
 		CheckDestroy: testAccCheckPackageRepositoryDestroy,
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
-			// Test creation
+			// Test creation of custom repo
 			{
-				Config: customRepo + ubuntuRepo,
+				Config: customRepo,
 				Check: resource.ComposeTestCheckFunc(
 					testAccPackageRepositoryCheckExists("maas_package_repository.test_custom"),
 					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "name", "custom repo"),
 				),
 			},
-			// Test updates
+			// Test updates of custom repo
+			{
+				Config: customChangedRepo,
+				Check: resource.ComposeTestCheckFunc(
+					testAccPackageRepositoryCheckExists("maas_package_repository.test_custom"),
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "name", "custom changed repo"),
+				),
+			},
+			// Test import using ID
+			{
+				Config:            ubuntuRepo,
+				ResourceName:      "maas_package_repository.test_ubuntu",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     "1",
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["maas_package_repository.test_ubuntu"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", "maas_package_repository.test_ubuntu")
+					}
+
+					if rs.Primary.ID == "" {
+						return "", fmt.Errorf("resource id not set")
+					}
+					return rs.Primary.ID, nil
+				},
+			},
+			// Test importing with Name
+			{
+				Config:            ubuntuRepo,
+				ResourceName:      "maas_package_repository.test_ubuntu",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     "main_archive",
+			},
+			// Test importing with url
+			{
+				Config:            ubuntuRepo,
+				ResourceName:      "maas_package_repository.test_ubuntu",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     "http://archive.ubuntu.com/ubuntu",
+			},
 		},
 	},
 	)
@@ -154,7 +208,7 @@ func testAccCheckPackageRepositoryDestroy(s *terraform.State) error {
 
 func listAsString(stringList []string) string {
 	if len(stringList) == 0 {
-		return ""
+		return "[]"
 	}
 
 	asList, _ := json.Marshal(stringList)
