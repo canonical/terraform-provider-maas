@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	mrand "math/rand"
 	"strings"
@@ -48,4 +49,11 @@ func GetNetworkPrefixFromCIDR(cidr string) string {
 
 func generateRandomNumberInRange(min int, max int) int {
 	return mrand.Intn(max-min) + min //nolint:gosec // used for testing only, no need for real randomness
+}
+
+// StringifySliceAsLiteralArray returns a string representation of a slice of strings, used for insertion into another string e.g., for a Terraform config.
+// For example, the slice ["foo", "bar"] would become `["foo", "bar"]` where quotes and commas are actual characters in the string.
+func StringifySliceAsLiteralArray(sliceOfStrings []string) string {
+	sliceString, _ := json.Marshal(sliceOfStrings)
+	return string(sliceString)
 }
