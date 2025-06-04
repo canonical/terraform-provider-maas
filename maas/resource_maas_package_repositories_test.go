@@ -81,14 +81,13 @@ func TestAccResourceMAASPackageRepository_basic(t *testing.T) {
 				ImportState:   true,
 				ImportStateId: "1",
 			},
-			// Test importing with Name
+			// Test importing with Name, only makes sense for custom repos.
 			{
-				Config:        ubuntuRepo,
-				ResourceName:  "maas_package_repository.test_ubuntu",
+				ResourceName:  "maas_package_repository.test_custom",
 				ImportState:   true,
-				ImportStateId: "main_archive",
+				ImportStateId: "custom changed repo",
 			},
-			// Test importing with url
+			// Test importing with URL
 			{
 				Config:        ubuntuRepo,
 				ResourceName:  "maas_package_repository.test_ubuntu",

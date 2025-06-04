@@ -14,7 +14,7 @@ import (
 
 func resourceMAASPackageRepositories() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage MAAS package repositories.",
+		Description:   "Provides a resource to manage MAAS package repositories.\n*Note*: The two ubuntu archives that ship with MAAS are import-only terraform resources, only custom repos can be created or destroyed.",
 		CreateContext: resourcePackageRepositoriesCreate,
 		ReadContext:   resourcePackageRepositoriesRead,
 		UpdateContext: resourcePackageRepositoriesUpdate,
@@ -57,7 +57,8 @@ func resourceMAASPackageRepositories() *schema.Resource {
 						false,
 					),
 				},
-				Description: "The list of components to enable. Only applicable to custom repositories.",
+				Description:   "The list of components to enable. Only applicable to custom repositories.",
+				ConflictsWith: []string{"disabled_components"},
 			},
 			"disable_sources": {
 				Type:        schema.TypeBool,
@@ -74,7 +75,8 @@ func resourceMAASPackageRepositories() *schema.Resource {
 						false,
 					),
 				},
-				Description: "The list of components to disable. Only applicable to the default Ubuntu repositories.",
+				Description:   "The list of components to disable. Only applicable to the default Ubuntu repositories.",
+				ConflictsWith: []string{"components"},
 			},
 			"disabled_pockets": {
 				Type:     schema.TypeSet,
@@ -110,12 +112,12 @@ func resourceMAASPackageRepositories() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the package repository.",
+				Description: "The name of the package repository.\n*Note*: the Name field for the Ubuntu Archive and Ubuntu Ports repos are `main_archive` and `ports_archive` respectively. As they are default resources, the MAAS UI shows a different name to their internal database name entry.",
 			},
 			"url": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The url of the package repository.",
+				Description: "The URL of the package repository.",
 			},
 		},
 	}
@@ -125,7 +127,6 @@ func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceDa
 	client := meta.(*ClientConfig).Client
 
 	disabledComponents := d.Get("disabled_components").(*schema.Set).List()
-	components := d.Get("components").(*schema.Set).List()
 
 	if len(disabledComponents) > 0 {
 		return diag.Errorf("`disabled_components` are used for Ubuntu repos, which cannot be created, only imported. Specify `components` for custom repos instead.")
@@ -137,7 +138,7 @@ func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceDa
 		Distributions:      listAsString(d.Get("distributions").(*schema.Set).List()),
 		DisabledPockets:    listAsString(d.Get("disabled_pockets").(*schema.Set).List()),
 		DisabledComponents: listAsString(disabledComponents),
-		Components:         listAsString(components),
+		Components:         listAsString(d.Get("components").(*schema.Set).List()),
 		Arches:             listAsString(d.Get("arches").(*schema.Set).List()),
 		Key:                d.Get("key").(string),
 		DisableSources:     d.Get("disable_sources").(bool),
@@ -198,20 +199,13 @@ func resourcePackageRepositoriesUpdate(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	disabledComponents := d.Get("disabled_components").(*schema.Set).List()
-	components := d.Get("components").(*schema.Set).List()
-
-	if len(components) > 0 && len(disabledComponents) > 0 {
-		return diag.Errorf("Cannot specify both `components` and `disabled_components`")
-	}
-
 	params := &entity.PackageRepositoryParams{
 		Name:               d.Get("name").(string),
 		URL:                d.Get("url").(string),
 		Distributions:      listAsString(d.Get("distributions").(*schema.Set).List()),
 		DisabledPockets:    listAsString(d.Get("disabled_pockets").(*schema.Set).List()),
-		DisabledComponents: listAsString(disabledComponents),
-		Components:         listAsString(components),
+		DisabledComponents: listAsString(d.Get("disabled_components").(*schema.Set).List()),
+		Components:         listAsString(d.Get("components").(*schema.Set).List()),
 		Arches:             listAsString(d.Get("arches").(*schema.Set).List()),
 		Key:                d.Get("key").(string),
 		DisableSources:     d.Get("disable_sources").(bool),

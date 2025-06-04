@@ -4,11 +4,13 @@ page_title: "maas_package_repository Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
   Provides a resource to manage MAAS package repositories.
+  Note: The two ubuntu archives that ship with MAAS are import-only terraform resources, only custom repos can be created or destroyed.
 ---
 
 # maas_package_repository (Resource)
 
 Provides a resource to manage MAAS package repositories.
+*Note*: The two ubuntu archives that ship with MAAS are import-only terraform resources, only custom repos can be created or destroyed.
 
 ## Example Usage
 
@@ -39,7 +41,8 @@ resource "maas_package_repository" "repo1" {
 ### Required
 
 - `name` (String) The name of the package repository.
-- `url` (String) The url of the package repository.
+*Note*: the Name field for the Ubuntu Archive and Ubuntu Ports repos are `main_archive` and `ports_archive` respectively. As they are default resources, the MAAS UI shows a different name to their internal database name entry.
+- `url` (String) The URL of the package repository.
 
 ### Optional
 
@@ -63,4 +66,6 @@ Import is supported using the following syntax:
 ```shell
 # A package repository can be imported using the Repo ID, Name, or URL.
 $ terraform import maas_package_repository.test "main_archive"
+
+# (See the `Name` note above as to why `Ubuntu archive` is imported with `main_archive`)
 ```
