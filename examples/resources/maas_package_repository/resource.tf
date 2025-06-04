@@ -16,3 +16,4 @@ resource "maas_package_repository" "repo1" {
     "jammy-security-prod"
   ]
 }
+
