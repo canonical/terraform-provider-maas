@@ -158,7 +158,12 @@ func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceDa
 func resourcePackageRepositoriesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	repo, err := getRepo(client, d.Id())
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	repo, err := client.PackageRepository.Get(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
