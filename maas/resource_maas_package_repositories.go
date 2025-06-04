@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
@@ -255,17 +254,4 @@ func getRepo(client *client.Client, identifier string) (*entity.PackageRepositor
 	}
 
 	return nil, fmt.Errorf("could not find repo with identifier %q", identifier)
-}
-
-func listAsString(stringList []interface{}) string {
-	if len(stringList) == 0 {
-		return "[]"
-	}
-
-	var asList []string
-	for _, listItem := range stringList {
-		asList = append(asList, listItem.(string))
-	}
-
-	return strings.Join(asList, ",")
 }

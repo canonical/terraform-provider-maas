@@ -44,6 +44,19 @@ func convertToStringSlice(field any) []string {
 	return result
 }
 
+func listAsString(stringList []interface{}) string {
+	if len(stringList) == 0 {
+		return "[]"
+	}
+
+	var asList []string
+	for _, listItem := range stringList {
+		asList = append(asList, listItem.(string))
+	}
+
+	return strings.Join(asList, ",")
+}
+
 func isElementIPAddress(i any, p cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
 
