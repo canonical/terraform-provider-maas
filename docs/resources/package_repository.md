@@ -4,13 +4,13 @@ page_title: "maas_package_repository Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
   Provides a resource to manage MAAS package repositories.
-  Note: The two ubuntu archives that ship with MAAS are import-only terraform resources, only custom repos can be created or destroyed.
+  Note: The two Ubuntu archives that ship with MAAS are import-only Terraform resources, only custom repositories can be created or destroyed.
 ---
 
 # maas_package_repository (Resource)
 
 Provides a resource to manage MAAS package repositories.
-*Note*: The two ubuntu archives that ship with MAAS are import-only terraform resources, only custom repos can be created or destroyed.
+*Note*: The two Ubuntu archives that ship with MAAS are import-only Terraform resources, only custom repositories can be created or destroyed.
 
 ## Example Usage
 
