@@ -152,7 +152,7 @@ func resourceMAASNodeScript() *schema.Resource {
 			"script": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The node script content.",
+				Description: "The node script content encoded in base64.",
 			},
 			"script_type": {
 				Type:         schema.TypeString,

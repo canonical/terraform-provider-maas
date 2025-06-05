@@ -14,7 +14,7 @@ Provides a resource to manage MAAS node scripts.
 
 ```terraform
 resource "maas_node_script" "tf_node_script" {
-  script      = file("${path.module}/scripts/dummy.sh")
+  script      = base64encode(file("${path.module}/scripts/dummy.sh"))
   script_type = "commissioning"
 
   name        = "dummy-script"
@@ -53,7 +53,7 @@ resource "maas_node_script" "tf_node_script" {
 
 ### Required
 
-- `script` (String) The node script content.
+- `script` (String) The node script content encoded in base64.
 
 ### Optional
 

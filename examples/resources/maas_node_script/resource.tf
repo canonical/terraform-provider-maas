@@ -1,5 +1,5 @@
 resource "maas_node_script" "tf_node_script" {
-  script      = file("${path.module}/scripts/dummy.sh")
+  script      = base64encode(file("${path.module}/scripts/dummy.sh"))
   script_type = "commissioning"
 
   name        = "dummy-script"
