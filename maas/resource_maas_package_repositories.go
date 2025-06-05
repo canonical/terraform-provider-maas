@@ -14,7 +14,7 @@ import (
 
 func resourceMAASPackageRepositories() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage MAAS package repositories.\n*Note*: The two ubuntu archives that ship with MAAS are import-only terraform resources, only custom repos can be created or destroyed.",
+		Description:   "Provides a resource to manage MAAS package repositories.\n*Note*: The two Ubuntu archives that ship with MAAS are import-only Terraform resources, only custom repositories can be created or destroyed.",
 		CreateContext: resourcePackageRepositoriesCreate,
 		ReadContext:   resourcePackageRepositoriesRead,
 		UpdateContext: resourcePackageRepositoriesUpdate,
