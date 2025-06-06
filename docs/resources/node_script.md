@@ -58,7 +58,6 @@ resource "maas_node_script" "tf_node_script" {
 ### Optional
 
 - `apply_configured_networking` (Boolean) Whether to apply the provided network configuration before the script runs.
-- `comment` (String) A comment about what this change does.
 - `description` (String) A description of what the script does.
 - `destructive` (Boolean) Whether or not the script overwrites data on any drive on the running system. Destructive scripts can not be run on deployed systems. Defaults to `false`.
 - `for_hardware` (Set of String) A list of modalias, PCI IDs, and/or USB IDs the script will automatically run on. Must start with `modalias:`, `pci:`, `usb:`, `system_vendor:`, `system_product:`, `system_version:`, `mainboard_vendor:`, or `mainboard_product:`.

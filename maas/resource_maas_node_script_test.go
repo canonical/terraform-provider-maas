@@ -20,40 +20,39 @@ import (
 func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 	var nodeScript entity.NodeScript
 
-	name := acctest.RandomWithPrefix("tf-node-script-")
+	name := acctest.RandomWithPrefix("tf-node-script")
 
 	scriptType := "commissioning"
 	title := "Initial Title"
 	description := "initial description"
-	comment := "initial comment"
 	parallel := "instance"
-	timeout := "00:10:00"
+	timeout := "0:10:00"
 	hardwareType := "node"
 	applyConfiguredNetworking := true
 	destructive := true
 	mayReboot := true
 	recommission := true
 	forHardware := []string{"system_vendor:canonical", "system_product:maas"}
-	tags := []string{"dummy", "script"}
+	tags := []string{"dummy", "script", "destructive", hardwareType}
 	packages := map[string][]string{"snap": {"maas", "maas-test-db"}}
+	packagesBytes, _ := json.Marshal(packages)
 
 	updatedScriptType := "testing"
 	updatedTitle := "Updated Title"
 	updatedDescription := "updated description"
-	updatedComment := "updated comment"
 	updatedParallel := "any"
-	updatedTimeout := "00:20:00"
+	updatedTimeout := "0:20:00"
 	updatedHardwareType := "storage"
 	updatedApplyConfiguredNetworking := false
 	updatedDestructive := false
 	updatedMayReboot := false
 	updatedRecommission := false
 	updatedForHardware := []string{"system_vendor:canonical", "system_product:maas-testdb"}
-	updatedTags := []string{"dummy", "script"}
-	updatedPackages := map[string][]string{"snap": {"maas", "maas-test-db"}}
+	updatedTags := []string{"dummy", "script", updatedHardwareType}
+	updatedPackages := map[string][]string{"snap": {"maas", "maas-test-db", "core24"}}
+	updatedPackagesBytes, _ := json.Marshal(updatedPackages)
 
-	scriptRaw := `
-#!/bin/bash
+	scriptRaw := `#!/bin/bash
 echo "Hello World"
 `
 	encodedScript := base64.StdEncoding.EncodeToString([]byte(scriptRaw))
@@ -65,7 +64,6 @@ echo "Hello World"
 		resource.TestCheckResourceAttr("maas_node_script.test", "script_type", scriptType),
 		resource.TestCheckResourceAttr("maas_node_script.test", "title", title),
 		resource.TestCheckResourceAttr("maas_node_script.test", "description", description),
-		resource.TestCheckResourceAttr("maas_node_script.test", "comment", comment),
 		resource.TestCheckResourceAttr("maas_node_script.test", "parallel", parallel),
 		resource.TestCheckResourceAttr("maas_node_script.test", "timeout", timeout),
 		resource.TestCheckResourceAttr("maas_node_script.test", "hardware_type", hardwareType),
@@ -73,6 +71,7 @@ echo "Hello World"
 		resource.TestCheckResourceAttr("maas_node_script.test", "destructive", fmt.Sprintf("%t", destructive)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "may_reboot", fmt.Sprintf("%t", mayReboot)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "recommission", fmt.Sprintf("%t", recommission)),
+		resource.TestCheckResourceAttr("maas_node_script.test", "packages", string(packagesBytes)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "tags.#", fmt.Sprintf("%v", len(tags))),
 		resource.TestCheckResourceAttr("maas_node_script.test", "for_hardware.#", fmt.Sprintf("%v", len(forHardware))),
 	}
@@ -92,7 +91,6 @@ echo "Hello World"
 		resource.TestCheckResourceAttr("maas_node_script.test", "script_type", updatedScriptType),
 		resource.TestCheckResourceAttr("maas_node_script.test", "title", updatedTitle),
 		resource.TestCheckResourceAttr("maas_node_script.test", "description", updatedDescription),
-		resource.TestCheckResourceAttr("maas_node_script.test", "comment", updatedComment),
 		resource.TestCheckResourceAttr("maas_node_script.test", "parallel", updatedParallel),
 		resource.TestCheckResourceAttr("maas_node_script.test", "timeout", updatedTimeout),
 		resource.TestCheckResourceAttr("maas_node_script.test", "hardware_type", updatedHardwareType),
@@ -100,6 +98,7 @@ echo "Hello World"
 		resource.TestCheckResourceAttr("maas_node_script.test", "destructive", fmt.Sprintf("%t", updatedDestructive)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "may_reboot", fmt.Sprintf("%t", updatedMayReboot)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "recommission", fmt.Sprintf("%t", updatedRecommission)),
+		resource.TestCheckResourceAttr("maas_node_script.test", "packages", string(updatedPackagesBytes)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "tags.#", fmt.Sprintf("%v", len(updatedTags))),
 		resource.TestCheckResourceAttr("maas_node_script.test", "for_hardware.#", fmt.Sprintf("%v", len(updatedForHardware))),
 	}
@@ -120,7 +119,7 @@ echo "Hello World"
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASNodeScript(
-					scriptType, name, title, description, comment, parallel, timeout, hardwareType,
+					encodedScript, scriptType, name, title, description, parallel, timeout, hardwareType,
 					applyConfiguredNetworking, destructive, mayReboot, recommission,
 					forHardware, tags,
 					packages,
@@ -130,12 +129,12 @@ echo "Hello World"
 			// Test update script
 			{
 				Config: testAccMAASNodeScript(
-					updatedScriptType, name, updatedTitle, updatedDescription, updatedComment, updatedParallel, updatedTimeout, updatedScriptType,
+					encodedScript, updatedScriptType, name, updatedTitle, updatedDescription, updatedParallel, updatedTimeout, updatedHardwareType,
 					updatedApplyConfiguredNetworking, updatedDestructive, updatedMayReboot, updatedRecommission,
 					updatedForHardware, updatedTags,
 					updatedPackages,
 				),
-				Check: resource.ComposeTestCheckFunc(checks...),
+				Check: resource.ComposeTestCheckFunc(updatedChecks...),
 			},
 			// Test import using name
 			{
@@ -148,7 +147,6 @@ echo "Hello World"
 					}
 					nodeScript = is[0]
 					assert.Equal(t, nodeScript.Attributes["name"], name)
-					assert.Equal(t, nodeScript.Attributes["description"], description)
 					return nil
 				},
 			},
@@ -187,7 +185,7 @@ func testAccMAASNodeScriptCheckExists(rn string, nodeScript *entity.NodeScript) 
 }
 
 func testAccMAASNodeScript(
-	scriptType, name, title, description, comment, parallel, timeout, hardwareType string,
+	script, scriptType, name, title, description, parallel, timeout, hardwareType string,
 	applyConfiguredNetworking, destructive, mayReboot, recommission bool,
 	forHardware, tags []string,
 	packages map[string][]string,
@@ -196,17 +194,16 @@ func testAccMAASNodeScript(
 
 	return fmt.Sprintf(`
 resource "maas_node_script" "test" {
-  script                      = file("${path.module}/scripts/dummy.sh")
-  script_type                 = %v
-  name                        = %v
-  title                       = %v
-  description                 = %v
-  comment                     = %v
-  parallel                    = %v
-  timeout                     = %v
-  hardware_type               = %v
+  script                      = %q
+  script_type                 = %q
+  name                        = %q
+  title                       = %q
+  description                 = %q
+  parallel                    = %q
+  timeout                     = %q
+  hardware_type               = %q
   for_hardware                = %v
-  packages                    = %v
+  packages                    = %q
   apply_configured_networking = %v
   destructive                 = %v
   may_reboot                  = %v
@@ -214,7 +211,7 @@ resource "maas_node_script" "test" {
   tags                        = %v
 }
 `,
-		scriptType, name, title, description, comment, parallel, timeout, hardwareType,
+		script, scriptType, name, title, description, parallel, timeout, hardwareType,
 		testutils.StringifySliceAsLiteralArray(forHardware), packagesMapString, applyConfiguredNetworking,
 		destructive, mayReboot, recommission, testutils.StringifySliceAsLiteralArray(tags),
 	)

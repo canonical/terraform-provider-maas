@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -63,12 +64,6 @@ func resourceMAASNodeScript() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Description: "Whether to apply the provided network configuration before the script runs.",
-			},
-			"comment": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "A comment about what this change does.",
 			},
 			"description": {
 				Type:        schema.TypeString,
@@ -191,7 +186,12 @@ func resourceNodeScriptCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	scriptContent := d.Get("script").(string)
 
-	nodeScript, err := client.NodeScripts.Create(getNodeScriptParams(d), []byte(scriptContent))
+	scriptRaw, err := base64.StdEncoding.DecodeString(scriptContent)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	nodeScript, err := client.NodeScripts.Create(getNodeScriptParams(d), []byte(scriptRaw))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -209,36 +209,33 @@ func resourceNodeScriptRead(ctx context.Context, d *schema.ResourceData, meta an
 		return diag.FromErr(err)
 	}
 
-	packagesJSON, err := structure.NormalizeJsonString(nodeScript.Packages)
+	packagesJSON, err := json.Marshal(nodeScript.Packages)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	latestChangeIdx := -1
 	latestChange := -1
+
 	for i, h := range nodeScript.History {
 		if h.ID > latestChange {
-			latestChange = i
+			latestChange = h.ID
+			latestChangeIdx = i
 		}
-	}
-
-	scriptData, err := base64.StdEncoding.DecodeString(nodeScript.History[latestChange].Data)
-	if err != nil {
-		return diag.FromErr(err)
 	}
 
 	tfState := map[string]any{
 		"apply_configured_networking": nodeScript.ApplyConfiguredNetworking,
-		"comment":                     nodeScript.History[latestChange].Comment,
 		"description":                 nodeScript.Description,
 		"destructive":                 nodeScript.Destructive,
 		"for_hardware":                nodeScript.ForHardware,
 		"hardware_type":               hardwareTypeEnumToName[nodeScript.HardwareType],
 		"may_reboot":                  nodeScript.MayReboot,
 		"name":                        nodeScript.Name,
-		"packages":                    packagesJSON,
+		"packages":                    string(packagesJSON),
 		"parallel":                    parallelEnumToName[nodeScript.Parallel],
 		"recommission":                nodeScript.Recommission,
-		"script":                      scriptData,
+		"script":                      nodeScript.History[latestChangeIdx].Data,
 		"script_type":                 scriptTypeEnumToName[nodeScript.Type],
 		"tags":                        nodeScript.Tags,
 		"timeout":                     nodeScript.Timeout,
@@ -256,7 +253,12 @@ func resourceNodeScriptUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	scriptContent := d.Get("script").(string)
 
-	nodeScript, err := client.NodeScript.Update(d.Id(), getNodeScriptParams(d), []byte(scriptContent))
+	scriptRaw, err := base64.StdEncoding.DecodeString(scriptContent)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	nodeScript, err := client.NodeScript.Update(d.Id(), getNodeScriptParams(d), []byte(scriptRaw))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -279,7 +281,6 @@ func resourceNodeScriptDelete(ctx context.Context, d *schema.ResourceData, meta 
 func getNodeScriptParams(d *schema.ResourceData) *entity.NodeScriptParams {
 	nodeScriptParams := entity.NodeScriptParams{
 		ApplyConfiguredNetworking: d.Get("apply_configured_networking").(bool),
-		Comment:                   d.Get("comment").(string),
 		Description:               d.Get("description").(string),
 		Destructive:               d.Get("destructive").(bool),
 		ForHardware:               strings.Join(convertToStringSlice(d.Get("for_hardware").(*schema.Set).List()), ","),
@@ -290,7 +291,7 @@ func getNodeScriptParams(d *schema.ResourceData) *entity.NodeScriptParams {
 		Parallel:                  d.Get("parallel").(string),
 		Recommission:              d.Get("recommission").(bool),
 		ScriptType:                d.Get("script_type").(string),
-		Tags:                      convertToStringSlice(d.Get("tags").(*schema.Set).List()),
+		Tags:                      strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
 		Timeout:                   d.Get("timeout").(string),
 		Title:                     d.Get("title").(string),
 	}
