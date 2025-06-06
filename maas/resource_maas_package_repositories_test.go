@@ -64,6 +64,21 @@ func TestAccResourceMAASPackageRepository_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccPackageRepositoryCheckExists("maas_package_repository.test_custom"),
 					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "name", "custom repo"),
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "url", "https://test.com"),
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "disable_sources", "true"),
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "enabled", "true"),
+
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "arches.#", "1"),
+					resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "arches.*", "amd64"),
+
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "components.#", "1"),
+					resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "components.*", "main"),
+
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "disabled_pockets.#", "1"),
+					resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "disabled_pockets.*", "updates"),
+
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "distributions.#", "1"),
+					resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "distributions.*", "jammy-prod"),
 				),
 			},
 			// Test updates of custom repo
@@ -72,6 +87,21 @@ func TestAccResourceMAASPackageRepository_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccPackageRepositoryCheckExists("maas_package_repository.test_custom"),
 					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "name", "custom changed repo"),
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "url", "https://test2.com"),
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "disable_sources", "true"),
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "enabled", "true"),
+
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "arches.#", "1"),
+					resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "arches.*", "armhf"),
+
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "components.#", "1"),
+					resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "components.*", "restricted"),
+
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "disabled_pockets.#", "1"),
+					resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "disabled_pockets.*", "security"),
+
+					resource.TestCheckResourceAttr("maas_package_repository.test_custom", "distributions.#", "1"),
+					resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "distributions.*", "jammy-prod"),
 				),
 			},
 			// Test import using ID
