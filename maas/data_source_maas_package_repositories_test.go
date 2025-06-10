@@ -14,19 +14,16 @@ func TestAccDataSourceMAASPackageRepositories_basic(t *testing.T) {
 
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttr("data.maas_package_repository.test", "name", resourceName),
-		resource.TestCheckResourceAttr("maas_package_repository.test_custom", "url", "http://archive.ubuntu.com/ubuntu"),
-		resource.TestCheckResourceAttr("maas_package_repository.test_custom", "disable_sources", "true"),
-		resource.TestCheckResourceAttr("maas_package_repository.test_custom", "enabled", "true"),
+		resource.TestCheckResourceAttr("maas_package_repository.test", "url", "http://archive.ubuntu.com/ubuntu"),
+		resource.TestCheckResourceAttr("maas_package_repository.test", "disable_sources", "true"),
+		resource.TestCheckResourceAttr("maas_package_repository.test", "enabled", "true"),
 
-		resource.TestCheckResourceAttr("maas_package_repository.test_custom", "arches.#", "2"),
-		resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "arches.*", "amd64"),
-		resource.TestCheckTypeSetElemAttr("maas_package_repository.test_custom", "arches.*", "i386"),
-
-		resource.TestCheckResourceAttr("maas_package_repository.test_custom", "components.#", "0"),
-
-		resource.TestCheckResourceAttr("maas_package_repository.test_custom", "disabled_pockets.#", "0"),
-
-		resource.TestCheckResourceAttr("maas_package_repository.test_custom", "distributions.#", "0"),
+		resource.TestCheckResourceAttr("maas_package_repository.test", "arches.#", "2"),
+		resource.TestCheckTypeSetElemAttr("maas_package_repository.test", "arches.*", "amd64"),
+		resource.TestCheckTypeSetElemAttr("maas_package_repository.test", "arches.*", "i386"),
+		resource.TestCheckResourceAttr("maas_package_repository.test", "components.#", "0"),
+		resource.TestCheckResourceAttr("maas_package_repository.test", "disabled_pockets.#", "0"),
+		resource.TestCheckResourceAttr("maas_package_repository.test", "distributions.#", "0"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
