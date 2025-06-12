@@ -29,25 +29,25 @@ func dataSourceMAASPackageRepositories() *schema.Resource {
 			"disable_sources": {
 				Type:        schema.TypeBool,
 				Computed:    true,
-				Description: "Disable deb-src lines.",
+				Description: "Whether deb-src lines are disabled for this repository.",
 			},
 			"disabled_components": {
 				Type:        schema.TypeSet,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "The list of components to disable. Only applicable to the default Ubuntu repositories.",
+				Description: "The list of components that are disabled. Only applicable to the default Ubuntu repositories.",
 			},
 			"disabled_pockets": {
 				Type:        schema.TypeSet,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "The list of pockets to disable.",
+				Description: "The list of pockets that are disabled.",
 			},
 			"distributions": {
 				Type:        schema.TypeSet,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "Which package distributions to include.",
+				Description: "The list of included package distributions.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
@@ -58,7 +58,7 @@ func dataSourceMAASPackageRepositories() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
-				Description: "The authentication key to use with the repository.",
+				Description: "The authentication key used with the repository.",
 			},
 			"name": {
 				Type:        schema.TypeString,

@@ -28,16 +28,16 @@ data "maas_package_repository" "main" {
 
 ### Optional
 
-- `key` (String, Sensitive) The authentication key to use with the repository.
+- `key` (String, Sensitive) The authentication key used with the repository.
 
 ### Read-Only
 
 - `arches` (Set of String) The list of supported architectures.
-- `components` (Set of String) The list of components to enable. Only applicable to custom repositories.
-- `disable_sources` (Boolean) Disable deb-src lines.
-- `disabled_components` (Set of String) The list of components to disable. Only applicable to the default Ubuntu repositories.
-- `disabled_pockets` (Set of String) The list of pockets to disable.
-- `distributions` (Set of String) Which package distributions to include.
+- `components` (Set of String) The list of components that are enabled. Only applicable to custom repositories.
+- `disable_sources` (Boolean) Whether deb-src lines are disabled for this repository.
+- `disabled_components` (Set of String) The list of components that are disabled. Only applicable to the default Ubuntu repositories.
+- `disabled_pockets` (Set of String) The list of pockets that are disabled.
+- `distributions` (Set of String) The list of included package distributions.
 - `enabled` (Boolean) Whether or not the repository is enabled.
 - `id` (String) The ID of this resource.
 - `url` (String) The URL of the package repository.
