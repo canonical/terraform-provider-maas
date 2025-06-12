@@ -29,7 +29,7 @@ data "maas_vm_host" "vm_host" {
 
 - `certificate` (String) Certificate to use for power control of the LXD VM host.
 - `cpu_over_commit_ratio` (Number) The VM host CPU overcommit ratio.
-- `default_macvlan_mode` (String) The VM host default macvlan mode. Supported values are: `bridge`, `passthru`, `private`, `vepa`.
+- `default_macvlan_mode` (String) The VM host default macvlan mode.
 - `id` (String) The ID of this resource.
 - `key` (String, Sensitive) Key to use for power control of the LXD VM host.
 - `memory_over_commit_ratio` (Number) The VM host RAM memory overcommit ratio.
@@ -37,10 +37,10 @@ data "maas_vm_host" "vm_host" {
 - `power_address` (String) Address that gives MAAS access to the VM host power control.
 - `power_pass` (String, Sensitive) User password to use for power control of the VM host.
 - `power_user` (String) User name to use for power control of the VM host.
+- `project` (String) For `lxd` VM hosts, the project that MAAS will manage.
 - `resources_cores_total` (Number) The VM host total number of CPU cores.
 - `resources_local_storage_total` (Number) The VM host total local storage (in bytes).
 - `resources_memory_total` (Number) The VM host total RAM memory (in MB).
 - `tags` (Set of String) A set of VM host tag names.
-- `project` (String) For `lxd` VM hosts, the project that MAAS will manage.
 - `type` (String) The VM host type. Supported values are: `lxd`, `virsh`.
 - `zone` (String) The VM host zone name.
