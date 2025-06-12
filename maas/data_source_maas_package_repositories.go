@@ -24,7 +24,7 @@ func dataSourceMAASPackageRepositories() *schema.Resource {
 				Type:        schema.TypeSet,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "The list of components to enable. Only applicable to custom repositories.",
+				Description: "The list of components that are enabled. Only applicable to custom repositories.",
 			},
 			"disable_sources": {
 				Type:        schema.TypeBool,
