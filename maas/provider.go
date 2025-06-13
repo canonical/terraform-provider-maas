@@ -54,6 +54,7 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"maas_boot_source_selection":      resourceMAASBootSourceSelection(),
 			"maas_boot_source":                resourceMAASBootSource(),
+			"maas_configuration":              resourceMAASConfiguration(),
 			"maas_device":                     resourceMAASDevice(),
 			"maas_instance":                   resourceMAASInstance(),
 			"maas_vm_host":                    resourceMAASVMHost(),
@@ -76,7 +77,9 @@ func Provider() *schema.Provider {
 			"maas_block_device_tag":           resourceMAASBlockDeviceTag(),
 			"maas_tag":                        resourceMAASTag(),
 			"maas_network_interface_tag":      resourceMAASNetworkInterfaceTag(),
+			"maas_package_repository":         resourceMAASPackageRepositories(),
 			"maas_user":                       resourceMAASUser(),
+			"maas_ssh_keys":                   resourceMAASSSHKeys(),
 			"maas_resource_pool":              resourceMAASResourcePool(),
 			"maas_raid":                       resourceMAASRAID(),
 			"maas_volume_group":               resourceMAASVolumeGroup(),
