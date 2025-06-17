@@ -55,13 +55,14 @@ resource "maas_node_script" "tf_node_script" {
 
 - `script` (String) The node script content encoded in base64.
 
-### Optional
+### Read-Only
 
 - `apply_configured_networking` (Boolean) Whether to apply the provided network configuration before the script runs.
 - `description` (String) A description of what the script does.
 - `destructive` (Boolean) Whether or not the script overwrites data on any drive on the running system. Destructive scripts can not be run on deployed systems. Defaults to `false`.
 - `for_hardware` (Set of String) A list of modalias, PCI IDs, and/or USB IDs the script will automatically run on. Must start with `modalias:`, `pci:`, `usb:`, `system_vendor:`, `system_product:`, `system_version:`, `mainboard_vendor:`, or `mainboard_product:`.
 - `hardware_type` (String) The hardware_type defines what type of hardware the script is associated with. May be `cpu`, `memory`, `storage`, `network`, `gpu`, or `node`.
+- `id` (String) The ID of this resource.
 - `may_reboot` (Boolean) Whether or not the script may reboot the system while running.
 - `name` (String) The name of the new node script.
 - `packages` (String) Dictionary of packages to be installed or extracted before running the script.
@@ -71,10 +72,6 @@ resource "maas_node_script" "tf_node_script" {
 - `tags` (Set of String) A set of tag names assigned to the new node script. This argument is computed if it's not given.
 - `timeout` (String) How long the script is allowed to run before failing. `0` gives unlimited time, defaults to `0`. Expects data in the format `DD HH:MM:SS.uuuuuu`, `DD HH:MM:SS,uuuuuu`, or as specified by ISO 8601 (e.g. `P4DT1H15M20S` which is equivalent to 4 1:15:20) or PostgreSQL’s day-time interval format (e.g. `3 days 04:05:06`).
 - `title` (String) The title of the script.
-
-### Read-Only
-
-- `id` (String) The ID of this resource.
 
 ## Import
 
