@@ -60,7 +60,7 @@ resource "maas_node_script" "tf_node_script" {
 - `apply_configured_networking` (Boolean) Whether to apply the provided network configuration before the script runs.
 - `description` (String) A description of what the script does.
 - `destructive` (Boolean) Whether or not the script overwrites data on any drive on the running system. Destructive scripts can not be run on deployed systems. Defaults to `false`.
-- `for_hardware` (Set of String) A list of modalias, PCI IDs, and/or USB IDs the script will automatically run on. Must start with `modalias:`, `pci:`, `usb:`, `system_vendor:`, `system_product:`, `system_version:`, `mainboard_vendor:`, or `mainboard_product:`.
+- `for_hardware` (List of String) A list of modalias, PCI IDs, and/or USB IDs the script will automatically run on. Must start with `modalias:`, `pci:`, `usb:`, `system_vendor:`, `system_product:`, `system_version:`, `mainboard_vendor:`, or `mainboard_product:`.
 - `hardware_type` (String) The hardware_type defines what type of hardware the script is associated with. May be `cpu`, `memory`, `storage`, `network`, `gpu`, or `node`.
 - `id` (String) The ID of this resource.
 - `may_reboot` (Boolean) Whether or not the script may reboot the system while running.
@@ -69,7 +69,7 @@ resource "maas_node_script" "tf_node_script" {
 - `parallel` (String) Whether the script may be run in parallel with other scripts. May be `disabled` to run by itself, `instance` to run along scripts with the same name, or `any` to run along any script.
 - `recommission` (Boolean) Whether builtin commissioning scripts should be rerun after successfully running this script.
 - `script_type` (String) The script_type defines when the script should be used: `commissioning` or `testing` or `release`. Defaults to `testing`.
-- `tags` (Set of String) A set of tag names assigned to the new node script. This argument is computed if it's not given.
+- `tags` (List of String) A set of tag names assigned to the new node script. This argument is computed if it's not given.
 - `timeout` (String) How long the script is allowed to run before failing. `0` gives unlimited time, defaults to `0`. Expects data in the format `DD HH:MM:SS.uuuuuu`, `DD HH:MM:SS,uuuuuu`, or as specified by ISO 8601 (e.g. `P4DT1H15M20S` which is equivalent to 4 1:15:20) or PostgreSQL’s day-time interval format (e.g. `3 days 04:05:06`).
 - `title` (String) The title of the script.
 
