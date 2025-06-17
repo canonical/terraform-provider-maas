@@ -32,10 +32,18 @@ func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 	destructive := true
 	mayReboot := true
 	recommission := true
-	forHardware := []string{"system_vendor:canonical", "system_product:maas"}
+	forHardware := []string{"system_vendor:canonical", "system_product:maas", "pci:1234:5678"}
 	tags := []string{"dummy", "script", "destructive", hardwareType}
 	packages := map[string][]string{"snap": {"maas", "maas-test-db"}}
 	packagesBytes, _ := json.Marshal(packages)
+
+	scriptRaw := testAccMAASNodeScriptWithMetadata(
+		scriptType, name, title, description, parallel, timeout, hardwareType,
+		applyConfiguredNetworking, destructive, mayReboot, recommission,
+		forHardware, tags,
+		packages,
+	)
+	encodedScript := base64.StdEncoding.EncodeToString([]byte(scriptRaw))
 
 	updatedScriptType := "testing"
 	updatedTitle := "Updated Title"
@@ -47,21 +55,14 @@ func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 	updatedMayReboot := false
 	updatedRecommission := false
 	updatedForHardware := []string{"system_vendor:canonical", "system_product:maas-testdb"}
+	updatedTags := []string{"dummy", "script", updatedHardwareType}
 	updatedPackages := map[string][]string{"snap": {"maas", "maas-test-db", "core24"}}
 	updatedPackagesBytes, _ := json.Marshal(updatedPackages)
-
-	scriptRaw := testAccMAASNodeScriptWithMetadata(
-		scriptType, name, title, description, parallel, timeout, hardwareType,
-		applyConfiguredNetworking, destructive, mayReboot, recommission,
-		forHardware, tags,
-		packages,
-	)
-	encodedScript := base64.StdEncoding.EncodeToString([]byte(scriptRaw))
 
 	updatedScriptRaw := testAccMAASNodeScriptWithMetadata(
 		updatedScriptType, name, updatedTitle, updatedDescription, updatedParallel, timeout, updatedHardwareType,
 		updatedApplyConfiguredNetworking, updatedDestructive, updatedMayReboot, updatedRecommission,
-		updatedForHardware, tags,
+		updatedForHardware, updatedTags,
 		updatedPackages,
 	)
 	encodedUpdatedScript := base64.StdEncoding.EncodeToString([]byte(updatedScriptRaw))
@@ -108,11 +109,11 @@ func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_node_script.test", "may_reboot", fmt.Sprintf("%t", updatedMayReboot)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "recommission", fmt.Sprintf("%t", updatedRecommission)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "packages", string(updatedPackagesBytes)),
-		resource.TestCheckResourceAttr("maas_node_script.test", "tags.#", fmt.Sprintf("%v", len(tags))),
+		resource.TestCheckResourceAttr("maas_node_script.test", "tags.#", fmt.Sprintf("%v", len(updatedTags))),
 		resource.TestCheckResourceAttr("maas_node_script.test", "for_hardware.#", fmt.Sprintf("%v", len(updatedForHardware))),
 	}
 
-	for _, t := range tags {
+	for _, t := range updatedTags {
 		updatedChecks = append(updatedChecks, resource.TestCheckTypeSetElemAttr("maas_node_script.test", "tags.*", t))
 	}
 

@@ -70,7 +70,7 @@ func resourceMAASNodeScript() *schema.Resource {
 				Description: "Whether or not the script overwrites data on any drive on the running system. Destructive scripts can not be run on deployed systems. Defaults to `false`.",
 			},
 			"for_hardware": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -118,7 +118,7 @@ func resourceMAASNodeScript() *schema.Resource {
 				Description: "The script_type defines when the script should be used: `commissioning` or `testing` or `release`. Defaults to `testing`.",
 			},
 			"tags": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
