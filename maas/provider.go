@@ -54,6 +54,7 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"maas_boot_source_selection":      resourceMAASBootSourceSelection(),
 			"maas_boot_source":                resourceMAASBootSource(),
+			"maas_configuration":              resourceMAASConfiguration(),
 			"maas_device":                     resourceMAASDevice(),
 			"maas_instance":                   resourceMAASInstance(),
 			"maas_vm_host":                    resourceMAASVMHost(),
@@ -76,6 +77,7 @@ func Provider() *schema.Provider {
 			"maas_block_device_tag":           resourceMAASBlockDeviceTag(),
 			"maas_tag":                        resourceMAASTag(),
 			"maas_network_interface_tag":      resourceMAASNetworkInterfaceTag(),
+			"maas_package_repository":         resourceMAASPackageRepositories(),
 			"maas_user":                       resourceMAASUser(),
 			"maas_ssh_keys":                   resourceMAASSSHKeys(),
 			"maas_resource_pool":              resourceMAASResourcePool(),
@@ -89,6 +91,7 @@ func Provider() *schema.Provider {
 			"maas_boot_resources":             dataSourceMAASBootResources(),
 			"maas_boot_source":                dataSourceMAASBootSource(),
 			"maas_boot_source_selection":      dataSourceMAASBootSourceSelection(),
+			"maas_configuration":              dataSourceMAASConfiguration(),
 			"maas_fabric":                     dataSourceMAASFabric(),
 			"maas_vlan":                       dataSourceMAASVLAN(),
 			"maas_subnet":                     dataSourceMAASSubnet(),
@@ -100,6 +103,7 @@ func Provider() *schema.Provider {
 			"maas_resource_pool":              dataSourceMAASResourcePool(),
 			"maas_rack_controller":            dataSourceMAASRackController(),
 			"maas_zone":                       dataSourceMAASZone(),
+			"maas_package_repository":         dataSourceMAASPackageRepositories(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
