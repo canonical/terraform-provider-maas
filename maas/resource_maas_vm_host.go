@@ -171,6 +171,7 @@ func resourceMAASVMHost() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Sensitive:     true,
+				Computed:      true,
 				ConflictsWith: []string{"machine", "certificate", "key", "password"},
 				Description:   "User password to use for power control of a Virsh VM host. Cannot be set if `machine`, `certificate`, `key` or `password` parameters are used.",
 			},
@@ -331,10 +332,6 @@ func addVMParametersToState(vmHostType string, tfState map[string]any, hostParam
 
 		if key, ok := hostParams["key"]; ok {
 			tfState["key"] = stripWhitespace(key)
-		}
-
-		if password, ok := hostParams["password"]; ok {
-			tfState["password"] = password
 		}
 
 		if project, ok := hostParams["project"]; ok {
