@@ -14,6 +14,7 @@ resource "maas_subnet" "tf_subnet_source" {
   vlan       = maas_vlan.tf_vlan.vid
   name       = "tf_subnet_source"
   gateway_ip = "10.88.88.1"
+
   dns_servers = [
     "1.1.1.1",
   ]
@@ -25,6 +26,7 @@ resource "maas_subnet" "tf_subnet_destination" {
   vlan       = maas_vlan.tf_vlan.vid
   name       = "tf_subnet_destination"
   gateway_ip = "10.99.99.1"
+
   dns_servers = [
     "1.1.1.1",
   ]
@@ -36,4 +38,3 @@ resource "maas_static_route" "tf_static_route" {
   gateway_ip  = maas_subnet.tf_subnet_source.gateway_ip
   metric      = 55
 }
-

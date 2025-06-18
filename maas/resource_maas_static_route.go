@@ -19,25 +19,7 @@ func resourceMAASStaticRoute() *schema.Resource {
 		UpdateContext: resourceStaticRouteUpdate,
 		DeleteContext: resourceStaticRouteDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				cfg := meta.(*ClientConfig)
-				client := cfg.Client
-				staticRoute, err := getStaticRoute(client, d.Id())
-				if err != nil {
-					return nil, err
-				}
-				tfState := map[string]interface{}{
-					"id":          fmt.Sprintf("%v", staticRoute.ID),
-					"source":      staticRoute.Source.Name,
-					"destination": staticRoute.Destination.Name,
-					"gateway_ip":  staticRoute.GatewayIP,
-					"metric":      staticRoute.Metric,
-				}
-				if err := setTerraformState(d, tfState); err != nil {
-					return nil, err
-				}
-				return []*schema.ResourceData{d}, nil
-			},
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -66,7 +48,7 @@ func resourceMAASStaticRoute() *schema.Resource {
 	}
 }
 
-func resourceStaticRouteCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceStaticRouteCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	cfg := meta.(*ClientConfig)
 	client := cfg.Client
 
@@ -82,10 +64,10 @@ func resourceStaticRouteCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	d.SetId(fmt.Sprintf("%v", staticRoute.ID))
 
-	return resourceStaticRouteUpdate(ctx, d, meta)
+	return resourceStaticRouteRead(ctx, d, meta)
 }
 
-func resourceStaticRouteRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceStaticRouteRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	cfg := meta.(*ClientConfig)
 	client := cfg.Client
 
@@ -99,16 +81,11 @@ func resourceStaticRouteRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	source := staticRoute.Source.Name
-	destination := staticRoute.Destination.Name
-	gatewayIP := staticRoute.GatewayIP
-	metric := staticRoute.Metric
-
-	tfState := map[string]interface{}{
-		"destination": destination,
-		"source":      source,
-		"gateway_ip":  gatewayIP,
-		"metric":      metric,
+	tfState := map[string]any{
+		"destination": staticRoute.Destination.Name,
+		"source":      staticRoute.Source.Name,
+		"gateway_ip":  staticRoute.GatewayIP,
+		"metric":      staticRoute.Metric,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -117,7 +94,7 @@ func resourceStaticRouteRead(ctx context.Context, d *schema.ResourceData, meta i
 	return nil
 }
 
-func resourceStaticRouteUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceStaticRouteUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	cfg := meta.(*ClientConfig)
 	client := cfg.Client
 
@@ -138,7 +115,7 @@ func resourceStaticRouteUpdate(ctx context.Context, d *schema.ResourceData, meta
 	return resourceStaticRouteRead(ctx, d, meta)
 }
 
-func resourceStaticRouteDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceStaticRouteDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	cfg := meta.(*ClientConfig)
 	client := cfg.Client
 
@@ -168,32 +145,4 @@ func getStaticRouteParams(client *client.Client, d *schema.ResourceData) (*entit
 	}
 
 	return &params, nil
-}
-
-func findStaticRoute(client *client.Client, identifier string) (*entity.StaticRoute, error) {
-	staticRoutes, err := client.StaticRoutes.Get()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, s := range staticRoutes {
-		if fmt.Sprintf("%v", s.ID) == identifier {
-			return &s, nil
-		}
-	}
-
-	return nil, err
-}
-
-func getStaticRoute(client *client.Client, identifier string) (*entity.StaticRoute, error) {
-	staticRoute, err := findStaticRoute(client, identifier)
-	if err != nil {
-		return nil, err
-	}
-
-	if staticRoute == nil {
-		return nil, fmt.Errorf("staticRoute (%s) was not found", identifier)
-	}
-
-	return staticRoute, nil
 }
