@@ -100,6 +100,7 @@ func Provider() *schema.Provider {
 			"maas_device":                     dataSourceMAASDevice(),
 			"maas_devices":                    dataSourceMAASDevices(),
 			"maas_resource_pool":              dataSourceMAASResourcePool(),
+			"maas_vm_host":                    dataSourceMAASVMHost(),
 			"maas_rack_controller":            dataSourceMAASRackController(),
 			"maas_zone":                       dataSourceMAASZone(),
 			"maas_package_repository":         dataSourceMAASPackageRepositories(),
