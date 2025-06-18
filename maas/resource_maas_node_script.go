@@ -102,10 +102,20 @@ func resourceMAASNodeScript() *schema.Resource {
 				Computed:    true,
 				Description: "Whether the node script may be run in parallel with other scripts. May be `disabled` to run by itself, `instance` to run along scripts with the same name, or `any` to run along any script.",
 			},
+			"parameters": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The parameters the node script accepts.",
+			},
 			"recommission": {
 				Type:        schema.TypeBool,
 				Computed:    true,
 				Description: "Whether builtin commissioning scripts should be rerun after successfully running this node script.",
+			},
+			"results": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The results the node script will return on completion.",
 			},
 			"script": {
 				Type:        schema.TypeString,
@@ -172,6 +182,16 @@ func resourceNodeScriptRead(ctx context.Context, d *schema.ResourceData, meta an
 		return diag.FromErr(err)
 	}
 
+	parametersJSON, err := json.Marshal(nodeScript.Parameters)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	resultsJSON, err := json.Marshal(nodeScript.Results)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	latestChangeIdx := -1
 	latestChange := -1
 
@@ -192,7 +212,9 @@ func resourceNodeScriptRead(ctx context.Context, d *schema.ResourceData, meta an
 		"name":                        nodeScript.Name,
 		"packages":                    string(packagesJSON),
 		"parallel":                    parallelEnumToName[nodeScript.Parallel],
+		"parameters":                  string(parametersJSON),
 		"recommission":                nodeScript.Recommission,
+		"results":                     string(resultsJSON),
 		"script":                      nodeScript.History[latestChangeIdx].Data,
 		"script_type":                 scriptTypeEnumToName[nodeScript.Type],
 		"tags":                        nodeScript.Tags,

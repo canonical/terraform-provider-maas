@@ -36,12 +36,17 @@ func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 	tags := []string{"dummy", "script", "destructive", hardwareType}
 	packages := map[string][]string{"snap": {"maas", "maas-test-db"}}
 	packagesBytes, _ := json.Marshal(packages)
+	parameters := map[string]map[string]string{"storage": {"type": "string"}}
+	parametersBytes, _ := json.Marshal(parameters)
+	results := map[string]map[string]string{"badblocks": {"title": "Bad blocks"}}
+	resultsBytes, _ := json.Marshal(results)
 
 	scriptRaw := testAccMAASNodeScriptWithMetadata(
 		scriptType, name, title, description, parallel, timeout, hardwareType,
 		applyConfiguredNetworking, destructive, mayReboot, recommission,
 		forHardware, tags,
 		packages,
+		parameters, results,
 	)
 	encodedScript := base64.StdEncoding.EncodeToString([]byte(scriptRaw))
 
@@ -58,12 +63,17 @@ func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 	updatedTags := []string{"dummy", "script", updatedHardwareType}
 	updatedPackages := map[string][]string{"snap": {"maas", "maas-test-db", "core24"}}
 	updatedPackagesBytes, _ := json.Marshal(updatedPackages)
+	updatedParameters := map[string]map[string]string{"bytes": {"type": "int"}}
+	updatedParametersBytes, _ := json.Marshal(updatedParameters)
+	updatedResults := map[string]map[string]string{"goodblocks": {"title": "Good blocks"}}
+	updatedResultsBytes, _ := json.Marshal(updatedResults)
 
 	updatedScriptRaw := testAccMAASNodeScriptWithMetadata(
 		updatedScriptType, name, updatedTitle, updatedDescription, updatedParallel, timeout, updatedHardwareType,
 		updatedApplyConfiguredNetworking, updatedDestructive, updatedMayReboot, updatedRecommission,
 		updatedForHardware, updatedTags,
 		updatedPackages,
+		updatedParameters, updatedResults,
 	)
 	encodedUpdatedScript := base64.StdEncoding.EncodeToString([]byte(updatedScriptRaw))
 
@@ -82,6 +92,8 @@ func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_node_script.test", "may_reboot", fmt.Sprintf("%t", mayReboot)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "recommission", fmt.Sprintf("%t", recommission)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "packages", string(packagesBytes)),
+		resource.TestCheckResourceAttr("maas_node_script.test", "parameters", string(parametersBytes)),
+		resource.TestCheckResourceAttr("maas_node_script.test", "results", string(resultsBytes)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "tags.#", fmt.Sprintf("%v", len(tags))),
 		resource.TestCheckResourceAttr("maas_node_script.test", "for_hardware.#", fmt.Sprintf("%v", len(forHardware))),
 	}
@@ -109,6 +121,8 @@ func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_node_script.test", "may_reboot", fmt.Sprintf("%t", updatedMayReboot)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "recommission", fmt.Sprintf("%t", updatedRecommission)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "packages", string(updatedPackagesBytes)),
+		resource.TestCheckResourceAttr("maas_node_script.test", "parameters", string(updatedParametersBytes)),
+		resource.TestCheckResourceAttr("maas_node_script.test", "results", string(updatedResultsBytes)),
 		resource.TestCheckResourceAttr("maas_node_script.test", "tags.#", fmt.Sprintf("%v", len(updatedTags))),
 		resource.TestCheckResourceAttr("maas_node_script.test", "for_hardware.#", fmt.Sprintf("%v", len(updatedForHardware))),
 	}
@@ -189,8 +203,11 @@ func testAccMAASNodeScriptWithMetadata(
 	applyConfiguredNetworking, destructive, mayReboot, recommission bool,
 	forHardware, tags []string,
 	packages map[string][]string,
+	parameters, results map[string]map[string]string,
 ) string {
 	packagesMapString, _ := json.Marshal(packages)
+	parametersMapString, _ := json.Marshal(parameters)
+	resultsMapString, _ := json.Marshal(results)
 
 	return fmt.Sprintf(`#!/bin/bash
 
@@ -209,24 +226,16 @@ func testAccMAASNodeScriptWithMetadata(
 # may_reboot: %v
 # recommission: %v
 # tags: %v
-# parameters:
-#   storage:
-#     type: string
-#     title: custom-storage
-#     argument_format: --custom-storage={input}
-#     default: dummy
-#     required: false
-# results:
-#   badblocks:
-#     title: Bad blocks
-#     description: The number of bad blocks found on the storage device.
+# parameters: %v
+# results: %v
 # --- End MAAS 1.0 script metadata ---
 
 echo "Hello World"
 `,
 		scriptType, name, title, description, parallel, timeout, hardwareType,
 		testutils.StringifySliceAsLiteralArray(forHardware), string(packagesMapString), applyConfiguredNetworking,
-		destructive, mayReboot, recommission, testutils.StringifySliceAsLiteralArray(tags),
+		destructive, mayReboot, recommission, testutils.StringifySliceAsLiteralArray(tags), string(parametersMapString),
+		string(resultsMapString),
 	)
 }
 

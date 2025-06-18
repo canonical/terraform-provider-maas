@@ -67,7 +67,9 @@ resource "maas_node_script" "tf_node_script" {
 - `name` (String) The name of the node script.
 - `packages` (String) Dictionary of packages to be installed or extracted before running the node script.
 - `parallel` (String) Whether the node script may be run in parallel with other scripts. May be `disabled` to run by itself, `instance` to run along scripts with the same name, or `any` to run along any script.
+- `parameters` (String) The parameters the node script accepts.
 - `recommission` (Boolean) Whether builtin commissioning scripts should be rerun after successfully running this node script.
+- `results` (String) The results the node script will return on completion.
 - `script_type` (String) Defines when the node script should be used: `commissioning` or `testing` or `release`.
 - `tags` (List of String) A set of tag names assigned to the node script.
 - `timeout` (String) How long the node script is allowed to run before failing. `0` means unlimited time.
