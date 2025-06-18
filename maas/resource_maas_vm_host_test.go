@@ -16,13 +16,11 @@ import (
 )
 
 func TestAccMAASVMHost_DeployParams(t *testing.T) {
-	// A VM host identifier. Used to create a VM, which is deployed as a VM host in this test.
+	// A VM host identifier. Used to create a VM, which is deployed as a VM host.
 	vmHostIdentifier := os.Getenv("TF_ACC_VM_HOST_ID")
-	// A random string to be used for test
-	rs := acctest.RandString(8)
-	testMachineName := fmt.Sprintf("test-vm-host-machine-%s", rs)
-	testVMHostName := fmt.Sprintf("test-vm-host-%s", rs)
-	resourceName := fmt.Sprintf("maas_vm_host.%s", testVMHostName)
+
+	testMachineName := acctest.RandomWithPrefix("tf-resource-vm-host")
+	vmHostType := "lxd"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
@@ -31,10 +29,10 @@ func TestAccMAASVMHost_DeployParams(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASVMHostDeployParamsConfig(vmHostIdentifier, testMachineName, testVMHostName),
+				Config: testAccMAASVMHostDeployParamsConfig(vmHostIdentifier, testMachineName, vmHostType),
 				Check: resource.ComposeTestCheckFunc(
-					checkMAASVMHostExists(t, resourceName),
-					resource.TestCheckResourceAttr(resourceName, "type", "lxd"),
+					checkMAASVMHostExists(t, "maas_vm_host.test"),
+					resource.TestCheckResourceAttr("maas_vm_host.test", "type", "lxd"),
 				),
 			},
 		},
@@ -80,26 +78,22 @@ func checkMAASVMHostExists(t *testing.T, resourceName string) resource.TestCheck
 	}
 }
 
-func testAccMAASVMHostDeployParamsConfig(vmHostIdentifier string, testMachineName string, testVMHostName string) string {
+func testAccMAASVMHostDeployParamsConfig(vmHostIdentifier string, testMachineName string, vmHostType string) string {
 	return fmt.Sprintf(`
-	resource "maas_vm_host_machine" "%s" {
-	  vm_host = %q
-	  cores   = 1
-	  memory  = 2048
-
-	  storage_disks {
-	    size_gigabytes = 12
-	  }
+	resource "maas_vm_host_machine" "test" {
+	  vm_host  = %q
+	  hostname = %q
 	}
-	resource "maas_vm_host" "%s" {
-	  machine = maas_vm_host_machine.%s.id
-	  type    = "lxd"
+
+	resource "maas_vm_host" "test" {
+	  machine = maas_vm_host_machine.test.id
+	  type    = %q
 
 	  deploy_params {
 		  user_data        = "#!/bin/bash\necho 'Hello from cloud-init'"
 	  }
 	}
-	`, testMachineName, vmHostIdentifier, testVMHostName, testMachineName)
+	`, vmHostIdentifier, testMachineName, vmHostType)
 }
 
 func testAccCheckMAASVMHostDestroy(s *terraform.State) error {

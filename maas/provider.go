@@ -91,6 +91,7 @@ func Provider() *schema.Provider {
 			"maas_boot_resources":             dataSourceMAASBootResources(),
 			"maas_boot_source":                dataSourceMAASBootSource(),
 			"maas_boot_source_selection":      dataSourceMAASBootSourceSelection(),
+			"maas_configuration":              dataSourceMAASConfiguration(),
 			"maas_fabric":                     dataSourceMAASFabric(),
 			"maas_vlan":                       dataSourceMAASVLAN(),
 			"maas_subnet":                     dataSourceMAASSubnet(),
@@ -100,8 +101,10 @@ func Provider() *schema.Provider {
 			"maas_device":                     dataSourceMAASDevice(),
 			"maas_devices":                    dataSourceMAASDevices(),
 			"maas_resource_pool":              dataSourceMAASResourcePool(),
+			"maas_vm_host":                    dataSourceMAASVMHost(),
 			"maas_rack_controller":            dataSourceMAASRackController(),
 			"maas_zone":                       dataSourceMAASZone(),
+			"maas_package_repository":         dataSourceMAASPackageRepositories(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
