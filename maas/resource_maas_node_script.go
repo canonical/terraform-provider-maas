@@ -35,7 +35,10 @@ var parallelEnumToName = map[entity.NodeScriptParallel]string{
 
 func resourceMAASNodeScript() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage MAAS node scripts.",
+		Description: "Provides a resource to manage MAAS node scripts. It expects a script with " +
+			"metadata defined only embedded in the script, and it computes them in the Terraform " +
+			"state after the resource creation. Details about script metadata can be found in MAAS " +
+			"docs, ref: https://maas.io/docs/reference-commissioning-scripts",
 		CreateContext: resourceNodeScriptCreate,
 		ReadContext:   resourceNodeScriptRead,
 		UpdateContext: resourceNodeScriptUpdate,
@@ -136,9 +139,10 @@ func resourceMAASNodeScript() *schema.Resource {
 				Description: "A set of tag names assigned to the node script.",
 			},
 			"timeout": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "How long the node script is allowed to run before failing. `0` means unlimited time.",
+				Type:     schema.TypeString,
+				Computed: true,
+				Description: "How long the node script is allowed to run before failing. `0` means unlimited time. " +
+					"The time is represented in the following format: `[DD] [[HH:]MM:]ss[.uuuuuu]`",
 			},
 			"title": {
 				Type:        schema.TypeString,
@@ -159,7 +163,7 @@ func resourceNodeScriptCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	nodeScript, err := client.NodeScripts.Create(nil, []byte(scriptRaw))
+	nodeScript, err := client.NodeScripts.Create(nil, scriptRaw)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -192,6 +196,10 @@ func resourceNodeScriptRead(ctx context.Context, d *schema.ResourceData, meta an
 		return diag.FromErr(err)
 	}
 
+	// Detect the latest change of the node script in the script history. A bigger database ID
+	// means a newer version of the script. In the Terraform provider implementation we only care
+	// about the most recent version of the script. When we find it, we keep track of its index in
+	// the slice. We are using this index to set the proper script content in the Terraform state.
 	latestChangeIdx := -1
 	latestChange := -1
 
@@ -238,7 +246,7 @@ func resourceNodeScriptUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	nodeScript, err := client.NodeScript.Update(d.Id(), nil, []byte(scriptRaw))
+	nodeScript, err := client.NodeScript.Update(d.Id(), nil, scriptRaw)
 	if err != nil {
 		return diag.FromErr(err)
 	}

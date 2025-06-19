@@ -3,12 +3,12 @@
 page_title: "maas_node_script Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage MAAS node scripts.
+  Provides a resource to manage MAAS node scripts. It expects a script with metadata defined only embedded in the script, and it computes them in the Terraform state after the resource creation. Details about script metadata can be found in MAAS docs, ref: https://maas.io/docs/reference-commissioning-scripts
 ---
 
 # maas_node_script (Resource)
 
-Provides a resource to manage MAAS node scripts.
+Provides a resource to manage MAAS node scripts. It expects a script with metadata defined only embedded in the script, and it computes them in the Terraform state after the resource creation. Details about script metadata can be found in MAAS docs, ref: https://maas.io/docs/reference-commissioning-scripts
 
 ## Example Usage
 
@@ -42,7 +42,7 @@ resource "maas_node_script" "tf_node_script" {
 - `results` (String) The results the node script will return on completion.
 - `script_type` (String) Defines when the node script should be used: `commissioning` or `testing` or `release`.
 - `tags` (List of String) A set of tag names assigned to the node script.
-- `timeout` (String) How long the node script is allowed to run before failing. `0` means unlimited time.
+- `timeout` (String) How long the node script is allowed to run before failing. `0` means unlimited time. The time is represented in the following format: `[DD] [[HH:]MM:]ss[.uuuuuu]`
 - `title` (String) The title of the node script.
 
 ## Import
