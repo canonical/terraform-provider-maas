@@ -1,6 +1,6 @@
 # Contributing to the Terraform MAAS Provider
 
-Thank you for your interest in contributing to the Terraform MAAS Provider! We appreciate your help in making this project better. This document provides information on how to set up your development environment and best practices for contributing to the project. For information on what this provider is and does, see [docs/index.md](docs/index.md).
+Thank you for your interest in contributing to the Terraform MAAS Provider! We appreciate your help in making this project better. This document provides information on how to set up your development environment and best practices for contributing to the project.
 
 
 ## Requirements
@@ -50,10 +50,6 @@ This project follows a fork-based development model with a single long-running m
 1. Submit a Pull Request:
     1. Go to the your forked repository on GitHub.
     1. Click "New Pull Request". Select your feature branch to merge from your forked repo, into the master branch of the original repo.
-    1. Ensure your PR includes:
-       - A clear description of changes.
-       - Links to relevant issues (e.g., Fixes #113).
-       - Passing tests, if applicable.
 1. Address Review Feedback. Once approved, a maintainer will merge your PR. 🎉
 
 ## Commit messages
@@ -162,20 +158,33 @@ Tests are written as advised in the [Terraform docs](https://developer.hashicorp
 
 To run the tests:
 1. Ensure MAAS_API_KEY and MAAS_API_URL environment variables are set (see [Running the local provider](#running-the-local-provider)).
-1. Run the unit tests with:
-    ```bash
-    make test
-    ```
-1. Run both the unit tests and terraform acceptance tests with:
-    ```bash
-    make testacc
-    ```
-    Note that you may need to specify a specific environment variables for some tests to pass, for example machine ids. Add these to your `env.sh` file before sourcing it again, if required:
-    ```bash
-    export TF_ACC=1
-    export TF_ACC_NETWORK_INTERFACE_MACHINE=<machine_id> # e.g. b68rn4
-    export TF_ACC_TAG_MACHINES=<machine_id> # e.g. b68rn4
-    ```
+
+2. Run the tests:    
+    - Run the unit tests:
+        ```bash
+        make test
+        ```
+    - Run both the unit tests and all Terraform acceptance tests:
+        ```bash
+        make testacc
+        ```
+        > [!NOTE]
+        > You may need to set specific environment variables for some tests to pass, for example machine ids. Add these to your `env.sh` file before sourcing it again, if required:
+        > ```bash
+        > export TF_ACC_NETWORK_INTERFACE_MACHINE=<system_id>   # b68rn4
+        > export TF_ACC_TAG_MACHINES=<system_id>                # b68rn4
+        > export TF_ACC_VM_HOST_ID=<system_id>                  # maas-host
+        > export TF_ACC_BLOCK_DEVICE_MACHINE=<system_id>        # b68rn4
+        > export TF_ACC_RACK_CONTROLLER_HOSTNAME=<name>         # maas-dev
+        > ```
+    - Run a specific acceptance test:
+        ```bash
+        make testacc TESTARGS="-run=TestAcc<resource_name>_basic" 
+        ```
+    - Run a group of acceptance tests with names matching the regex:
+        ```bash
+        make testacc TESTARGS="-run=TestAcc<resource_name>"      
+        ```
 
 ## Getting Help
 
@@ -183,7 +192,7 @@ Check for existing issues [here](https://github.com/canonical/terraform-provider
 
 ## Release Process
 
-Releases are handled by the maintainers, see [README.md](../README.md).
+Releases are handled by the maintainers, see [RELEASING.md](RELEASING.md).
 
 ## Additional Resources
 
