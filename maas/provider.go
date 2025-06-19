@@ -86,6 +86,7 @@ func Provider() *schema.Provider {
 			"maas_volume_group":               resourceMAASVolumeGroup(),
 			"maas_logical_volume":             resourceMAASLogicalVolume(),
 			"maas_zone":                       resourceMAASZone(),
+			"maas_node_script":                resourceMAASNodeScript(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"maas_boot_resources":             dataSourceMAASBootResources(),
