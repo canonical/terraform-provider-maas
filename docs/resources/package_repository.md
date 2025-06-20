@@ -50,7 +50,7 @@ resource "maas_package_repository" "repo1" {
 - `components` (Set of String) The list of components to enable. Only applicable to custom repositories.
 - `disable_sources` (Boolean) Disable deb-src lines.
 - `disabled_components` (Set of String) The list of components to disable. Only applicable to the default Ubuntu repositories.
-- `disabled_pockets` (Set of String) The list of pockets to disable.
+- `disabled_pockets` (Set of String) The list of pockets to disable. This only applies to Ubuntu repositories; custom or not.
 - `distributions` (Set of String) Which package distributions to include.
 - `enabled` (Boolean) Whether or not the repository is enabled.
 - `key` (String, Sensitive) The authentication key to use with the repository.
