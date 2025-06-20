@@ -52,10 +52,6 @@ func resourceMAASPackageRepositories() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
-					ValidateFunc: validation.StringInSlice(
-						[]string{"main", "restricted", "universe", "multiverse"},
-						false,
-					),
 				},
 				Description:   "The list of components to enable. Only applicable to custom repositories.",
 				ConflictsWith: []string{"disabled_components"},
@@ -70,10 +66,6 @@ func resourceMAASPackageRepositories() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
-					ValidateFunc: validation.StringInSlice(
-						[]string{"restricted", "universe", "multiverse"},
-						false,
-					),
 				},
 				Description:   "The list of components to disable. Only applicable to the default Ubuntu repositories.",
 				ConflictsWith: []string{"components"},
@@ -83,10 +75,6 @@ func resourceMAASPackageRepositories() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
-					ValidateFunc: validation.StringInSlice(
-						[]string{"updates", "security", "backports"},
-						false,
-					),
 				},
 				Description: "The list of pockets to disable.",
 			},
