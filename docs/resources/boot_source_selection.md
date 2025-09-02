@@ -69,6 +69,8 @@ Optional:
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # A boot resource selection can be imported using the boot source ID and the boot source selection ID. e.g.
 $ terraform import maas_boot_source.example boot_source:id

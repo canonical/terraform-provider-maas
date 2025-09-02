@@ -69,6 +69,8 @@ resource "maas_volume_group" "vg1" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # Volume groups can be imported with the machine identifier (system ID, hostname, or FQDN) and the volume group identifier (ID or name). e.g.
 $ terraform import maas_volume_group.vg1 machine-06/vg1

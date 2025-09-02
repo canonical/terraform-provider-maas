@@ -51,6 +51,8 @@ resource "maas_user" "cloudbase" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # Users can be imported using their name. e.g.
 $ terraform import maas_user.cloudbase cloudbase

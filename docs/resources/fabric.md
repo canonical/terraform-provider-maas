@@ -33,6 +33,8 @@ resource "maas_fabric" "tf_fabric" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # An existing network fabric can be imported using its name or ID. e.g.
 $ terraform import maas_fabric.tf_fabric tf-fabric

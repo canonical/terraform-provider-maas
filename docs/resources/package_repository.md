@@ -63,6 +63,8 @@ resource "maas_package_repository" "repo1" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # A package repository can be imported using the Repo ID, Name, or URL.
 $ terraform import maas_package_repository.test "main_archive"

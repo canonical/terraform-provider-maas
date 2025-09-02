@@ -70,6 +70,8 @@ Read-Only:
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # MAAS machines can be imported using one of the attributes: system ID, hostname, or FQDN. e.g.
 $ terraform import maas_machine.virsh_vm1 vm1.maas
