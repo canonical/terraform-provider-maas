@@ -49,6 +49,8 @@ resource "maas_node_script" "tf_node_script" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # Node scripts can be imported using the name or ID. e.g.
 $ terraform import maas_node_script.tf_node_script tf-node-script

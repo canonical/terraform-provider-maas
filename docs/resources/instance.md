@@ -122,6 +122,8 @@ Optional:
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # The machines imported as `maas_instance` resources must be already deployed. They can be imported using one of the deployed machine attributes: system ID, hostname, or FQDN. e.g.
 $ terraform import maas_instance.virsh_vm machine-01

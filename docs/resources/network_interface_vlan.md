@@ -46,6 +46,8 @@ resource "maas_network_interface_vlan" "example" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # A VLAN network interface can be imported using the machine identifier (system ID, hostname, or FQDN) and ID. e.g.
 $ terraform import maas_network_interface_vlan.example vm1:id

@@ -41,6 +41,8 @@ resource "maas_dns_domain" "cloudbase" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # DNS domains can be imported using their ID or name. e.g.
 $ terraform import maas_dns_domain.cloudbase cloudbase

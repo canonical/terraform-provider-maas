@@ -108,6 +108,8 @@ Optional:
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # VM hosts can be imported using the ID or the name. e.g.
 $ terraform import maas_vm_host.kvm vm-host-01

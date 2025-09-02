@@ -49,6 +49,8 @@ resource "maas_block_device_tag" "test2" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # A block device tag can be imported using the machine system id and the block device id. e.g.
 $ terraform import maas_block_device_tag.test abc123/12

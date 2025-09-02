@@ -51,6 +51,8 @@ resource "maas_subnet_ip_range" "reserved_ip_range" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # IP ranges can be imported with the start IP and the end IP. e.g.
 $ terraform import maas_subnet_ip_range.dynamic_ip_range 10.77.77.2:10.77.77.60

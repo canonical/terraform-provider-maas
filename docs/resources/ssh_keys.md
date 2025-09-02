@@ -55,6 +55,8 @@ resource "maas_ssh_keys" "multiple_keys" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # An existing SSH key can be imported using its id. e.g.
 $ terraform import maas_ssh_keys.single_key 1
