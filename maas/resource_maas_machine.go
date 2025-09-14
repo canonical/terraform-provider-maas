@@ -343,7 +343,21 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 }
 
 func getMachine(client *client.Client, identifier string) (*entity.Machine, error) {
-	machines, err := client.Machines.Get(&entity.MachinesParams{})
+	machines, err := client.Machines.Get(&entity.MachinesParams{
+		ID: []string{identifier},
+	})
+	if err == nil && len(machines) == 1 {
+		// Create a local copy so we know we won't keep the array alive
+		m := machines[0]
+		return &m, nil
+	}
+
+	if err != nil {
+		// TODO (jam) 2025-09-14: treat ENOTFOUND as not a normal error, because we assume we are looking up by something other than SystemID
+		return nil, err
+	}
+
+	machines, err = client.Machines.Get(&entity.MachinesParams{})
 	if err != nil {
 		return nil, err
 	}
