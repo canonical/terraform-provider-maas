@@ -343,21 +343,26 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 }
 
 func getMachine(client *client.Client, identifier string) (*entity.Machine, error) {
-	machines, err := client.Machines.Get(&entity.MachinesParams{
-		ID: []string{identifier},
-	})
-	if err == nil && len(machines) == 1 {
-		// Create a local copy so we know we won't keep the array alive
-		m := machines[0]
-		return &m, nil
+	// TODO (jam): 2025-09-18 It might be better to update the `client` to be a caching client, that
+	//   keeps track of a set of immutable Machine objects, rather than going back to the MAAS API every time.
+	//   For now, we just load the machines as quickly as we can.
+
+	// The most common reference to a machine will be "foo.id" so do a quick lookup using that as the default.
+	// This assumes that id doesn't collide with Hostname or FQDN, etc, but that is a likely condition.
+	machine, err := client.Machine.Get(identifier)
+	if err == nil {
+		return machine, nil
 	}
 
-	if err != nil {
-		// TODO (jam) 2025-09-14: treat ENOTFOUND as not a normal error, because we assume we are looking up by something other than SystemID
-		return nil, err
-	}
+	/// TODO (jam) 2025-09-14: only ignore some errors, not all of them
+	///   However, gomaasapi does not do typed errors, the best we can look for is a ServerError that has an error
+	///   code on it of something like 404.
+	/// if err != nil {
+	///
+	/// 	return nil, err
+	/// }
 
-	machines, err = client.Machines.Get(&entity.MachinesParams{})
+	machines, err := client.Machines.Get(&entity.MachinesParams{})
 	if err != nil {
 		return nil, err
 	}
