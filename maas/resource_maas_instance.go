@@ -92,6 +92,26 @@ func resourceMAASInstance() *schema.Resource {
 							ForceNew:    true,
 							Description: "The zone name of the MAAS machine to be allocated.",
 						},
+						"vm_storage_disks": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "A list of storage disks for the new VM host. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). This parameter is useful for VM machines only.",
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"pool": {
+										Type:        schema.TypeString,
+										Optional:    true,
+										Description: "The VM host storage pool name.",
+									},
+									"size_gigabytes": {
+										Type:        schema.TypeInt,
+										Required:    true,
+										Description: "The storage disk size, specified in GB.",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -358,11 +378,29 @@ func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocatePa
 				Pool:     allocateParams["pool"].(string),
 				SystemID: allocateParams["system_id"].(string),
 				Tags:     convertToStringSlice(allocateParams["tags"].(*schema.Set).List()),
+				Storage:  getMachineStorageDisks(allocateParams["vm_storage_disks"].([]any)),
 			}
 		}
 	}
 
 	return &entity.MachineAllocateParams{}
+}
+
+func getMachineStorageDisks(storageDisks []any) []string {
+	vmHostStorageDisks := []string{}
+
+	for i, storageDisk := range storageDisks {
+		d := storageDisk.(map[string]any)
+		disk := fmt.Sprintf("disk%d:%d", i, int64(d["size_gigabytes"].(int)))
+
+		if pool := d["pool"].(string); pool != "" {
+			disk = fmt.Sprintf("%s(%s)", disk, pool)
+		}
+
+		vmHostStorageDisks = append(vmHostStorageDisks, disk)
+	}
+
+	return vmHostStorageDisks
 }
 
 func getMachineDeployParams(d *schema.ResourceData) *entity.MachineDeployParams {
