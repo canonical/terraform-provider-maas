@@ -193,6 +193,17 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 
 	machine, err := client.Machines.Create(getMachineParams(d), powerParams)
 	if err != nil {
+		// Clean up trailing resources, as the gomaasclient does not return the created machine on error
+		badMachine, errDel := getMachine(client, d.Get("pxe_mac_address").(string))
+		if errDel != nil {
+			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to get the trailing resource: %v", err, errDel))
+		}
+
+		errDel = client.Machine.Delete(badMachine.SystemID)
+		if errDel != nil {
+			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to delete the trailing resource: %v", err, errDel))
+		}
+
 		return diag.FromErr(err)
 	}
 
