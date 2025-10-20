@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp/go-version"
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -262,7 +261,7 @@ func resourceMAASInstance() *schema.Resource {
 				if releaseParamsData[0] != nil {
 					releaseParams := releaseParamsData[0].(map[string]any)
 					if _, ok := releaseParams["scripts"]; ok {
-						err := ensureMinimumVersion(meta.(*ClientConfig).Client, "3.5")
+						err := EnsureMinimumVersion(meta.(*ClientConfig).Client, "3.5")
 						if err != nil {
 							return fmt.Errorf("the 'scripts' parameter in 'release_params' requires MAAS version 3.7 or higher, got error: %v", err)
 						}
@@ -276,25 +275,6 @@ func resourceMAASInstance() *schema.Resource {
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 	}
-}
-
-func ensureMinimumVersion(client *client.Client, minVersion string) error {
-	minV, err := version.NewVersion(minVersion)
-	if err != nil {
-		return err
-	}
-	v, err := client.Version.Get()
-	if err != nil {
-		return err
-	}
-	currentV, err := version.NewVersion(v.Version)
-	if err != nil {
-		return err
-	}
-	if currentV.LessThan(minV) {
-		return fmt.Errorf("MAAS version %s is lower than the minimum required version %s", currentV, minV)
-	}
-	return nil
 }
 
 func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -433,14 +413,17 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 		if releaseParamsData[0] != nil {
 			releaseParams := releaseParamsData[0].(map[string]any)
 
-			return &entity.MachineReleaseParams{
+			params := &entity.MachineReleaseParams{
 				Comment:     releaseParams["comment"].(string),
-				Scripts:     listAsString(releaseParams["scripts"].([]interface{})),
 				Erase:       releaseParams["erase"].(bool),
 				Force:       releaseParams["force"].(bool),
 				QuickErase:  releaseParams["quick_erase"].(bool),
 				SecureErase: releaseParams["secure_erase"].(bool),
 			}
+			if scripts, ok := releaseParams["scripts"]; ok {
+				params.Scripts = listAsString(scripts.([]interface{}))
+			}
+			return params
 		}
 	}
 
