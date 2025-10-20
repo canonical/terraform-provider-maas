@@ -236,9 +236,9 @@ func resourceMAASInstance() *schema.Resource {
 							Description: "Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.",
 						},
 						"scripts": {
-							Type:        schema.TypeList,
-							Optional:    true,
-							Elem:        &schema.Schema{
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
 							Description: "List of the names of existing node release scripts to run when releasing the machine. These scripts run on an ephemeral copy of Ubuntu that is loaded after the deployed OS has been shut down. Only available in MAAS 3.5 and later.",
@@ -414,6 +414,7 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 		releaseParamsData := p.([]any)
 		if releaseParamsData[0] != nil {
 			releaseParams := releaseParamsData[0].(map[string]any)
+
 			params := &entity.MachineReleaseParams{
 				Comment:     releaseParams["comment"].(string),
 				Erase:       releaseParams["erase"].(bool),
@@ -424,6 +425,7 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 			if scripts, ok := releaseParams["scripts"]; ok && len(scripts.([]interface{})) > 0 {
 				params.Scripts = listAsString(scripts.([]interface{}))
 			}
+
 			return params
 		}
 	}
@@ -486,14 +488,15 @@ func configureInstanceNetworkInterfaces(client *client.Client, d *schema.Resourc
 }
 
 func validateReleaseScriptsVersionRequirements(d *schema.ResourceData, client *client.Client) error {
-    if p, ok := d.GetOk("release_params"); ok {
-        releaseParamsData := p.([]any)
-        if releaseParamsData[0] != nil {
-            releaseParams := releaseParamsData[0].(map[string]any)
-            if scripts, ok := releaseParams["scripts"]; ok && len(scripts.([]interface{})) > 0 {
-                return EnsureMinimumVersion(client, "3.5")
-            }
-        }
-    }
-    return nil
+	if p, ok := d.GetOk("release_params"); ok {
+		releaseParamsData := p.([]any)
+		if releaseParamsData[0] != nil {
+			releaseParams := releaseParamsData[0].(map[string]any)
+			if scripts, ok := releaseParams["scripts"]; ok && len(scripts.([]interface{})) > 0 {
+				return EnsureMinimumVersion(client, "3.5")
+			}
+		}
+	}
+
+	return nil
 }

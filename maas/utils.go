@@ -234,16 +234,20 @@ func EnsureMinimumVersion(client *client.Client, minVersion string) error {
 	if err != nil {
 		return err
 	}
+
 	v, err := client.Version.Get()
 	if err != nil {
 		return err
 	}
+
 	currentV, err := version.NewVersion(v.Version)
 	if err != nil {
 		return err
 	}
+
 	if currentV.LessThan(minV) {
 		return fmt.Errorf("MAAS version %s is lower than the minimum required version %s", currentV, minV)
 	}
+
 	return nil
 }
