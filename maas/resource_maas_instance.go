@@ -258,13 +258,11 @@ func resourceMAASInstance() *schema.Resource {
 			},
 		},
 		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
-			// return fmt.Errorf("Toby customize diff called")
 			if p, ok := d.GetOk("release_params"); ok {
 				releaseParamsData := p.([]any)
 				if releaseParamsData[0] != nil {
 					releaseParams := releaseParamsData[0].(map[string]any)
 					if _, ok := releaseParams["scripts"]; ok {
-						// return fmt.Errorf("Toby customize diff called")
 						err := ensureMinimumVersion(meta.(*ClientConfig).Client, "3.5")
 						if err != nil {
 							return fmt.Errorf("the 'scripts' parameter in 'release_params' requires MAAS version 3.7 or higher, got error: %v", err)
@@ -335,7 +333,6 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta an
 }
 
 func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	log.Printf("Toby debug maas_instance read called")
 	client := meta.(*ClientConfig).Client
 
 	// Get MAAS machine
@@ -375,7 +372,7 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta an
 	client := meta.(*ClientConfig).Client
 
 	releaseParams := getReleaseParams(d)
-	log.Println("Toby debug release scripts being used:", releaseParams.Scripts)
+
 	// Release MAAS machine
 	_, err := client.Machine.Release(d.Id(), releaseParams)
 	if err != nil {
