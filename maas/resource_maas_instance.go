@@ -3,8 +3,10 @@ package maas
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
+	"github.com/hashicorp/go-version"
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -230,6 +232,14 @@ func resourceMAASInstance() *schema.Resource {
 							Optional:    true,
 							Description: "Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.",
 						},
+						"scripts": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Elem:        &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Description: "List of the names of existing node release scripts to run when releasing the machine. These scripts run on an ephemeral copy of Ubuntu that is loaded after the deployed OS has been shut down. Only available in MAAS 3.5 and later.",
+						},
 					},
 				},
 			},
@@ -247,11 +257,47 @@ func resourceMAASInstance() *schema.Resource {
 				Description: "The deployed MAAS machine zone name.",
 			},
 		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
+			// return fmt.Errorf("Toby customize diff called")
+			if p, ok := d.GetOk("release_params"); ok {
+				releaseParamsData := p.([]any)
+				if releaseParamsData[0] != nil {
+					releaseParams := releaseParamsData[0].(map[string]any)
+					if _, ok := releaseParams["scripts"]; ok {
+						// return fmt.Errorf("Toby customize diff called")
+						err := ensureMinimumVersion(meta.(*ClientConfig).Client, "3.5")
+						if err != nil {
+							return fmt.Errorf("the 'scripts' parameter in 'release_params' requires MAAS version 3.7 or higher, got error: %v", err)
+						}
+					}
+				}
+			}
+			return nil
+		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 	}
+}
+
+func ensureMinimumVersion(client *client.Client, minVersion string) error {
+	minV, err := version.NewVersion(minVersion)
+	if err != nil {
+		return err
+	}
+	v, err := client.Version.Get()
+	if err != nil {
+		return err
+	}
+	currentV, err := version.NewVersion(v.Version)
+	if err != nil {
+		return err
+	}
+	if currentV.LessThan(minV) {
+		return fmt.Errorf("MAAS version %s is lower than the minimum required version %s", currentV, minV)
+	}
+	return nil
 }
 
 func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -289,6 +335,7 @@ func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta an
 }
 
 func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	log.Printf("Toby debug maas_instance read called")
 	client := meta.(*ClientConfig).Client
 
 	// Get MAAS machine
@@ -328,7 +375,7 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta an
 	client := meta.(*ClientConfig).Client
 
 	releaseParams := getReleaseParams(d)
-
+	log.Println("Toby debug release scripts being used:", releaseParams.Scripts)
 	// Release MAAS machine
 	_, err := client.Machine.Release(d.Id(), releaseParams)
 	if err != nil {
@@ -392,6 +439,7 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 
 			return &entity.MachineReleaseParams{
 				Comment:     releaseParams["comment"].(string),
+				Scripts:     listAsString(releaseParams["scripts"].([]interface{})),
 				Erase:       releaseParams["erase"].(bool),
 				Force:       releaseParams["force"].(bool),
 				QuickErase:  releaseParams["quick_erase"].(bool),
