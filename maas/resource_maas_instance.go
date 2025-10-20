@@ -3,7 +3,6 @@ package maas
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/hashicorp/go-version"
