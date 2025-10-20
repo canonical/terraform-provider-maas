@@ -27,6 +27,9 @@ build:
 create_dev_overrides: build
 	@sh -c "'$(CURDIR)/scripts/generate-dev-overrides.sh'"
 
+create_dev_env: build
+	@sh -c "'$(CURDIR)/scripts/create-dev-env.sh'"
+
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS}_${ARCH}
 	mv $(BIN)/${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS}_${ARCH}

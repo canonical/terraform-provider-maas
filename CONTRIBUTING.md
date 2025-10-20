@@ -40,7 +40,7 @@ This project follows a fork-based development model with a single long-running m
         ```bash
         git checkout feat/feature-name
         git rebase master
-        ```   
+        ```
 1. Commit and Push Changes:
     1. Follow commit message guidelines (e.g., fix: correct typo in readme).
     1. Push your branch to your forked repository:
@@ -64,7 +64,7 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0
 [footer(s)]
 ```
 
-Where 
+Where
 - `type` is the kind of the change (e.g. feature, bug fix, documentation change, refactor).
 - `scope` may be used to provide additional contextual information (e.g. which system component is affected). If scope is provided, it’s enclosed in parentheses.
 - `!` MUST be added if commit introduces a breaking change.
@@ -72,94 +72,31 @@ Where
 - `footer` is detailed information about the change (e.g. breaking change, related bugs, etc.).
 
 
-## Running the local provider
-
-1. Build a local version of the provider. At the root of the repository run:
-   1. Run `make build` to build the provider.
-   1. Run `make install` to install the provider locally. This installs the provider binary in the `~/.terraform.d/plugins` directory.
-1. Create a terraform configuration:
-   1. Create a new directory with a `main.tf` file:
-       ```bash
-       mkdir -p ./terraform-provider-maas-dev
-       cd ./terraform-provider-maas-dev
-       touch main.tf
-       ```
-   1. Add the Terraform configuration below to `main.tf`. For more information, see [docs/index.md](docs/index.md):
-       ```hcl
-       terraform {
-           required_providers {
-               maas = {
-                   source  = "registry.terraform.io/canonical/maas"
-                   version = "=1.0.1"
-               }
-           }
-       }
-
-       provider "maas" {
-           api_version = "2.0"
-       }
-
-       resource "maas_space" "tf_space" {
-           name = "tf-space"
-       }
-
-       resource "maas_fabric" "tf_fabric" {
-           name = "tf-fabric"
-       }
-
-       resource "maas_vlan" "tf_vlan" {
-           fabric = maas_fabric.tf_fabric.id
-           vid    = 14
-           name   = "tf-vlan14"
-           space  = maas_space.tf_space.name
-       }
-
-       resource "maas_subnet" "tf_subnet" {
-           cidr       = "10.88.88.0/24"
-           fabric     = maas_fabric.tf_fabric.id
-           vlan       = maas_vlan.tf_vlan.vid
-           name       = "tf_subnet"
-           gateway_ip = "10.88.88.1"
-           dns_servers = [
-               "1.1.1.1",
-           ]
-           ip_ranges {
-               type     = "reserved"
-               start_ip = "10.88.88.1"
-               end_ip   = "10.88.88.50"
-           }
-           ip_ranges {
-               type     = "dynamic"
-               start_ip = "10.88.88.200"
-               end_ip   = "10.88.88.254"
-           }
-       }
-       ```
-1. Create and source your environment variables:
-   1. In your environment running MAAS, obtain the MAAS API key:
-       ```bash
-       sudo maas apikey --username=maas
-       ```
-   1. Create an `env.sh` file and put in it the following variables: 
-       ```shell
-       export MAAS_API_KEY=<api-key>
-       export MAAS_API_URL=<maas-api-url> # e.g. http://10.10.0.18:5240/MAAS/
-       ```
-   1. Run `source env.sh` to load the environment variables.
-1. Use this configuration to start terraforming:
+## Create a development environment
+### Setup
+1. Run `make build` to build the provider binary locally, located in `./bin`.
+1. Run `make create-dev-overrides` and follow any output instructions. More info [here](https://developer.hashicorp.com/terraform/cli/config/config-file#development-overrides-for-provider-developers).
+1. Run `make dev-env` to create a development directory and follow any output instructions.
+1. In your dev-env directory, use these commands to get started:
    1. Run `terraform fmt` to format the `main.tf` file.
    1. Run `terraform init` to initialize the provider.
    1. Run `terraform plan` to see the changes that will be applied.
    1. Run `terraform apply` to apply the changes. These should be reflected in the MAAS environment.
    1. Run `terraform destroy` to destroy the resources.
 
+### Workflow
+Assuming you have already setup dev-overrides:
+1. Make a change to the provider.
+1. Rebuild the provider binary locally with `make build`.
+1. In your dev-env directory, you can immediately run `terraform apply` with your new changes.
+
 ## Testing
 Tests are written as advised in the [Terraform docs](https://developer.hashicorp.com/terraform/plugin/sdkv2/testing). They are split into unit tests and acceptance tests, with the latter creating real resources in the MAAS environment. Therefore, you will need to ensure MAAS is running locally for these tests to pass.
 
 To run the tests:
-1. Ensure MAAS_API_KEY and MAAS_API_URL environment variables are set (see [Running the local provider](#running-the-local-provider)).
+1. Ensure `MAAS_API_KEY` and `MAAS_API_URL` environment variables are set in your shell, corresponding to your running MAAS installation.
 
-2. Run the tests:    
+2. Run the tests:
     - Run the unit tests:
         ```bash
         make test
@@ -179,11 +116,11 @@ To run the tests:
         > ```
     - Run a specific acceptance test:
         ```bash
-        make testacc TESTARGS="-run=TestAcc<resource_name>_basic" 
+        make testacc TESTARGS="-run=TestAcc<resource_name>_basic"
         ```
     - Run a group of acceptance tests with names matching the regex:
         ```bash
-        make testacc TESTARGS="-run=TestAcc<resource_name>"      
+        make testacc TESTARGS="-run=TestAcc<resource_name>"
         ```
 
 ## Getting Help

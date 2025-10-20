@@ -39,3 +39,6 @@ vendor
 *.winfile eol=crlf
 
 dist/
+
+# Dev environment
+.devenv/
