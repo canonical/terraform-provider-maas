@@ -412,7 +412,6 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 		releaseParamsData := p.([]any)
 		if releaseParamsData[0] != nil {
 			releaseParams := releaseParamsData[0].(map[string]any)
-
 			params := &entity.MachineReleaseParams{
 				Comment:     releaseParams["comment"].(string),
 				Erase:       releaseParams["erase"].(bool),
@@ -420,7 +419,7 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 				QuickErase:  releaseParams["quick_erase"].(bool),
 				SecureErase: releaseParams["secure_erase"].(bool),
 			}
-			if scripts, ok := releaseParams["scripts"]; ok {
+			if scripts, ok := releaseParams["scripts"]; ok && len(scripts.([]interface{})) > 0 {
 				params.Scripts = listAsString(scripts.([]interface{}))
 			}
 			return params
