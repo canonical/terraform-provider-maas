@@ -2,7 +2,6 @@ package maas_test
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"strings"
@@ -34,12 +33,12 @@ func TestAccResourceMAASInstance_releaseScripts(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Test creation
 			{
-				Config: testAccMAASInstanceConfigBasic(vmHost, hostname),
+				Config: testAccMAASInstanceConfigBasic(vmHost, hostname) + testAccMAASInstanceConfigReleaseScriptSetup(scriptName),
 				Check:  resource.ComposeTestCheckFunc(baseChecks...),
 			},
 			// Test update
 			{
-				Config: testAccMAASInstanceConfigSetup(vmHost, hostname) + testAccMAASInstanceConfigReleaseScripts(scriptName),
+				Config: testAccMAASInstanceConfigSetup(vmHost, hostname) + testAccMAASInstanceConfigReleaseScriptSetup(scriptName) + testAccMAASInstanceConfigReleaseScripts(),
 				Check: resource.ComposeTestCheckFunc(append(
 					baseChecks,
 					resource.TestCheckResourceAttr("maas_instance.test", "release_params.#", "1"),
@@ -48,9 +47,9 @@ func TestAccResourceMAASInstance_releaseScripts(t *testing.T) {
 				)...,
 				),
 			},
-			// Test destroy releases the machine and runs the script
+			// Test destroy releases the machine and runs the release script
 			{
-				Config: testAccMAASInstanceConfigSetup(vmHost, hostname),
+				Config: testAccMAASInstanceConfigSetup(vmHost, hostname) + testAccMAASInstanceConfigReleaseScriptSetup(scriptName),
 				Check:  testAccMAASInstanceCheckReleaseScriptsRanOnDestroy(hostname, scriptName),
 			},
 		},
@@ -154,38 +153,33 @@ func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) 
 func testAccMAASInstanceCheckReleaseScriptsRanOnDestroy(hostname, scriptName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
-
-		// Check release script ran
 		releaseScriptRan := false
 		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "maas_instance" {
+			if rs.Type != "maas_vm_host_machine" {
 				continue
 			}
-
-			// if rs.Primary.Attributes["hostname"] != hostname {
-			// 	continue
-			// }
-
+			if rs.Primary.Attributes["hostname"] != hostname {
+				continue
+			}
 			params := entity.NodeResultParams{
 				Type:  3,
 			}
+
 			results, err := conn.NodeResults.Get(rs.Primary.ID, &params)
 			if err != nil {
 				return err
 			}
-			log.Printf("Number of results: %d\n", len(results))
-
 			for _, result := range results {
 				for _, item := range result.Results {
 					if item.Name == scriptName {
+
 						releaseScriptRan = true
 					}
 				}
 			}
 		}
 		if !releaseScriptRan {
-			// return fmt.Errorf("release script did not run for machine %s", scriptName)
-			return nil
+			return fmt.Errorf("release script did not run for machine %s", scriptName)
 		}
 		return nil
 	}
@@ -270,9 +264,27 @@ resource "maas_instance" "test" {
 `, testAccMAASInstanceConfigSetup(vmHost, hostname))
 }
 
-func testAccMAASInstanceConfigReleaseScripts(scriptName string) string {
+func testAccMAASInstanceConfigReleaseScripts() string {
+	return 	`
+resource "maas_instance" "test" {
+  release_params {
+	scripts    = [maas_node_script.dummy_release_script.name]
+  }
+
+  allocate_params {
+    hostname      = maas_vm_host_machine.test.hostname
+    min_memory    = 4000
+    min_cpu_count = 1
+  }
+
+}
+`
+}
+
+func testAccMAASInstanceConfigReleaseScriptSetup(scriptName string) string {
 	return fmt.Sprintf(
 		`
+
 resource "maas_node_script" "dummy_release_script" {
   script = base64encode(<<-EOF
 #!/usr/bin/bash
@@ -287,18 +299,6 @@ EOF
   )
 }
 
-resource "maas_instance" "test" {
-  release_params {
-	scripts      = [maas_node_script.dummy_release_script.name]
-  }
-
-  allocate_params {
-    hostname      = maas_vm_host_machine.test.hostname
-    min_memory    = 4000
-    min_cpu_count = 1
-  }
-
-}
 `, scriptName)
 }
 
@@ -320,7 +320,6 @@ resource "maas_instance" "test" {
     min_memory    = 4000
     min_cpu_count = 1
   }
-
 }
 `, comment, erase, force, quickErase, secureErase)
 }
