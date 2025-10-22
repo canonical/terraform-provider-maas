@@ -156,6 +156,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 			Summary:  "Unable to get MAAS version",
 			Detail:   fmt.Sprintf("Unable to get MAAS version using the provided configuration: %s", err),
 		})
+
 		return nil, diags
 	}
 

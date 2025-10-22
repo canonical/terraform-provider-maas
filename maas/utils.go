@@ -253,18 +253,21 @@ func EnsureMinimumVersion(client *client.Client, minVersion string) error {
 	return nil
 }
 
-func checkSemverConstraint(MAASVersion, semverConstraint string) error {
-	if semverConstraint == "" || MAASVersion == "" {
+func checkSemverConstraint(currentVersion, semverConstraint string) error {
+	if semverConstraint == "" || currentVersion == "" {
 		return nil
 	}
 
-	version := semver.MustParse(MAASVersion)
+	version := semver.MustParse(currentVersion)
+
 	c, err := semver.NewConstraint(semverConstraint)
 	if err != nil {
 		return err
 	}
+
 	if !c.Check(version) {
-		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", MAASVersion, semverConstraint)
+		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", currentVersion, semverConstraint)
 	}
+
 	return nil
 }

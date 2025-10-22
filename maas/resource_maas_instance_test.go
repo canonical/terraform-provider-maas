@@ -17,6 +17,7 @@ import (
 
 func TestAccResourceMAASInstance_releaseScripts(t *testing.T) {
 	testutils.SkipTestIfNotMAASVersion(t, ">=3.5.0")
+
 	vmHost := os.Getenv("TF_ACC_VM_HOST_ID")
 	hostname := acctest.RandomWithPrefix("tf-instance")
 	scriptName := acctest.RandomWithPrefix("tf-release-script")
@@ -154,33 +155,38 @@ func testAccMAASInstanceCheckReleaseScriptsRanOnDestroy(hostname, scriptName str
 	return func(s *terraform.State) error {
 		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 		releaseScriptRan := false
+
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "maas_vm_host_machine" {
 				continue
 			}
+
 			if rs.Primary.Attributes["hostname"] != hostname {
 				continue
 			}
+
 			params := entity.NodeResultParams{
-				Type:  3,
+				Type: 3,
 			}
 
 			results, err := conn.NodeResults.Get(rs.Primary.ID, &params)
 			if err != nil {
 				return err
 			}
+
 			for _, result := range results {
 				for _, item := range result.Results {
 					if item.Name == scriptName {
-
 						releaseScriptRan = true
 					}
 				}
 			}
 		}
+
 		if !releaseScriptRan {
 			return fmt.Errorf("release script did not run for machine %s", scriptName)
 		}
+
 		return nil
 	}
 }
@@ -249,7 +255,6 @@ resource "maas_vm_host_machine" "test" {
 `, vmHost, hostname)
 }
 
-
 func testAccMAASInstanceConfigBasic(vmHost, hostname string) string {
 	return fmt.Sprintf(`
 %s
@@ -265,7 +270,7 @@ resource "maas_instance" "test" {
 }
 
 func testAccMAASInstanceConfigReleaseScripts() string {
-	return 	`
+	return `
 resource "maas_instance" "test" {
   release_params {
 	scripts    = [maas_node_script.dummy_release_script.name]

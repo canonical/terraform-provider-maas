@@ -19,6 +19,7 @@ import (
 
 func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 	var nodeScript entity.NodeScript
+
 	name := acctest.RandomWithPrefix("tf-node-script")
 
 	scriptType := "commissioning"
