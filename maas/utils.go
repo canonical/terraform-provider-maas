@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/go-cty/cty"
@@ -249,5 +250,21 @@ func EnsureMinimumVersion(client *client.Client, minVersion string) error {
 		return fmt.Errorf("MAAS version %s is lower than the minimum required version %s", currentV, minV)
 	}
 
+	return nil
+}
+
+func checkSemverConstraint(MAASVersion, semverConstraint string) error {
+	if semverConstraint == "" || MAASVersion == "" {
+		return nil
+	}
+
+	version := semver.MustParse(MAASVersion)
+	c, err := semver.NewConstraint(semverConstraint)
+	if err != nil {
+		return fmt.Errorf("invalid constraint %s: %v", semverConstraint, err)
+	}
+	if !c.Check(version) {
+		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", MAASVersion, semverConstraint)
+	}
 	return nil
 }

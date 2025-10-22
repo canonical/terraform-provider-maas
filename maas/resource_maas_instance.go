@@ -265,9 +265,9 @@ func resourceMAASInstance() *schema.Resource {
 				if releaseParamsData[0] != nil {
 					releaseParams := releaseParamsData[0].(map[string]any)
 					if _, ok := releaseParams["scripts"]; ok {
-						err := EnsureMinimumVersion(meta.(*ClientConfig).Client, "3.8")
+						err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, ">=3.5.0")
 						if err != nil {
-							return fmt.Errorf("the 'scripts' parameter in 'release_params' requires MAAS version 3.5 or higher, got error: %v", err)
+							return err
 						}
 					}
 				}
