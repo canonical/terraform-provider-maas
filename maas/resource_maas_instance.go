@@ -23,11 +23,6 @@ func resourceMAASInstance() *schema.Resource {
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
 
-				err := validateReleaseScriptsVersionRequirements(d, client)
-				if err != nil {
-					return nil, err
-				}
-
 				machine, err := getMachine(client, d.Id())
 				if err != nil {
 					return nil, err
@@ -264,16 +259,26 @@ func resourceMAASInstance() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
+			if p, ok := d.GetOk("release_params"); ok {
+				releaseParamsData := p.([]any)
+				if releaseParamsData[0] != nil {
+					releaseParams := releaseParamsData[0].(map[string]any)
+					if _, ok := releaseParams["scripts"]; ok {
+						err := EnsureMinimumVersion(meta.(*ClientConfig).Client, "3.8")
+						if err != nil {
+							return fmt.Errorf("the 'scripts' parameter in 'release_params' requires MAAS version 3.5 or higher, got error: %v", err)
+						}
+					}
+				}
+			}
+			return nil
+		},
 	}
 }
 
 func resourceInstanceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
-
-	err := validateReleaseScriptsVersionRequirements(d, client)
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	// Allocate MAAS machine
 	machine, err := client.Machines.Allocate(getMachinesAllocateParams(d))
@@ -338,14 +343,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 }
 
 func resourceInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	// Dummy update to allow release params to be updated and validate version requirements.
-	client := meta.(*ClientConfig).Client
-
-	err := validateReleaseScriptsVersionRequirements(d, client)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+	// Dummy update to allow release params to be updated.
 	return resourceInstanceRead(ctx, d, meta)
 }
 
@@ -481,20 +479,6 @@ func configureInstanceNetworkInterfaces(client *client.Client, d *schema.Resourc
 		}
 		if _, err = client.NetworkInterface.LinkSubnet(machine.SystemID, nic.ID, &params); err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-func validateReleaseScriptsVersionRequirements(d *schema.ResourceData, client *client.Client) error {
-	if p, ok := d.GetOk("release_params"); ok {
-		releaseParamsData := p.([]any)
-		if releaseParamsData[0] != nil {
-			releaseParams := releaseParamsData[0].(map[string]any)
-			if scripts, ok := releaseParams["scripts"]; ok && len(scripts.([]interface{})) > 0 {
-				return EnsureMinimumVersion(client, "3.5")
-			}
 		}
 	}
 

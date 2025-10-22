@@ -3,10 +3,10 @@ package maas
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/canonical/gomaasclient/client"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -148,6 +148,18 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 
 		return nil, diags
 	}
+
+	v, err := c.Version.Get()
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to get MAAS version",
+			Detail:   fmt.Sprintf("Unable to get MAAS version using the provided configuration: %s", err),
+		})
+		return nil, diags
+	}
+	config.MAASVersion = v.Version
+	log.Printf("MAAS version: %s", config.MAASVersion)
 
 	return &ClientConfig{Client: c, InstallationMethod: d.Get("installation_method").(string)}, diags
 }

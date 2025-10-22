@@ -13,6 +13,7 @@ type Config struct {
 	APIURL                string
 	APIVersion            string
 	TLSCACertPath         string
+	MAASVersion           string
 	TLSInsecureSkipVerify bool
 }
 
