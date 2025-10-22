@@ -225,11 +225,6 @@ func resourceMAASInstance() *schema.Resource {
 							Optional:    true,
 							Description: "Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.",
 						},
-						"secure_erase": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Description: "Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.",
-						},
 						"scripts": {
 							Type:     schema.TypeList,
 							Optional: true,
@@ -237,6 +232,11 @@ func resourceMAASInstance() *schema.Resource {
 								Type: schema.TypeString,
 							},
 							Description: "List of the names of existing node release scripts to run when releasing the machine. These scripts run on an ephemeral copy of Ubuntu that is loaded after the deployed OS has been shut down. Only available in MAAS 3.5 and later.",
+						},
+						"secure_erase": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.",
 						},
 					},
 				},
