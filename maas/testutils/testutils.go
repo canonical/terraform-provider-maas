@@ -41,9 +41,11 @@ func checkSemverConstraint(t *testing.T, semverConstraint string) {
 // SkipTestIfNotMAASVersion skips acceptance tests if the MAAS version constraint is not met.
 func SkipTestIfNotMAASVersion(t *testing.T, semverConstraint string) {
 	t.Helper()
-	if os.Getenv("TF_ACC") != "1" {
+
+	if runAccTests := os.Getenv("TF_ACC"); runAccTests != "1" {
 		return
 	}
+
 	checkEnvVarsSet(t, "MAAS_VERSION")
 	checkSemverConstraint(t, semverConstraint)
 }
