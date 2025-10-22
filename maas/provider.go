@@ -3,7 +3,6 @@ package maas
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/canonical/gomaasclient/client"
@@ -114,6 +113,7 @@ func Provider() *schema.Provider {
 type ClientConfig struct {
 	Client             *client.Client
 	InstallationMethod string
+	MAASVersion        string
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
@@ -158,8 +158,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		})
 		return nil, diags
 	}
-	config.MAASVersion = v.Version
-	log.Printf("MAAS version: %s", config.MAASVersion)
 
-	return &ClientConfig{Client: c, InstallationMethod: d.Get("installation_method").(string)}, diags
+	return &ClientConfig{Client: c, InstallationMethod: d.Get("installation_method").(string), MAASVersion: v.Version}, diags
 }
