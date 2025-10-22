@@ -261,7 +261,7 @@ func checkSemverConstraint(MAASVersion, semverConstraint string) error {
 	version := semver.MustParse(MAASVersion)
 	c, err := semver.NewConstraint(semverConstraint)
 	if err != nil {
-		return fmt.Errorf("invalid constraint %s: %v", semverConstraint, err)
+		return err
 	}
 	if !c.Check(version) {
 		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", MAASVersion, semverConstraint)
