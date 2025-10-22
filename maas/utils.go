@@ -12,7 +12,6 @@ import (
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-cty/cty/gocty"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -228,29 +227,6 @@ func SplitStateID(stateID string, delimeter string) (string, string, error) {
 // Remove leading and trailing whitespace, as defined by unicode, from a string.
 func stripWhitespace(s string) string {
 	return strings.TrimSpace(s)
-}
-
-func EnsureMinimumVersion(client *client.Client, minVersion string) error {
-	minV, err := version.NewVersion(minVersion)
-	if err != nil {
-		return err
-	}
-
-	v, err := client.Version.Get()
-	if err != nil {
-		return err
-	}
-
-	currentV, err := version.NewVersion(v.Version)
-	if err != nil {
-		return err
-	}
-
-	if currentV.LessThan(minV) {
-		return fmt.Errorf("MAAS version %s is lower than the minimum required version %s", currentV, minV)
-	}
-
-	return nil
 }
 
 func checkSemverConstraint(currentVersion, semverConstraint string) error {
