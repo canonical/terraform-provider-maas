@@ -8,6 +8,8 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
+// functions checkEnvVarsSet and checkSemverConstraint are adapted from [terraform-provider-grafana](https://github.com/grafana/terraform-provider-grafana)
+// Licensed under MPL-2.0
 func checkEnvVarsSet(t *testing.T, envVars ...string) {
 	t.Helper()
 
