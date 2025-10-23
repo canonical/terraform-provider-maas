@@ -266,7 +266,7 @@ func resourceMAASInstance() *schema.Resource {
 					releaseParams := releaseParamsData[0].(map[string]any)
 					if scripts, ok := releaseParams["scripts"]; ok {
 						if len(scripts.([]interface{})) > 0 {
-							err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, ">=3.7.0")
+							err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, ">=3.5.0")
 							if err != nil {
 								return err
 							}
