@@ -260,20 +260,31 @@ func resourceMAASInstance() *schema.Resource {
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
-			if p, ok := d.GetOk("release_params"); ok {
-				releaseParamsData := p.([]any)
-				if releaseParamsData[0] != nil {
-					releaseParams := releaseParamsData[0].(map[string]any)
-					if scripts, ok := releaseParams["scripts"]; ok {
-						if len(scripts.([]interface{})) > 0 {
-							err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, ">=3.5.0")
-							if err != nil {
-								return err
-							}
-						}
-					}
-				}
+			p, ok := d.GetOk("release_params")
+			if !ok {
+				return nil
 			}
+
+			releaseParamsData := p.([]any)
+			if releaseParamsData[0] == nil {
+				return nil
+			}
+
+			releaseParams := releaseParamsData[0].(map[string]any)
+			scripts, ok := releaseParams["scripts"]
+			if !ok {
+				return nil
+			}
+
+			if len(scripts.([]interface{})) == 0 {
+				return nil
+			}
+
+			err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, ">=3.5.0")
+			if err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}
