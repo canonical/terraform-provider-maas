@@ -166,7 +166,7 @@ func testAccMAASInstanceCheckReleaseScriptsRanOnDestroy(hostname, scriptName str
 			}
 
 			params := entity.NodeResultParams{
-				Type: 3,
+				Type: entity.RELEASE,
 			}
 
 			results, err := conn.NodeResults.Get(rs.Primary.ID, &params)
