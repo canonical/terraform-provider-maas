@@ -225,6 +225,14 @@ func resourceMAASInstance() *schema.Resource {
 							Optional:    true,
 							Description: "Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.",
 						},
+						"scripts": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Description: "List of the names of existing node release scripts to run when releasing the machine. These scripts run on an ephemeral copy of Ubuntu that is loaded after the deployed OS has been shut down. Only available in MAAS 3.5 and later.",
+						},
 						"secure_erase": {
 							Type:        schema.TypeBool,
 							Optional:    true,
@@ -250,6 +258,34 @@ func resourceMAASInstance() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
+		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
+			p, ok := d.GetOk("release_params")
+			if !ok {
+				return nil
+			}
+
+			releaseParamsData := p.([]any)
+			if releaseParamsData[0] == nil {
+				return nil
+			}
+
+			releaseParams := releaseParamsData[0].(map[string]any)
+			scripts, ok := releaseParams["scripts"]
+			if !ok {
+				return nil
+			}
+
+			if len(scripts.([]interface{})) == 0 {
+				return nil
+			}
+
+			err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, ">=3.5.0")
+			if err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 }
@@ -390,13 +426,18 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 		if releaseParamsData[0] != nil {
 			releaseParams := releaseParamsData[0].(map[string]any)
 
-			return &entity.MachineReleaseParams{
+			params := &entity.MachineReleaseParams{
 				Comment:     releaseParams["comment"].(string),
 				Erase:       releaseParams["erase"].(bool),
 				Force:       releaseParams["force"].(bool),
 				QuickErase:  releaseParams["quick_erase"].(bool),
 				SecureErase: releaseParams["secure_erase"].(bool),
 			}
+			if scripts, ok := releaseParams["scripts"]; ok && len(scripts.([]interface{})) > 0 {
+				params.Scripts = listAsString(scripts.([]interface{}))
+			}
+
+			return params
 		}
 	}
 

@@ -107,6 +107,7 @@ Optional:
 - `erase` (Boolean) Erase the disk when releasing.
 - `force` (Boolean) Force the release of the machine.
 - `quick_erase` (Boolean) Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.
+- `scripts` (List of String) List of the names of existing node release scripts to run when releasing the machine. These scripts run on an ephemeral copy of Ubuntu that is loaded after the deployed OS has been shut down. Only available in MAAS 3.5 and later.
 - `secure_erase` (Boolean) Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.
 
 
