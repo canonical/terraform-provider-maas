@@ -87,7 +87,7 @@ func dataSourceMAASRackControllers() *schema.Resource {
 	}
 }
 
-func dataSourceMAASRackControllersRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMAASRackControllersRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	// Get all rack controllers
