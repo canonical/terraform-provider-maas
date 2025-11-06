@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -88,7 +87,7 @@ func dataSourceMAASRackControllers() *schema.Resource {
 }
 
 func dataSourceMAASRackControllersRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	client := meta.(*client.Client)
+	client := meta.(*ClientConfig).Client
 
 	// Get all rack controllers
 	rackControllers, err := client.RackControllers.Get(&entity.RackControllersGetParams{})
