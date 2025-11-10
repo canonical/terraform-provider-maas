@@ -35,7 +35,7 @@ jobs:
       - name: Terraform lint
         run: make lint-tf
       - name: Go lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.1
           # Note: By default, the `.golangci.yml` file should be at the root of the repository.
