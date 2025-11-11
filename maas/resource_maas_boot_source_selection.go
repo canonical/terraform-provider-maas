@@ -85,7 +85,12 @@ func resourceBootSourceSelectionImport(ctx context.Context, d *schema.ResourceDa
 		return nil, fmt.Errorf("unexpected format of ID (%q), expected BOOT_SOURCE:BOOT_SOURCE_SELECTION_ID", d.Id())
 	}
 
-	d.Set("boot_source", idParts[0])
+	bootSourceID, err := strconv.Atoi(idParts[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse BOOT_SOURCE id, expected int-like, err: %v", err)
+	}
+
+	d.Set("boot_source", bootSourceID)
 	d.SetId(idParts[1])
 
 	return []*schema.ResourceData{d}, nil
