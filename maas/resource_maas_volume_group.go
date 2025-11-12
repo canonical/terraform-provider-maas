@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -148,7 +149,7 @@ func resourceMAASVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 		"machine":        volumeGroup.SystemID,
 		"name":           volumeGroup.Name,
 		"partitions":     partitions,
-		"size_gigabytes": int64(volumeGroup.Size / (1000 * 1000 * 1000)),
+		"size_gigabytes": int(math.Round(float64(volumeGroup.Size) / (1000 * 1000 * 1000))),
 		"uuid":           volumeGroup.UUID,
 	}
 

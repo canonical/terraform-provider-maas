@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,7 +41,7 @@ func resourceMAASBlockDevice() *schema.Resource {
 					"id":             fmt.Sprintf("%v", blockDevice.ID),
 					"machine":        machine.SystemID,
 					"name":           blockDevice.Name,
-					"size_gigabytes": int(blockDevice.Size / (1000 * 1000 * 1000)),
+					"size_gigabytes": int(math.Round(float64(blockDevice.Size) / (1000 * 1000 * 1000))),
 					"block_size":     blockDevice.BlockSize,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
@@ -394,7 +395,7 @@ func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[stri
 
 	for i, p := range blockDevice.Partitions {
 		part := map[string]any{
-			"size_gigabytes": int(p.Size / (1000 * 1000 * 1000)),
+			"size_gigabytes": int(math.Round(float64(p.Size) / (1000 * 1000 * 1000))),
 			"bootable":       p.Bootable,
 			"tags":           p.Tags,
 			"fs_type":        p.FileSystem.FSType,
