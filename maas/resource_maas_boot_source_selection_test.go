@@ -60,6 +60,23 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 				)...,
 				),
 			},
+			// Test import
+			{
+				ResourceName:      "maas_boot_source_selection.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["maas_boot_source_selection.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", "maas_boot_source_selection.test")
+					}
+
+					if rs.Primary.ID == "" {
+						return "", fmt.Errorf("resource id not set")
+					}
+					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["boot_source"], rs.Primary.ID), nil
+				},
+			},
 		},
 	})
 }
