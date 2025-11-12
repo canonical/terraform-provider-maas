@@ -100,4 +100,4 @@ resource "maas_raid" "raid1" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `size_gigabytes` (Number) The volume size (given in GiB).
+- `size_gigabytes` (Number) The volume size (given in GB).

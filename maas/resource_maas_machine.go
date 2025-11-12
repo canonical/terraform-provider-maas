@@ -379,7 +379,7 @@ func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) []map
 	for i, blockDevice := range blockDevices {
 		blockDeviceParams[i] = map[string]any{
 			"name":           blockDevice.Name,
-			"size_gigabytes": int(blockDevice.Size / (1024 * 1024 * 1024)),
+			"size_gigabytes": int(blockDevice.Size / (1000 * 1000 * 1000)),
 			"id_path":        blockDevice.IDPath,
 			"model":          blockDevice.Model,
 		}
