@@ -149,7 +149,7 @@ func resourceMAASVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 		"machine":        volumeGroup.SystemID,
 		"name":           volumeGroup.Name,
 		"partitions":     partitions,
-		"size_gigabytes": int(math.Round(float64(volumeGroup.Size) / (1000 * 1000 * 1000))),
+		"size_gigabytes": int(math.Round(float64(volumeGroup.Size) / GigaBytes)),
 		"uuid":           volumeGroup.UUID,
 	}
 

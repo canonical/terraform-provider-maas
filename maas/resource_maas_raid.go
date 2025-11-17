@@ -172,7 +172,7 @@ func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		"mount_point":      raid.VirtualDevice.Filesystem.MountPoint,
 		"name":             raid.Name,
 		"partitions":       partitions,
-		"size_gigabytes":   int(math.Round(float64(raid.Size) / (1000 * 1000 * 1000))),
+		"size_gigabytes":   int(math.Round(float64(raid.Size) / GigaBytes)),
 		"spare_devices":    spareDevices,
 		"spare_partitions": sparePartitions,
 	}
