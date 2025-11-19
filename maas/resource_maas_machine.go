@@ -367,7 +367,6 @@ func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams 
 	}
 	if scriptParams, ok := d.GetOk("script_parameters"); ok && len(scriptParams.(map[string]any)) > 0 {
 		params.ScriptParams = scriptParams.(map[string]any)
-		log.Printf("Toby script params: %s", params.ScriptParams)
 	}
 	return params
 
@@ -388,11 +387,17 @@ func getMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams 
 }
 
 func getMachineCommissionParams(d *schema.ResourceData) *entity.MachineCommissionParams {
-	return &entity.MachineCommissionParams{
-		CommissioningScripts: listAsString(d.Get("commissioning_scripts").([]any)),
-		TestingScripts:       listAsString(d.Get("testing_scripts").([]any)),
-		ScriptParams:        d.Get("script_parameters").(map[string]any),
+	params := &entity.MachineCommissionParams{}
+	if commScripts, ok := d.GetOk("commissioning_scripts"); ok && len(commScripts.([]any)) > 0 {
+		params.CommissioningScripts = listAsString(commScripts.([]any))
 	}
+	if testScripts, ok := d.GetOk("testing_scripts"); ok && len(testScripts.([]any)) > 0 {
+		params.TestingScripts = listAsString(testScripts.([]any))
+	}
+	if scriptParams, ok := d.GetOk("script_parameters"); ok && len(scriptParams.(map[string]any)) > 0 {
+		params.ScriptParams = scriptParams.(map[string]any)
+	}
+	return params
 }
 
 
