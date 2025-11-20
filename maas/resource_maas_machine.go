@@ -98,6 +98,14 @@ func resourceMAASMachine() *schema.Resource {
 					},
 				},
 			},
+			"commissioning_scripts": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Commissioning script names and tags to be run. By default all custom commissioning scripts are run. Built-in commissioning scripts always run. Selecting 'update_firmware' or 'configure_hba' will run firmware updates or configure HBA's on matching machines.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 			"domain": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -163,22 +171,16 @@ func resourceMAASMachine() *schema.Resource {
 						"sm15k", "ucsm", "vmware", "webhook", "wedge", "lxd", "virsh",
 					},
 					false)),
-			},
+				},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The MAC address of the machine's PXE boot NIC.",
 			},
-			"zone": {
-				Type:        schema.TypeString,
+			"script_parameters": {
+				Type:        schema.TypeMap,
 				Optional:    true,
-				Computed:    true,
-				Description: "The zone of the machine. This is computed if it's not set.",
-			},
-			"commissioning_scripts": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				Description: "Commissioning script names and tags to be run. By default all custom commissioning scripts are run. Built-in commissioning scripts always run. Selecting 'update_firmware' or 'configure_hba' will run firmware updates or configure HBA's on matching machines.",
+				Description: "Scripts specified to run may define their own parameters. These parameters may be passed as parameter name (key) value pairs as a map. Optionally a parameter may have the script name prepended to have that parameter only apply to that specific script, e.g. my-script_param=value.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -191,13 +193,11 @@ func resourceMAASMachine() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-			"script_parameters": {
-				Type:        schema.TypeMap,
+			"zone": {
+				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Scripts specified to run may define their own parameters. These parameters may be passed as parameter name (key) value pairs as a map. Optionally a parameter may have the script name prepended to have that parameter only apply to that specific script, e.g. my-script_param=value.",
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
+				Computed:    true,
+				Description: "The zone of the machine. This is computed if it's not set.",
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
