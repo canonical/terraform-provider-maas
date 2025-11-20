@@ -171,7 +171,7 @@ func resourceMAASMachine() *schema.Resource {
 						"sm15k", "ucsm", "vmware", "webhook", "wedge", "lxd", "virsh",
 					},
 					false)),
-				},
+			},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
 				Required:    true,
