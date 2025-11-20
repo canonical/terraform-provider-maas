@@ -287,8 +287,7 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	scriptsHaveChanged := d.HasChange("commissioning_scripts") || d.HasChange("testing_scripts") || d.HasChange("script_parameters")
-
+	scriptsHaveChanged := d.HasChanges("commissioning_scripts", "testing_scripts", "script_parameters")
 	// Update machine
 	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
