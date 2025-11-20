@@ -49,8 +49,8 @@ func listAsString(stringList []interface{}) string {
 	if len(stringList) == 0 {
 		return "[]"
 	}
-	return listAsStringBase(stringList)
 
+	return listAsStringBase(stringList)
 }
 
 func listAsStringBase(stringList []interface{}) string {

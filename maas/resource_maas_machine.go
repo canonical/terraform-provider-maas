@@ -300,7 +300,8 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
-	if _, err := client.Machine.Update(machine.SystemID, getMachineUpdateParams(d), powerParams); err != nil {
+	_, err = client.Machine.Update(machine.SystemID, getMachineUpdateParams(d), powerParams)
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -349,15 +350,15 @@ func getMachinePowerParams(d *schema.ResourceData) (map[string]any, error) {
 
 func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams {
 	return &entity.MachineCreateParams{
-		Commission:   true,
-		PowerType:    d.Get("power_type").(string),
-		MACAddresses: []string{d.Get("pxe_mac_address").(string)},
-		Architecture: d.Get("architecture").(string),
-		MinHWEKernel: d.Get("min_hwe_kernel").(string),
-		Hostname:     d.Get("hostname").(string),
-		Domain:       d.Get("domain").(string),
-		Zone:         d.Get("zone").(string),
-		Pool:         d.Get("pool").(string),
+		Commission:           true,
+		PowerType:            d.Get("power_type").(string),
+		MACAddresses:         []string{d.Get("pxe_mac_address").(string)},
+		Architecture:         d.Get("architecture").(string),
+		MinHWEKernel:         d.Get("min_hwe_kernel").(string),
+		Hostname:             d.Get("hostname").(string),
+		Domain:               d.Get("domain").(string),
+		Zone:                 d.Get("zone").(string),
+		Pool:                 d.Get("pool").(string),
 		CommissioningScripts: listAsStringBase(d.Get("commissioning_scripts").([]any)),
 		TestingScripts:       listAsStringBase(d.Get("testing_scripts").([]any)),
 		ScriptParams:         d.Get("script_parameters").(map[string]any),
