@@ -34,8 +34,8 @@ github.com/bmatcuk/doublestar/v4 v4.9.1 h1:X8jg9rRZmJd4yRy7ZeNDRnM+T3ZfHv15JiBJ/
 github.com/bmatcuk/doublestar/v4 v4.9.1/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTSPVIjEY1Wr7jzc=
 github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/FBatYVw=
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
-github.com/canonical/gomaasclient v0.17.0 h1:UYEf/44KRtqff/3axNccFyUcbAeRS1y/Qa6HGWsXnm8=
-github.com/canonical/gomaasclient v0.17.0/go.mod h1:m6SVTt/lKkogKmhOfvolVECzZ9qY6Jm9EGVyIVnmMWI=
+github.com/canonical/gomaasclient v0.18.0 h1:Wle03pomLrI9VCffLIcUqIwpXz0t1xodysH7I5MSyiw=
+github.com/canonical/gomaasclient v0.18.0/go.mod h1:m6SVTt/lKkogKmhOfvolVECzZ9qY6Jm9EGVyIVnmMWI=
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=
 github.com/cloudflare/circl v1.6.1/go.mod h1:uddAzsPgqdMAYatqJ0lsjX1oECcQLIlRpzZh3pJrofs=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
