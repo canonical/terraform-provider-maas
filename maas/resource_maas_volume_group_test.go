@@ -36,8 +36,7 @@ func TestAccResourceMAASVolumeGroup_basic(t *testing.T) {
 			{
 				Config: testAccMAASVolumeGroup(machine, name, []string{}, []string{"maas_block_device.bd1.partitions.0.id"}),
 				Check: resource.ComposeTestCheckFunc(append(baseChecks,
-					// we loose about 5MB when creating a volume group, which rounds down to the next GB
-					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "19"),
+					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "20"),
 					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "0"),
 					resource.TestCheckResourceAttr("maas_volume_group.test", "partitions.#", "1"),
 					resource.TestCheckResourceAttrPair("maas_volume_group.test", "partitions.0", "maas_block_device.bd1", "partitions.0.id"),
@@ -47,7 +46,7 @@ func TestAccResourceMAASVolumeGroup_basic(t *testing.T) {
 			{
 				Config: testAccMAASVolumeGroup(machine, name, []string{"maas_block_device.bd2.id"}, []string{"maas_block_device.bd1.partitions.0.id"}),
 				Check: resource.ComposeTestCheckFunc(append(baseChecks,
-					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "69"),
+					resource.TestCheckResourceAttr("maas_volume_group.test", "size_gigabytes", "70"),
 					resource.TestCheckResourceAttr("maas_volume_group.test", "block_devices.#", "1"),
 					resource.TestCheckResourceAttr("maas_volume_group.test", "partitions.#", "1"),
 					resource.TestCheckTypeSetElemAttrPair("maas_volume_group.test", "block_devices.0", "maas_block_device.bd2", "id"),

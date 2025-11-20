@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"reflect"
 	"sort"
 	"time"
@@ -379,7 +380,7 @@ func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) []map
 	for i, blockDevice := range blockDevices {
 		blockDeviceParams[i] = map[string]any{
 			"name":           blockDevice.Name,
-			"size_gigabytes": int(blockDevice.Size / (1024 * 1024 * 1024)),
+			"size_gigabytes": int(math.Round(float64(blockDevice.Size) / GigaBytes)),
 			"id_path":        blockDevice.IDPath,
 			"model":          blockDevice.Model,
 		}
