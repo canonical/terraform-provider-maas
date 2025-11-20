@@ -186,7 +186,7 @@ func resourceMAASMachine() *schema.Resource {
 			"testing_scripts": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "Testing scripts names and tags to be run. By default all tests tagged 'testing' will be run. Set to ['none'] to disable running tests.",
+				Description: "Testing scripts names and tags to be run after commissioning. By default all tests tagged 'testing' will be run. Set to ['none'] to disable running tests.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -311,11 +311,11 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any
 		}
 
 		// Wait for machine to be ready
-		_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
-			if err != nil {
-				return diag.FromErr(err)
-			}
+		_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutUpdate))
+		if err != nil {
+			return diag.FromErr(err)
 		}
+	}
 
 	return resourceMachineRead(ctx, d, meta)
 }
@@ -348,7 +348,7 @@ func getMachinePowerParams(d *schema.ResourceData) (map[string]any, error) {
 }
 
 func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams {
-	params := &entity.MachineCreateParams{
+	return &entity.MachineCreateParams{
 		Commission:   true,
 		PowerType:    d.Get("power_type").(string),
 		MACAddresses: []string{d.Get("pxe_mac_address").(string)},
@@ -358,18 +358,10 @@ func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams 
 		Domain:       d.Get("domain").(string),
 		Zone:         d.Get("zone").(string),
 		Pool:         d.Get("pool").(string),
+		CommissioningScripts: listAsStringBase(d.Get("commissioning_scripts").([]any)),
+		TestingScripts:       listAsStringBase(d.Get("testing_scripts").([]any)),
+		ScriptParams:         d.Get("script_parameters").(map[string]any),
 	}
-	if commScripts, ok := d.GetOk("commissioning_scripts"); ok && len(commScripts.([]any)) > 0 {
-		params.CommissioningScripts = listAsString(commScripts.([]any))
-	}
-	if testScripts, ok := d.GetOk("testing_scripts"); ok && len(testScripts.([]any)) > 0 {
-		params.TestingScripts = listAsString(testScripts.([]any))
-	}
-	if scriptParams, ok := d.GetOk("script_parameters"); ok && len(scriptParams.(map[string]any)) > 0 {
-		params.ScriptParams = scriptParams.(map[string]any)
-	}
-	return params
-
 }
 
 func getMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams {
@@ -387,19 +379,12 @@ func getMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams 
 }
 
 func getMachineCommissionParams(d *schema.ResourceData) *entity.MachineCommissionParams {
-	params := &entity.MachineCommissionParams{}
-	if commScripts, ok := d.GetOk("commissioning_scripts"); ok && len(commScripts.([]any)) > 0 {
-		params.CommissioningScripts = listAsString(commScripts.([]any))
+	return &entity.MachineCommissionParams{
+		CommissioningScripts: listAsStringBase(d.Get("commissioning_scripts").([]any)),
+		TestingScripts:       listAsStringBase(d.Get("testing_scripts").([]any)),
+		ScriptParams:         d.Get("script_parameters").(map[string]any),
 	}
-	if testScripts, ok := d.GetOk("testing_scripts"); ok && len(testScripts.([]any)) > 0 {
-		params.TestingScripts = listAsString(testScripts.([]any))
-	}
-	if scriptParams, ok := d.GetOk("script_parameters"); ok && len(scriptParams.(map[string]any)) > 0 {
-		params.ScriptParams = scriptParams.(map[string]any)
-	}
-	return params
 }
-
 
 func getMachineStatusFunc(client *client.Client, systemID string) retry.StateRefreshFunc {
 	return func() (any, string, error) {

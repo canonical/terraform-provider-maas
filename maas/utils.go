@@ -49,7 +49,11 @@ func listAsString(stringList []interface{}) string {
 	if len(stringList) == 0 {
 		return "[]"
 	}
+	return listAsStringBase(stringList)
 
+}
+
+func listAsStringBase(stringList []interface{}) string {
 	var asList []string
 	for _, listItem := range stringList {
 		asList = append(asList, listItem.(string))
