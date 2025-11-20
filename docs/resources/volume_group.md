@@ -62,7 +62,7 @@ resource "maas_volume_group" "vg1" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `size_gigabytes` (Number) The volume group size (GiB).
+- `size_gigabytes` (Number) The volume group size (GB).
 - `uuid` (String) Volume group UUID.
 
 ## Import

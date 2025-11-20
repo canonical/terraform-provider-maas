@@ -77,7 +77,7 @@ func resourceLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 
 	LVMParams := &entity.LogicalVolumeParams{
 		Name: d.Get("name").(string),
-		Size: int64(d.Get("size_gigabytes").(int)) * 1024 * 1024 * 1024,
+		Size: int64(d.Get("size_gigabytes").(int)) * GigaBytes,
 	}
 
 	createdLVM, err := client.VolumeGroup.CreateLogicalVolume(machine.SystemID, volumeGroup.ID, LVMParams)
@@ -135,7 +135,7 @@ func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	params := entity.BlockDeviceParams{
 		Name: d.Get("name").(string),
-		Size: int64(d.Get("size_gigabytes").(int)) * 1024 * 1024 * 1024,
+		Size: int64(d.Get("size_gigabytes").(int)) * GigaBytes,
 	}
 
 	updatedLVM, err := client.BlockDevice.Update(machine.SystemID, id, &params)
@@ -187,7 +187,7 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 		"mount_options":  logicalVolume.Filesystem.MountOptions,
 		"mount_point":    logicalVolume.Filesystem.MountPoint,
 		"name":           name,
-		"size_gigabytes": math.Round(float64(logicalVolume.Size) / (1024 * 1024 * 1024)),
+		"size_gigabytes": math.Round(float64(logicalVolume.Size) / GigaBytes),
 		"volume_group":   fmt.Sprintf("%v", volumeGroup.ID),
 	}
 
