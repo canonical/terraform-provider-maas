@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,7 +41,7 @@ func resourceMAASBlockDevice() *schema.Resource {
 					"id":             fmt.Sprintf("%v", blockDevice.ID),
 					"machine":        machine.SystemID,
 					"name":           blockDevice.Name,
-					"size_gigabytes": int(blockDevice.Size / (1024 * 1024 * 1024)),
+					"size_gigabytes": int(math.Round(float64(blockDevice.Size) / GigaBytes)),
 					"block_size":     blockDevice.BlockSize,
 				}
 				if err := setTerraformState(d, tfState); err != nil {
@@ -303,7 +304,7 @@ func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta
 func getBlockDeviceParams(d *schema.ResourceData) *entity.BlockDeviceParams {
 	return &entity.BlockDeviceParams{
 		Name:      d.Get("name").(string),
-		Size:      int64(d.Get("size_gigabytes").(int)) * 1024 * 1024 * 1024,
+		Size:      int64(d.Get("size_gigabytes").(int)) * GigaBytes,
 		BlockSize: d.Get("block_size").(int),
 		Model:     d.Get("model").(string),
 		Serial:    d.Get("serial").(string),
@@ -394,7 +395,7 @@ func getBlockDevicePartitionsTFState(blockDevice *entity.BlockDevice) []map[stri
 
 	for i, p := range blockDevice.Partitions {
 		part := map[string]any{
-			"size_gigabytes": int(p.Size / (1024 * 1024 * 1024)),
+			"size_gigabytes": int(math.Round(float64(p.Size) / GigaBytes)),
 			"bootable":       p.Bootable,
 			"tags":           p.Tags,
 			"fs_type":        p.FileSystem.FSType,
@@ -426,7 +427,7 @@ func updateBlockDevicePartitions(client *client.Client, d *schema.ResourceData, 
 	for _, part := range partitions {
 		partition := part.(map[string]any)
 		partitionParams := entity.BlockDevicePartitionParams{
-			Size:     int64(partition["size_gigabytes"].(int)) * 1024 * 1024 * 1024,
+			Size:     int64(partition["size_gigabytes"].(int)) * GigaBytes,
 			Bootable: partition["bootable"].(bool),
 		}
 

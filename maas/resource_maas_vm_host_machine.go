@@ -251,8 +251,8 @@ func getVMHostMachineParams(d *schema.ResourceData) (*entity.VMHostMachineParams
 	return &params, nil
 }
 
-func getVMHostMachineUpdateParams(d *schema.ResourceData) *entity.MachineParams {
-	return &entity.MachineParams{
+func getVMHostMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams {
+	return &entity.MachineUpdateParams{
 		Hostname: d.Get("hostname").(string),
 		Domain:   d.Get("domain").(string),
 		Zone:     d.Get("zone").(string),
