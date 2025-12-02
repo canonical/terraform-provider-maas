@@ -10,6 +10,7 @@ import (
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceMAASVLANDHCP() *schema.Resource {
@@ -47,6 +48,7 @@ func resourceMAASVLANDHCP() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"primary_rack_controller", "secondary_rack_controller"},
 				AtLeastOneOf:  []string{"primary_rack_controller", "relay_vlan"},
+				ValidateFunc:  validation.IntAtLeast(1),
 				Description:   "Database ID of the VLAN to use as a relay for DHCP.",
 			},
 			"secondary_rack_controller": {
@@ -95,6 +97,19 @@ func resourceVLANDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 	fabricID := d.Get("fabric").(int)
 	vlanID := d.Get("vlan").(int)
 	params := getVLANDHCPParams(d)
+
+	// To be able to set relay_vlan we first need to set DHCP off
+	if params.RelayVLAN != nil {
+		// gomaasclient requires a pointer to an empty string in order to nil the values below
+		nilValue := ""
+
+		_, err = client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
+			PrimaryRack: &nilValue, SecondaryRack: &nilValue, DHCPOn: false,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	_, err = client.VLAN.Update(fabricID, vlanID, params)
 	if err != nil {
@@ -154,7 +169,22 @@ func resourceVLANDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	if _, err := client.VLAN.Update(fabricID, vlanID, getVLANDHCPParams(d)); err != nil {
+	params := getVLANDHCPParams(d)
+
+	// To be able to set relay_vlan we first need to set DHCP off
+	if params.RelayVLAN != nil {
+		// gomaasclient requires a pointer to an empty string in order to nil the values below
+		nilValue := ""
+
+		_, err = client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
+			PrimaryRack: &nilValue, SecondaryRack: &nilValue, DHCPOn: false,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if _, err := client.VLAN.Update(fabricID, vlanID, params); err != nil {
 		return diag.FromErr(err)
 	}
 
