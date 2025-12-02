@@ -34,6 +34,7 @@ func resourceMAASUser() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

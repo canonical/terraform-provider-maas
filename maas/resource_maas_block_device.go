@@ -27,16 +27,19 @@ func resourceMAASBlockDevice() *schema.Resource {
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE:BLOCK_DEVICE", d.Id())
 				}
+
 				client := meta.(*ClientConfig).Client
 
 				machine, err := getMachine(client, idParts[0])
 				if err != nil {
 					return nil, err
 				}
+
 				blockDevice, err := getBlockDevice(client, machine.SystemID, idParts[1])
 				if err != nil {
 					return nil, err
 				}
+
 				tfState := map[string]any{
 					"id":             fmt.Sprintf("%v", blockDevice.ID),
 					"machine":        machine.SystemID,
@@ -47,6 +50,7 @@ func resourceMAASBlockDevice() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

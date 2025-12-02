@@ -125,6 +125,7 @@ func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 					if rs.Primary.ID == "" {
 						return "", fmt.Errorf("resource id not set")
 					}
+
 					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["machine"], rs.Primary.Attributes["id"]), nil
 				},
 			},

@@ -27,10 +27,13 @@ func resourceMAASInstance() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				if machine.StatusName != "Deployed" {
 					return nil, fmt.Errorf("machine '%s' needs to be already deployed to be imported as maas_instance resource", machine.Hostname)
 				}
+
 				d.SetId(machine.SystemID)
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -271,6 +274,7 @@ func resourceMAASInstance() *schema.Resource {
 			}
 
 			releaseParams := releaseParamsData[0].(map[string]any)
+
 			scripts, ok := releaseParams["scripts"]
 			if !ok {
 				return nil

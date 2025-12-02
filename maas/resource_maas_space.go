@@ -26,6 +26,7 @@ func resourceMAASSpace() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				tfState := map[string]any{
 					"id":   fmt.Sprintf("%v", space.ID),
 					"name": space.Name,
@@ -33,6 +34,7 @@ func resourceMAASSpace() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

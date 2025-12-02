@@ -38,6 +38,7 @@ func resourceMAASVMHost() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				tfState := map[string]any{
 					"id":   fmt.Sprintf("%v", vmHost.ID),
 					"type": vmHost.Type,
@@ -49,15 +50,18 @@ func resourceMAASVMHost() *schema.Resource {
 					if err != nil {
 						return nil, err
 					}
+
 					for _, k := range []string{"power_address", "power_user", "power_pass"} {
 						if val, ok := vmHostParams[k]; ok {
 							tfState[k] = val
 						}
 					}
 				}
+
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

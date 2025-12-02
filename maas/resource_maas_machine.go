@@ -41,14 +41,17 @@ func resourceMAASMachine() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				powerParams, err := client.Machine.GetPowerParameters(machine.SystemID)
 				if err != nil {
 					return nil, err
 				}
+
 				powerParamsString, err := structure.FlattenJsonToString(powerParams)
 				if err != nil {
 					return nil, err
 				}
+
 				tfState := map[string]any{
 					"id":               machine.SystemID,
 					"power_type":       machine.PowerType,
@@ -59,6 +62,7 @@ func resourceMAASMachine() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -149,10 +153,12 @@ func resourceMAASMachine() *schema.Resource {
 					if err != nil {
 						return false
 					}
+
 					newMap, err := structure.ExpandJsonFromString(newValue)
 					if err != nil {
 						return false
 					}
+
 					return reflect.DeepEqual(oldMap, newMap)
 				},
 				StateFunc: func(v any) string {

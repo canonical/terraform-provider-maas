@@ -27,6 +27,7 @@ func resourceMAASSubnet() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				tfState := map[string]any{
 					"id":          fmt.Sprintf("%v", subnet.ID),
 					"cidr":        subnet.CIDR,
@@ -40,6 +41,7 @@ func resourceMAASSubnet() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

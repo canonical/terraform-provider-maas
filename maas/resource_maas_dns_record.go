@@ -31,23 +31,29 @@ func resourceMAASDNSRecord() *schema.Resource {
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected TYPE:IDENTIFIER", d.Id())
 				}
+
 				resourceType := idParts[0]
 				if _, errors := validation.StringInSlice(validDNSRecordTypes, false)(resourceType, "type"); len(errors) > 0 {
 					return nil, errors[0]
 				}
+
 				client := meta.(*ClientConfig).Client
 
 				resourceIdentifier := idParts[1]
+
 				var tfState map[string]any
+
 				if resourceType == "A/AAAA" {
 					dnsRecord, err := getDNSResource(client, resourceIdentifier)
 					if err != nil {
 						return nil, err
 					}
+
 					ips := []string{}
 					for _, ipAddress := range dnsRecord.IPAddresses {
 						ips = append(ips, ipAddress.IP.String())
 					}
+
 					tfState = map[string]any{
 						"id":   fmt.Sprintf("%v", dnsRecord.ID),
 						"type": resourceType,
@@ -60,6 +66,7 @@ func resourceMAASDNSRecord() *schema.Resource {
 					if err != nil {
 						return nil, err
 					}
+
 					tfState = map[string]any{
 						"id":   fmt.Sprintf("%v", dnsRecord.ID),
 						"type": dnsRecord.RRType,
@@ -68,9 +75,11 @@ func resourceMAASDNSRecord() *schema.Resource {
 						"ttl":  dnsRecord.TTL,
 					}
 				}
+
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},
