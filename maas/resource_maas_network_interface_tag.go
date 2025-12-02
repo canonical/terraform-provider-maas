@@ -48,6 +48,7 @@ func resourceMAASNetworkInterfaceTag() *schema.Resource {
 				}
 				// Set the resource ID
 				d.SetId(fmt.Sprintf("%v/%v", existingInterface.SystemID, existingInterface.ID))
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -87,8 +88,8 @@ func resourceNetworkInterfaceTagCreate(ctx context.Context, d *schema.ResourceDa
 
 	interfaceID := d.Get("interface_id").(int)
 	desiredTags := convertToStringSlice(d.Get("tags").(*schema.Set).List())
-	systemID, err := getMachineOrDeviceSystemID(client, d)
 
+	systemID, err := getMachineOrDeviceSystemID(client, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -208,7 +209,6 @@ func resourceNetworkInterfaceTagDelete(ctx context.Context, d *schema.ResourceDa
 
 	for _, t := range tags {
 		_, err := client.NetworkInterface.RemoveTag(systemID, interfaceID, t)
-
 		if err != nil {
 			return diag.FromErr(err)
 		}

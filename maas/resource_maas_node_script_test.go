@@ -156,11 +156,14 @@ func TestAccResourceMAASNodeScript_basic(t *testing.T) {
 				ImportState:  true,
 				ImportStateCheck: func(is []*terraform.InstanceState) error {
 					var nodeScript *terraform.InstanceState
+
 					if len(is) != 1 {
 						return fmt.Errorf("expected 1 state: %#v", t)
 					}
+
 					nodeScript = is[0]
 					assert.Equal(t, nodeScript.Attributes["name"], name)
+
 					return nil
 				},
 			},

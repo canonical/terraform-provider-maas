@@ -30,6 +30,7 @@ func resourceMAASPackageRepositories() *schema.Resource {
 				}
 
 				d.SetId(fmt.Sprintf("%v", repo.ID))
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

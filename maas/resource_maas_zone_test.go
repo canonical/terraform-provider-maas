@@ -43,12 +43,15 @@ func TestAccResourceMAASZone_basic(t *testing.T) {
 				ImportState:  true,
 				ImportStateCheck: func(is []*terraform.InstanceState) error {
 					var zone *terraform.InstanceState
+
 					if len(is) != 1 {
 						return fmt.Errorf("expected 1 state: %#v", t)
 					}
+
 					zone = is[0]
 					assert.Equal(t, zone.Attributes["name"], name)
 					assert.Equal(t, zone.Attributes["description"], description)
+
 					return nil
 				},
 			},
