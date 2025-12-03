@@ -99,16 +99,8 @@ func resourceVLANDHCPCreate(ctx context.Context, d *schema.ResourceData, meta in
 	params := getVLANDHCPParams(d)
 
 	// To be able to set relay_vlan we first need to set DHCP off
-	if params.RelayVLAN != nil {
-		// gomaasclient requires a pointer to an empty string in order to nil the values below
-		nilValue := ""
-
-		_, err = client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
-			PrimaryRack: &nilValue, SecondaryRack: &nilValue, DHCPOn: false,
-		})
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	if err = disableDHCPIfRelayVLANSet(client, fabricID, vlanID, params); err != nil {
+		return diag.FromErr(err)
 	}
 
 	_, err = client.VLAN.Update(fabricID, vlanID, params)
@@ -172,16 +164,8 @@ func resourceVLANDHCPUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	params := getVLANDHCPParams(d)
 
 	// To be able to set relay_vlan we first need to set DHCP off
-	if params.RelayVLAN != nil {
-		// gomaasclient requires a pointer to an empty string in order to nil the values below
-		nilValue := ""
-
-		_, err = client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
-			PrimaryRack: &nilValue, SecondaryRack: &nilValue, DHCPOn: false,
-		})
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	if err := disableDHCPIfRelayVLANSet(client, fabricID, vlanID, params); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if _, err := client.VLAN.Update(fabricID, vlanID, params); err != nil {
@@ -282,6 +266,24 @@ func confirmIPRangeSubnetsInVLAN(client *client.Client, d *schema.ResourceData) 
 
 		if ipRange.Subnet.VLAN.FabricID != expectedFabricID || ipRange.Subnet.VLAN.VID != expectedVLANVID {
 			return fmt.Errorf("IP range id=%d in fabric id=%d, vlan vid=%d and subnet id=%d is not in the same VLAN as the VLAN DHCP resource, with fabric id=%d and vlan vid=%d", ipRangeID, ipRange.Subnet.VLAN.FabricID, ipRange.Subnet.VLAN.VID, ipRange.Subnet.ID, expectedFabricID, expectedVLANVID)
+		}
+	}
+
+	return nil
+}
+
+// disableDHCPIfRelayVLANSet disables DHCP on the VLAN if relay_vlan is being set.
+// This is required by MAAS before setting a relay VLAN.
+func disableDHCPIfRelayVLANSet(client *client.Client, fabricID, vlanID int, params *entity.VLANParams) error {
+	if params.RelayVLAN != nil {
+		// gomaasclient requires a pointer to an empty string in order to nil the values below
+		nilValue := ""
+
+		_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
+			PrimaryRack: &nilValue, SecondaryRack: &nilValue, DHCPOn: false,
+		})
+		if err != nil {
+			return err
 		}
 	}
 
