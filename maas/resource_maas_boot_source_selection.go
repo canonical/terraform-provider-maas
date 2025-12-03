@@ -2,6 +2,7 @@ package maas
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -119,10 +120,47 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 		Labels:    labels,
 	}
 
-	// Create the selection
-	bootSourceSelection, err := client.BootSourceSelections.Create(d.Get("boot_source").(int), &bootSourceSelectionParams)
+	// Check if boot source exists by consulting maas config commissioning_distro_series
+	var commissioningDistroSeries string
+
+	commissioningDistroSeriesbytes, err := client.MAASServer.Get("commissioning_distro_series")
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("error creating %s %s: %s", d.Get("os"), d.Get("release"), err))
+		return diag.FromErr(fmt.Errorf("failed to get commissioning distro series from client: %s", err))
+	}
+
+	err = json.Unmarshal(commissioningDistroSeriesbytes, &commissioningDistroSeries)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("failed to unmarshal commissioningDistroSeriesbytes: %s", err))
+	}
+
+	var bootSourceSelection *entity.BootSourceSelection
+
+	if bootSourceSelectionParams.OS == "ubuntu" && bootSourceSelectionParams.Release == commissioningDistroSeries {
+		// Update the selection
+		bootSourceSelections, err := client.BootSourceSelections.Get(d.Get("boot_source").(int))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		for _, bss := range bootSourceSelections {
+			if bss.OS == bootSourceSelectionParams.OS && bss.Release == bootSourceSelectionParams.Release {
+				bootSourceSelection, err = client.BootSourceSelection.Update(d.Get("boot_source").(int), bss.ID, &bootSourceSelectionParams)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				break
+			}
+		}
+
+		// Handle case where no matching selection was found
+		if bootSourceSelection == nil {
+			return diag.FromErr(fmt.Errorf("expected default boot source selection for ubuntu/%s not found", commissioningDistroSeries))
+		}
+	} else {
+		// Create the selection
+		bootSourceSelection, err = client.BootSourceSelections.Create(d.Get("boot_source").(int), &bootSourceSelectionParams)
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("error creating %s %s: %s", d.Get("os"), d.Get("release"), err))
+		}
 	}
 
 	// Trigger image import and wait for its completion
@@ -215,7 +253,29 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	// Delete the selection
+	// Check if this is the default commissioning selection
+	commissioningDistroSeriesbytes, err := client.MAASServer.Get("commissioning_distro_series")
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("failed to get commissioning distro series from client: %s", err))
+	}
+
+	var commissioningDistroSeries string
+	err = json.Unmarshal(commissioningDistroSeriesbytes, &commissioningDistroSeries)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("failed to unmarshal commissioningDistroSeriesbytes: %s", err))
+	}
+
+	// If this is the default commissioning selection (ubuntu/commissioning_distro_series),
+	// make it a noop to avoid breaking MAAS functionality
+	if d.Get("os").(string) == "ubuntu" && d.Get("release").(string) == commissioningDistroSeries {
+		// Log that we're skipping deletion
+		// Note: Terraform providers typically don't have direct logging, but you can add this for debugging
+		// Just remove the resource from state without actually deleting it from MAAS
+		d.SetId("")
+		return nil
+	}
+
+	// Delete the selection (normal path for non-default selections)
 	if err := client.BootSourceSelection.Delete(d.Get("boot_source").(int), id); err != nil {
 		// 404 means the resource was deleted already
 		if strings.Contains(err.Error(), "404 Not Found") {
