@@ -98,7 +98,7 @@ func TestAccResourceMAASBootSourceSelection_defaultCommissioningAdoption(t *test
 					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "os", "ubuntu"),
 					resource.TestCheckResourceAttrSet("maas_boot_source_selection.commissioning", "release"),
 					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "arches.#", "1"),
-					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "arches.0", "ppc64el"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "arches.0", "amd64"),
 					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "labels.#", "1"),
 					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "labels.0", "*"),
 					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "subarches.#", "1"),
@@ -211,7 +211,7 @@ resource "maas_boot_source_selection" "commissioning" {
   boot_source = data.maas_boot_source.test.id
   os          = "ubuntu"
   release     = data.maas_configuration.commissioning_series.value
-  arches      = ["ppc64el"]
+  arches      = ["amd64"]
 }
 `
 }
