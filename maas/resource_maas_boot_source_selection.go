@@ -135,18 +135,22 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 
 	var bootSourceSelection *entity.BootSourceSelection
 
+	var bootSourceSelectionList []entity.BootSourceSelection
+
 	if bootSourceSelectionParams.OS == "ubuntu" && bootSourceSelectionParams.Release == commissioningDistroSeries {
 		// Update the selection
-		bootSourceSelections, err := client.BootSourceSelections.Get(d.Get("boot_source").(int))
+		bootSourceSelectionList, err = client.BootSourceSelections.Get(d.Get("boot_source").(int))
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		for _, bss := range bootSourceSelections {
+
+		for _, bss := range bootSourceSelectionList {
 			if bss.OS == bootSourceSelectionParams.OS && bss.Release == bootSourceSelectionParams.Release {
 				bootSourceSelection, err = client.BootSourceSelection.Update(d.Get("boot_source").(int), bss.ID, &bootSourceSelectionParams)
 				if err != nil {
 					return diag.FromErr(err)
 				}
+
 				break
 			}
 		}
@@ -260,6 +264,7 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	var commissioningDistroSeries string
+
 	err = json.Unmarshal(commissioningDistroSeriesbytes, &commissioningDistroSeries)
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("failed to unmarshal commissioningDistroSeriesbytes: %s", err))

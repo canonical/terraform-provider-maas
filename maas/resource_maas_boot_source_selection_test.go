@@ -228,7 +228,8 @@ func testAccCheckMAASBootSourceSelectionDefaultStillExists(s *terraform.State) e
 	}
 
 	var commissioningSeries string
-	if err := json.Unmarshal(commissioningSeriesBytes, &commissioningSeries); err != nil {
+
+	if err = json.Unmarshal(commissioningSeriesBytes, &commissioningSeries); err != nil {
 		return fmt.Errorf("failed to unmarshal commissioning distro series: %v", err)
 	}
 
