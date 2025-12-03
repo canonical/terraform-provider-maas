@@ -25,12 +25,17 @@ func resourceMAASSubnetIPRange() *schema.Resource {
 				client := meta.(*ClientConfig).Client
 
 				idParts := strings.Split(d.Id(), ":")
-				var ipRange *entity.IPRange
-				var err error
+
+				var (
+					ipRange *entity.IPRange
+					err     error
+				)
+
 				if len(idParts) == 2 {
 					if idParts[0] == "" || idParts[1] == "" {
 						return nil, fmt.Errorf("unexpected format of ID (%q), expected START_IP:END_IP", d.Id())
 					}
+
 					ipRange, err = getSubnetIPRange(client, idParts[0], idParts[1])
 					if err != nil {
 						return nil, err
@@ -40,11 +45,13 @@ func resourceMAASSubnetIPRange() *schema.Resource {
 					if err != nil {
 						return nil, err
 					}
+
 					ipRange, err = client.IPRange.Get(id)
 					if err != nil {
 						return nil, err
 					}
 				}
+
 				tfState := map[string]any{
 					"id":       fmt.Sprintf("%v", ipRange.ID),
 					"subnet":   fmt.Sprintf("%v", ipRange.Subnet.ID),
@@ -55,6 +62,7 @@ func resourceMAASSubnetIPRange() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

@@ -21,11 +21,14 @@ func resourceMAASZone() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
+
 				zone, err := getZone(client, d.Id())
 				if err != nil {
 					return nil, err
 				}
+
 				d.SetId(fmt.Sprintf("%v", zone.ID))
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

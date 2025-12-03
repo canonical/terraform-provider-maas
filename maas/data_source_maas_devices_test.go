@@ -27,6 +27,7 @@ func TestAccDataSourceMAASDevices_basic(t *testing.T) {
 				if err := resource.TestCheckResourceAttrSet("data.maas_devices.test", fmt.Sprintf("devices.%v.system_id", i))(s); err != nil {
 					return err
 				}
+
 				if err := resource.TestCheckResourceAttrSet("data.maas_devices.test", fmt.Sprintf("devices.%v.hostname", i))(s); err != nil {
 					return err
 				}

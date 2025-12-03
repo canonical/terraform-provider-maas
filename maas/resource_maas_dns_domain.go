@@ -26,6 +26,7 @@ func resourceMAASDNSDomain() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				tfState := map[string]any{
 					"id":            fmt.Sprintf("%v", domain.ID),
 					"name":          domain.Name,
@@ -36,6 +37,7 @@ func resourceMAASDNSDomain() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

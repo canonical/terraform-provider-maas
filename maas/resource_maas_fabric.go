@@ -26,10 +26,13 @@ func resourceMAASFabric() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				if err := d.Set("name", fabric.Name); err != nil {
 					return nil, err
 				}
+
 				d.SetId(fmt.Sprintf("%v", fabric.ID))
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

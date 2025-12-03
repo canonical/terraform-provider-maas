@@ -46,13 +46,16 @@ func TestAccResourceMAASTag_basic(t *testing.T) {
 				ImportState:  true,
 				ImportStateCheck: func(is []*terraform.InstanceState) error {
 					var tag *terraform.InstanceState
+
 					if len(is) != 1 {
 						return fmt.Errorf("expected 1 state: %#v", t)
 					}
+
 					tag = is[0]
 					assert.Equal(t, tag.Attributes["name"], name)
 					assert.Equal(t, tag.Attributes["comment"], comment)
 					assert.Equal(t, tag.Attributes["machines.#"], strconv.Itoa(len(strings.Split(machines, ","))))
+
 					return nil
 				},
 			},

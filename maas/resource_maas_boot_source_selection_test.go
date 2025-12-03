@@ -74,6 +74,7 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 					if rs.Primary.ID == "" {
 						return "", fmt.Errorf("resource id not set")
 					}
+
 					return fmt.Sprintf("%s:%s", rs.Primary.Attributes["boot_source"], rs.Primary.ID), nil
 				},
 			},

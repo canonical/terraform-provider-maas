@@ -67,6 +67,7 @@ func TestAccResourceMAASDevice_basic(t *testing.T) {
 					if rs.Primary.ID == "" {
 						return "", fmt.Errorf("resource id not set")
 					}
+
 					return rs.Primary.Attributes["hostname"], nil
 				},
 			},

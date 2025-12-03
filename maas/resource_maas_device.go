@@ -23,7 +23,9 @@ func resourceMAASDevice() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				d.SetId(device.SystemID)
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

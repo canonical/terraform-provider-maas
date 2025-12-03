@@ -51,7 +51,9 @@ func resourceMAASNodeScript() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				d.SetId(nodeScript.Name)
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},
