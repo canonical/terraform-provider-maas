@@ -123,14 +123,14 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 	// Check if boot source exists by consulting maas config commissioning_distro_series
 	var commissioningDistroSeries string
 
-	commissioningDistroSeriesbytes, err := client.MAASServer.Get("commissioning_distro_series")
+	commissioningDistroSeriesBytes, err := client.MAASServer.Get("commissioning_distro_series")
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("failed to get commissioning distro series from client: %s", err))
 	}
 
-	err = json.Unmarshal(commissioningDistroSeriesbytes, &commissioningDistroSeries)
+	err = json.Unmarshal(commissioningDistroSeriesBytes, &commissioningDistroSeries)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to unmarshal commissioningDistroSeriesbytes: %s", err))
+		return diag.FromErr(fmt.Errorf("failed to unmarshal commissioningDistroSeriesBytes: %s", err))
 	}
 
 	var bootSourceSelection *entity.BootSourceSelection
@@ -258,16 +258,16 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Check if this is the default commissioning selection
-	commissioningDistroSeriesbytes, err := client.MAASServer.Get("commissioning_distro_series")
+	commissioningDistroSeriesBytes, err := client.MAASServer.Get("commissioning_distro_series")
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("failed to get commissioning distro series from client: %s", err))
 	}
 
 	var commissioningDistroSeries string
 
-	err = json.Unmarshal(commissioningDistroSeriesbytes, &commissioningDistroSeries)
+	err = json.Unmarshal(commissioningDistroSeriesBytes, &commissioningDistroSeries)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to unmarshal commissioningDistroSeriesbytes: %s", err))
+		return diag.FromErr(fmt.Errorf("failed to unmarshal commissioningDistroSeriesBytes: %s", err))
 	}
 
 	// If this is the default commissioning selection (ubuntu/{commissioning_distro_series}),
