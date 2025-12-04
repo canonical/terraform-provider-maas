@@ -47,6 +47,7 @@ resource "maas_instance" "kvm" {
 
 ### Read-Only
 
+- `architecture` (String) The deployed MAAS machine architecture.
 - `cpu_count` (Number) The number of CPU cores of the deployed MAAS machine.
 - `fqdn` (String) The deployed MAAS machine FQDN.
 - `hostname` (String) The deployed MAAS machine hostname.
@@ -62,6 +63,7 @@ resource "maas_instance" "kvm" {
 
 Optional:
 
+- `architecture` (String) The architecture type of the machine. Defaults to `amd64/generic`.
 - `hostname` (String) The hostname of the MAAS machine to be allocated.
 - `min_cpu_count` (Number) The minimum number of cores used to allocate the MAAS machine.
 - `min_memory` (Number) The minimum RAM memory size (in MB) used to allocate the MAAS machine.

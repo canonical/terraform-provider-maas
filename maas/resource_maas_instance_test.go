@@ -3,6 +3,7 @@ package maas_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"strings"
 	"terraform-provider-maas/maas"
@@ -66,6 +67,9 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 	quickErase := "true"
 	secureErase := "false"
 
+	nonDefaultArchitecture := "arm64/generic"
+	archError := regexp.MustCompile("Architecture not recognised")
+
 	baseChecks := []resource.TestCheckFunc{
 		testAccMAASInstanceCheckExists("maas_instance.test"),
 		resource.TestCheckResourceAttr("maas_instance.test", "hostname", hostname),
@@ -82,7 +86,16 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 			// Test creation
 			{
 				Config: testAccMAASInstanceConfigBasic(vmHost, hostname),
-				Check:  resource.ComposeTestCheckFunc(baseChecks...),
+				Check: resource.ComposeTestCheckFunc(append(
+					baseChecks,
+					resource.TestCheckResourceAttr("maas_instance.test", "architecture", "amd64/generic"),
+				)...,
+				),
+			},
+			// Test different architecture
+			{
+				Config:      testAccMAASInstanceConfigAllocateParamsNonDefaultArchitecture(vmHost, hostname, nonDefaultArchitecture),
+				ExpectError: archError,
 			},
 			// Test update
 			{
@@ -327,4 +340,19 @@ resource "maas_instance" "test" {
   }
 }
 `, comment, erase, force, quickErase, secureErase)
+}
+
+func testAccMAASInstanceConfigAllocateParamsNonDefaultArchitecture(vmHost, hostname, architecture string) string {
+	return fmt.Sprintf(`
+%s
+
+resource "maas_instance" "test" {
+  allocate_params {
+    hostname      = maas_vm_host_machine.test.hostname
+    min_memory    = 4000
+    min_cpu_count = 1
+    architecture  = %q
+  }
+}
+`, testAccMAASInstanceConfigSetup(vmHost, hostname), architecture)
 }
