@@ -19,7 +19,7 @@ import (
 
 func resourceMAASBootSourceSelection() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Provides a resource to manage a MAAS boot source selection.",
+		Description:   "Provides a resource to manage a MAAS boot source selection.\n\n*Note*: MAAS automatically creates a default commissioning boot source selection for the Ubuntu LTS release that accompanies the current MAAS version (e.g., Noble for MAAS 3.6). The commissioning distro series can be changed by administrators, but whatever boot source selection points to the current commissioning distro series at any point in time cannot be deleted. When managing boot source selections through Terraform:\n\n- **Create**: If creating a selection for Ubuntu with the current commissioning distro series, Terraform will adopt and update the existing selection instead of creating a new one\n- **Delete**: If deleting a selection that matches Ubuntu with the current commissioning distro series at deletion time, Terraform will remove the resource from state without deleting it from MAAS (no-op operation)\n\nThis behavior ensures MAAS functionality is not disrupted while allowing Terraform to manage boot source selection configurations.",
 		CreateContext: resourceBootSourceSelectionCreate,
 		ReadContext:   resourceBootSourceSelectionRead,
 		UpdateContext: resourceBootSourceSelectionUpdate,
