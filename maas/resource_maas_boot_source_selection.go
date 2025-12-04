@@ -270,11 +270,9 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(fmt.Errorf("failed to unmarshal commissioningDistroSeriesbytes: %s", err))
 	}
 
-	// If this is the default commissioning selection (ubuntu/commissioning_distro_series),
+	// If this is the default commissioning selection (ubuntu/{commissioning_distro_series}),
 	// make it a noop to avoid breaking MAAS functionality
 	if d.Get("os").(string) == "ubuntu" && d.Get("release").(string) == commissioningDistroSeries {
-		// Log that we're skipping deletion
-		// Note: Terraform providers typically don't have direct logging, but you can add this for debugging
 		// Just remove the resource from state without actually deleting it from MAAS
 		d.SetId("")
 		return nil

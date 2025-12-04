@@ -92,7 +92,22 @@ func TestAccResourceMAASBootSourceSelection_defaultCommissioningAdoption(t *test
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASBootSourceSelectionDefaultCommissioning(),
+				Config: testAccMAASBootSourceSelectionDefaultCommissioning([]string{"amd64", "ppc64el"}),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMAASBootSourceSelectionCheckExists("maas_boot_source_selection.commissioning", &bootSourceSelection),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "os", "ubuntu"),
+					resource.TestCheckResourceAttrSet("maas_boot_source_selection.commissioning", "release"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "arches.#", "2"),
+					resource.TestCheckTypeSetElemAttr("maas_boot_source_selection.commissioning", "arches.*", "amd64"),
+					resource.TestCheckTypeSetElemAttr("maas_boot_source_selection.commissioning", "arches.*", "ppc64el"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "labels.#", "1"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "labels.0", "*"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "subarches.#", "1"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "subarches.0", "*"),
+				),
+			},
+			{
+				Config: testAccMAASBootSourceSelectionDefaultCommissioning([]string{"amd64"}),
 				Check: resource.ComposeTestCheckFunc(
 					testAccMAASBootSourceSelectionCheckExists("maas_boot_source_selection.commissioning", &bootSourceSelection),
 					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "os", "ubuntu"),
@@ -199,8 +214,10 @@ resource "maas_boot_source_selection" "test" {
 `, os, release, string(archesList))
 }
 
-func testAccMAASBootSourceSelectionDefaultCommissioning() string {
-	return `
+func testAccMAASBootSourceSelectionDefaultCommissioning(arches []string) string {
+	archesList, _ := json.Marshal(arches)
+
+	return fmt.Sprintf(`
 data "maas_boot_source" "test" {}
 
 data "maas_configuration" "commissioning_series" {
@@ -211,9 +228,9 @@ resource "maas_boot_source_selection" "commissioning" {
   boot_source = data.maas_boot_source.test.id
   os          = "ubuntu"
   release     = data.maas_configuration.commissioning_series.value
-  arches      = ["amd64"]
+  arches      = %v
 }
-`
+`, string(archesList))
 }
 
 // Custom destroy check that verifies the default commissioning selection still exists in MAAS
