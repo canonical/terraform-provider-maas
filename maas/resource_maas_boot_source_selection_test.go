@@ -82,6 +82,48 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 	})
 }
 
+func TestAccResourceMAASBootSourceSelection_defaultCommissioningAdoption(t *testing.T) {
+	var bootSourceSelection entity.BootSourceSelection
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: testAccCheckMAASBootSourceSelectionDefaultStillExists,
+		ErrorCheck:   func(err error) error { return err },
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMAASBootSourceSelectionDefaultCommissioning([]string{"amd64", "ppc64el"}),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMAASBootSourceSelectionCheckExists("maas_boot_source_selection.commissioning", &bootSourceSelection),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "os", "ubuntu"),
+					resource.TestCheckResourceAttrSet("maas_boot_source_selection.commissioning", "release"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "arches.#", "2"),
+					resource.TestCheckTypeSetElemAttr("maas_boot_source_selection.commissioning", "arches.*", "amd64"),
+					resource.TestCheckTypeSetElemAttr("maas_boot_source_selection.commissioning", "arches.*", "ppc64el"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "labels.#", "1"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "labels.0", "*"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "subarches.#", "1"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "subarches.0", "*"),
+				),
+			},
+			{
+				Config: testAccMAASBootSourceSelectionDefaultCommissioning([]string{"amd64"}),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMAASBootSourceSelectionCheckExists("maas_boot_source_selection.commissioning", &bootSourceSelection),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "os", "ubuntu"),
+					resource.TestCheckResourceAttrSet("maas_boot_source_selection.commissioning", "release"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "arches.#", "1"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "arches.0", "amd64"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "labels.#", "1"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "labels.0", "*"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "subarches.#", "1"),
+					resource.TestCheckResourceAttr("maas_boot_source_selection.commissioning", "subarches.0", "*"),
+				),
+			},
+		},
+	})
+}
+
 func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *entity.BootSourceSelection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
@@ -170,6 +212,67 @@ resource "maas_boot_source_selection" "test" {
 	arches     = %v
 }
 `, os, release, string(archesList))
+}
+
+func testAccMAASBootSourceSelectionDefaultCommissioning(arches []string) string {
+	archesList, _ := json.Marshal(arches)
+
+	return fmt.Sprintf(`
+data "maas_boot_source" "test" {}
+
+data "maas_configuration" "commissioning_series" {
+  key = "commissioning_distro_series"
+}
+
+resource "maas_boot_source_selection" "commissioning" {
+  boot_source = data.maas_boot_source.test.id
+  os          = "ubuntu"
+  release     = data.maas_configuration.commissioning_series.value
+  arches      = %v
+}
+`, string(archesList))
+}
+
+// Custom destroy check that verifies the default commissioning selection still exists in MAAS
+// but is removed from Terraform state (noop deletion behavior)
+func testAccCheckMAASBootSourceSelectionDefaultStillExists(s *terraform.State) error {
+	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
+	// Get commissioning distro series from MAAS
+	commissioningSeriesBytes, err := conn.MAASServer.Get("commissioning_distro_series")
+	if err != nil {
+		return fmt.Errorf("failed to get commissioning distro series: %v", err)
+	}
+
+	var commissioningSeries string
+
+	if err = json.Unmarshal(commissioningSeriesBytes, &commissioningSeries); err != nil {
+		return fmt.Errorf("failed to unmarshal commissioning distro series: %v", err)
+	}
+
+	// Get all boot sources
+	bootSources, err := conn.BootSources.Get()
+	if err != nil {
+		return fmt.Errorf("failed to get boot sources: %v", err)
+	}
+
+	// Look for the default commissioning selection in MAAS
+	for _, source := range bootSources {
+		selections, err := conn.BootSourceSelections.Get(source.ID)
+		if err != nil {
+			continue
+		}
+
+		for _, selection := range selections {
+			if selection.OS == "ubuntu" && selection.Release == commissioningSeries {
+				// Found the default commissioning selection still exists in MAAS
+				// This confirms the noop deletion behavior worked correctly
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("expected default commissioning selection (ubuntu/%s) not found in MAAS after 'deletion'", commissioningSeries)
 }
 
 func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
