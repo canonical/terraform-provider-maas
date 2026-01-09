@@ -13,6 +13,7 @@ Provides a resource to manage MAAS machines.
 ## Example Usage
 
 ```terraform
+# Add an existing Virsh VM
 resource "maas_machine" "virsh_vm1" {
   power_type = "virsh"
   power_parameters = jsonencode({
@@ -20,6 +21,50 @@ resource "maas_machine" "virsh_vm1" {
     power_id      = "test-vm1"
   })
   pxe_mac_address = "52:54:00:89:f5:3e"
+}
+
+# Add an exisiting LXD VM, specifying a commissioning script and its parameters.
+# This might be applicable to a node-script with the 'noauto' tag, in order to run this
+# solely for a particular machine.
+resource "maas_node_script" "my-script" {
+  script = base64encode(<<-EOF
+#!/bin/bash
+
+# --- Start MAAS 1.0 script metadata ---
+# name: commissioning-test
+# title: Testing out commissioning
+# description: This is an example commissioning script that simply echoes a message.
+# script_type: commissioning
+# tags: noauto
+# parameters:
+#   msg:
+#     type: string
+#     required: true
+#     argument_format: '{input}'
+#     description: Message to echo.
+# --- End MAAS 1.0 script metadata ---
+
+echo "msg found: $1"
+EOF
+  )
+}
+
+resource "maas_machine" "myvm" {
+  hostname        = "my-special-machine"
+  architecture    = "amd64/generic"
+  power_type      = "lxd"
+  pxe_mac_address = "00:16:3e:f9:8e:bb"
+  power_parameters = jsonencode({
+    project       = "default",
+    certificate   = file("cert.pem")
+    key           = file("pass.key")
+    power_address = "10.10.0.1",
+    instance_name = "test-machine",
+  })
+  script_parameters = {
+    commissioning-test_msg = "hello"
+  }
+  commissioning_scripts = [maas_node_script.my-script.name]
 }
 ```
 
@@ -35,10 +80,13 @@ resource "maas_machine" "virsh_vm1" {
 ### Optional
 
 - `architecture` (String) The architecture type of the machine. Defaults to `amd64/generic`.
+- `commissioning_scripts` (List of String) Commissioning script names and tags to be run. By default all custom commissioning scripts are run. Built-in commissioning scripts always run. Selecting 'update_firmware' or 'configure_hba' will run firmware updates or configure HBA's on matching machines.
 - `domain` (String) The domain of the machine. This is computed if it's not set.
 - `hostname` (String) The machine hostname. This is computed if it's not set.
 - `min_hwe_kernel` (String) The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.
 - `pool` (String) The resource pool of the machine. This is computed if it's not set.
+- `script_parameters` (Map of String) Scripts specified to run may define their own parameters. These parameters may be passed as parameter name (key) value pairs as a map. Optionally a parameter may have the script name prepended to have that parameter only apply to that specific script, e.g. my-script_param=value.
+- `testing_scripts` (List of String) Testing scripts names and tags to be run after commissioning. By default all tests tagged 'testing' will be run. Set to ['none'] to disable running tests.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `zone` (String) The zone of the machine. This is computed if it's not set.
 
@@ -54,6 +102,7 @@ resource "maas_machine" "virsh_vm1" {
 Optional:
 
 - `create` (String)
+- `update` (String)
 
 
 <a id="nestedatt--block_devices"></a>

@@ -25,7 +25,7 @@ func init() {
 // The presence of MAAS_API_URL and MAAS_API_KEY are checked by default.
 // If any required variables are missing, the test fails.
 func PreCheck(t *testing.T, extra []string) {
-	var requiredVariables = []string{"MAAS_API_URL", "MAAS_API_KEY"}
+	var requiredVariables = []string{"MAAS_API_URL", "MAAS_API_KEY", "MAAS_VERSION"}
 
 	missingVariables := new([]string)
 

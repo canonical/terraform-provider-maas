@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/go-cty/cty"
@@ -49,6 +50,10 @@ func listAsString(stringList []interface{}) string {
 		return "[]"
 	}
 
+	return listAsStringBase(stringList)
+}
+
+func listAsStringBase(stringList []interface{}) string {
 	var asList []string
 	for _, listItem := range stringList {
 		asList = append(asList, listItem.(string))
@@ -226,4 +231,23 @@ func SplitStateID(stateID string, delimeter string) (string, string, error) {
 // Remove leading and trailing whitespace, as defined by unicode, from a string.
 func stripWhitespace(s string) string {
 	return strings.TrimSpace(s)
+}
+
+func checkSemverConstraint(currentVersion, semverConstraint string) error {
+	if semverConstraint == "" || currentVersion == "" {
+		return nil
+	}
+
+	version := semver.MustParse(currentVersion)
+
+	c, err := semver.NewConstraint(semverConstraint)
+	if err != nil {
+		return err
+	}
+
+	if !c.Check(version) {
+		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", currentVersion, semverConstraint)
+	}
+
+	return nil
 }

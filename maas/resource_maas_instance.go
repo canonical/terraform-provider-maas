@@ -27,10 +27,13 @@ func resourceMAASInstance() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				if machine.StatusName != "Deployed" {
 					return nil, fmt.Errorf("machine '%s' needs to be already deployed to be imported as maas_instance resource", machine.Hostname)
 				}
+
 				d.SetId(machine.SystemID)
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -45,6 +48,13 @@ func resourceMAASInstance() *schema.Resource {
 				Description: "Nested argument with the constraints used to machine allocation. Defined below.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"architecture": {
+							Type:        schema.TypeString,
+							ForceNew:    true,
+							Optional:    true,
+							Default:     "amd64/generic",
+							Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
+						},
 						"hostname": {
 							Type:        schema.TypeString,
 							Optional:    true,
@@ -94,6 +104,11 @@ func resourceMAASInstance() *schema.Resource {
 						},
 					},
 				},
+			},
+			"architecture": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The deployed MAAS machine architecture.",
 			},
 			"cpu_count": {
 				Type:        schema.TypeInt,
@@ -225,6 +240,14 @@ func resourceMAASInstance() *schema.Resource {
 							Optional:    true,
 							Description: "Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.",
 						},
+						"scripts": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Description: "List of the names of existing node release scripts to run when releasing the machine. These scripts run on an ephemeral copy of Ubuntu that is loaded after the deployed OS has been shut down. Only available in MAAS 3.5 and later.",
+						},
 						"secure_erase": {
 							Type:        schema.TypeBool,
 							Optional:    true,
@@ -250,6 +273,35 @@ func resourceMAASInstance() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
+		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
+			p, ok := d.GetOk("release_params")
+			if !ok {
+				return nil
+			}
+
+			releaseParamsData := p.([]any)
+			if releaseParamsData[0] == nil {
+				return nil
+			}
+
+			releaseParams := releaseParamsData[0].(map[string]any)
+
+			scripts, ok := releaseParams["scripts"]
+			if !ok {
+				return nil
+			}
+
+			if len(scripts.([]interface{})) == 0 {
+				return nil
+			}
+
+			err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, ">=3.5.0")
+			if err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 }
@@ -303,6 +355,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 	}
 
 	tfState := map[string]any{
+		"architecture": machine.Architecture,
 		"fqdn":         machine.FQDN,
 		"hostname":     machine.Hostname,
 		"zone":         machine.Zone.Name,
@@ -351,6 +404,7 @@ func getMachinesAllocateParams(d *schema.ResourceData) *entity.MachineAllocatePa
 			allocateParams := allocateParamsData[0].(map[string]any)
 
 			return &entity.MachineAllocateParams{
+				Arch:     allocateParams["architecture"].(string),
 				CPUCount: allocateParams["min_cpu_count"].(int),
 				Mem:      int64(allocateParams["min_memory"].(int)),
 				Name:     allocateParams["hostname"].(string),
@@ -390,13 +444,18 @@ func getReleaseParams(d *schema.ResourceData) *entity.MachineReleaseParams {
 		if releaseParamsData[0] != nil {
 			releaseParams := releaseParamsData[0].(map[string]any)
 
-			return &entity.MachineReleaseParams{
+			params := &entity.MachineReleaseParams{
 				Comment:     releaseParams["comment"].(string),
 				Erase:       releaseParams["erase"].(bool),
 				Force:       releaseParams["force"].(bool),
 				QuickErase:  releaseParams["quick_erase"].(bool),
 				SecureErase: releaseParams["secure_erase"].(bool),
 			}
+			if scripts, ok := releaseParams["scripts"]; ok && len(scripts.([]interface{})) > 0 {
+				params.Scripts = listAsString(scripts.([]interface{}))
+			}
+
+			return params
 		}
 	}
 

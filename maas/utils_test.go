@@ -134,3 +134,71 @@ func TestSplitStateIDIntoInts(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckSemverConstraint(t *testing.T) {
+	tests := []struct {
+		name             string
+		MAASVersion      string
+		semverConstraint string
+		expectedErr      bool
+		ErrString        string
+	}{
+		{
+			name:             ">= constraint",
+			MAASVersion:      "2.0.0",
+			semverConstraint: ">= 2.0.0",
+			expectedErr:      false,
+		},
+		{
+			name:             "== constraint",
+			MAASVersion:      "3.1.4",
+			semverConstraint: "= 3.1.4",
+			expectedErr:      false,
+		},
+		{
+			name:             "<= constraint",
+			MAASVersion:      "3.1.3",
+			semverConstraint: "<= 3.1.4",
+			expectedErr:      false,
+		},
+		{
+			name:             "invalid constraint",
+			MAASVersion:      "1.0.0",
+			semverConstraint: ">= 2.0.0",
+			expectedErr:      true,
+			ErrString:        "MAAS version `1.0.0`, does not satisfy constraint `>= 2.0.0`",
+		},
+		{
+			name:             "empty constraint",
+			MAASVersion:      "1.0.0",
+			semverConstraint: "",
+			expectedErr:      false,
+		},
+		{
+			name:             "empty version",
+			MAASVersion:      "",
+			semverConstraint: ">= 2.0.0",
+			expectedErr:      false,
+		},
+		{
+			name:             "invalid constraint format",
+			MAASVersion:      "3.0.0",
+			semverConstraint: ">> 2.0.0",
+			expectedErr:      true,
+			ErrString:        "improper constraint: >> 2.0.0",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := checkSemverConstraint(testCase.MAASVersion, testCase.semverConstraint)
+			if (err != nil) != testCase.expectedErr {
+				t.Errorf("checkSemverConstraint() error = %v, expectedErr %v", err, testCase.expectedErr)
+			}
+
+			if err != nil && err.Error() != testCase.ErrString {
+				t.Errorf("checkSemverConstraint() error = %v, ErrString %v", err.Error(), testCase.ErrString)
+			}
+		})
+	}
+}

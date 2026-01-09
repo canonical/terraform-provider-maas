@@ -27,7 +27,9 @@ func resourceMAASResourcePool() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				d.SetId(fmt.Sprintf("%v", resourcePool.ID))
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

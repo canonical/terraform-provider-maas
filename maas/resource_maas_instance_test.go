@@ -1,9 +1,9 @@
 package maas_test
 
 import (
-	// "encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 
 	"strings"
 	"terraform-provider-maas/maas"
@@ -16,6 +16,48 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+func TestAccResourceMAASInstance_releaseScripts(t *testing.T) {
+	testutils.SkipTestIfNotMAASVersion(t, ">=3.5.0")
+
+	vmHost := os.Getenv("TF_ACC_VM_HOST_ID")
+	hostname := acctest.RandomWithPrefix("tf-instance")
+	scriptName := acctest.RandomWithPrefix("tf-release-script")
+
+	baseChecks := []resource.TestCheckFunc{
+		testAccMAASInstanceCheckExists("maas_instance.test"),
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
+		Providers:    testutils.TestAccProviders,
+		ErrorCheck:   func(err error) error { return err },
+		CheckDestroy: testAccMAASInstanceCheckDestroy,
+		Steps: []resource.TestStep{
+			// Test creation
+			{
+				Config: testAccMAASInstanceConfigBasic(vmHost, hostname) + testAccMAASInstanceConfigReleaseScriptSetup(scriptName),
+				Check:  resource.ComposeTestCheckFunc(baseChecks...),
+			},
+			// Test update
+			{
+				Config: testAccMAASInstanceConfigSetup(vmHost, hostname) + testAccMAASInstanceConfigReleaseScriptSetup(scriptName) + testAccMAASInstanceConfigReleaseScripts(),
+				Check: resource.ComposeTestCheckFunc(append(
+					baseChecks,
+					resource.TestCheckResourceAttr("maas_instance.test", "release_params.#", "1"),
+					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.scripts.#", "1"),
+					resource.TestCheckResourceAttr("maas_instance.test", "release_params.0.scripts.0", scriptName),
+				)...,
+				),
+			},
+			// Test destroy releases the machine and runs the release script
+			{
+				Config: testAccMAASInstanceConfigSetup(vmHost, hostname) + testAccMAASInstanceConfigReleaseScriptSetup(scriptName),
+				Check:  testAccMAASInstanceCheckReleaseScriptsRanOnDestroy(hostname, scriptName),
+			},
+		},
+	})
+}
+
 func TestAccResourceMAASInstance_basic(t *testing.T) {
 	vmHost := os.Getenv("TF_ACC_VM_HOST_ID")
 	hostname := acctest.RandomWithPrefix("tf-instance")
@@ -24,6 +66,9 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 	force := "false"
 	quickErase := "true"
 	secureErase := "false"
+
+	nonDefaultArchitecture := "arm64/generic"
+	archError := regexp.MustCompile("Architecture not recognised")
 
 	baseChecks := []resource.TestCheckFunc{
 		testAccMAASInstanceCheckExists("maas_instance.test"),
@@ -41,7 +86,16 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 			// Test creation
 			{
 				Config: testAccMAASInstanceConfigBasic(vmHost, hostname),
-				Check:  resource.ComposeTestCheckFunc(baseChecks...),
+				Check: resource.ComposeTestCheckFunc(append(
+					baseChecks,
+					resource.TestCheckResourceAttr("maas_instance.test", "architecture", "amd64/generic"),
+				)...,
+				),
+			},
+			// Test different architecture
+			{
+				Config:      testAccMAASInstanceConfigAllocateParamsNonDefaultArchitecture(vmHost, hostname, nonDefaultArchitecture),
+				ExpectError: archError,
 			},
 			// Test update
 			{
@@ -104,6 +158,46 @@ func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) 
 
 		if wasErased != erase {
 			return fmt.Errorf("machine %s did not have disks erased as expected", hostname)
+		}
+
+		return nil
+	}
+}
+
+func testAccMAASInstanceCheckReleaseScriptsRanOnDestroy(hostname, scriptName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+		releaseScriptRan := false
+
+		for _, rs := range s.RootModule().Resources {
+			if rs.Type != "maas_vm_host_machine" {
+				continue
+			}
+
+			if rs.Primary.Attributes["hostname"] != hostname {
+				continue
+			}
+
+			params := entity.NodeResultParams{
+				Type: entity.RELEASE,
+			}
+
+			results, err := conn.NodeResults.Get(rs.Primary.ID, &params)
+			if err != nil {
+				return err
+			}
+
+			for _, result := range results {
+				for _, item := range result.Results {
+					if item.Name == scriptName {
+						releaseScriptRan = true
+					}
+				}
+			}
+		}
+
+		if !releaseScriptRan {
+			return fmt.Errorf("release script did not run for machine %s", scriptName)
 		}
 
 		return nil
@@ -176,7 +270,7 @@ resource "maas_vm_host_machine" "test" {
 
 func testAccMAASInstanceConfigBasic(vmHost, hostname string) string {
 	return fmt.Sprintf(`
-%s 
+%s
 
 resource "maas_instance" "test" {
   allocate_params {
@@ -188,16 +282,11 @@ resource "maas_instance" "test" {
 `, testAccMAASInstanceConfigSetup(vmHost, hostname))
 }
 
-func testAccMAASInstanceConfigReleaseParams(comment, erase, force, quickErase, secureErase string) string {
-	return fmt.Sprintf(
-		`
+func testAccMAASInstanceConfigReleaseScripts() string {
+	return `
 resource "maas_instance" "test" {
   release_params {
-    comment      = %q
-    erase        = %q
-    force        = %q
-    quick_erase  = %q
-    secure_erase = %q	
+	scripts    = [maas_node_script.dummy_release_script.name]
   }
 
   allocate_params {
@@ -207,5 +296,63 @@ resource "maas_instance" "test" {
   }
 
 }
+`
+}
+
+func testAccMAASInstanceConfigReleaseScriptSetup(scriptName string) string {
+	return fmt.Sprintf(
+		`
+
+resource "maas_node_script" "dummy_release_script" {
+  script = base64encode(<<-EOF
+#!/usr/bin/bash
+#
+# --- Start MAAS 1.0 script metadata ---
+# name: %s
+# title: Terraform Dummy Release Script
+# script_type: release
+# --- End MAAS 1.0 script metadata ---
+echo "Goodbye world!"
+EOF
+  )
+}
+
+`, scriptName)
+}
+
+func testAccMAASInstanceConfigReleaseParams(comment, erase, force, quickErase, secureErase string) string {
+	return fmt.Sprintf(
+		`
+
+resource "maas_instance" "test" {
+  release_params {
+    comment      = %q
+    erase        = %q
+    force        = %q
+    quick_erase  = %q
+    secure_erase = %q
+  }
+
+  allocate_params {
+    hostname      = maas_vm_host_machine.test.hostname
+    min_memory    = 4000
+    min_cpu_count = 1
+  }
+}
 `, comment, erase, force, quickErase, secureErase)
+}
+
+func testAccMAASInstanceConfigAllocateParamsNonDefaultArchitecture(vmHost, hostname, architecture string) string {
+	return fmt.Sprintf(`
+%s
+
+resource "maas_instance" "test" {
+  allocate_params {
+    hostname      = maas_vm_host_machine.test.hostname
+    min_memory    = 4000
+    min_cpu_count = 1
+    architecture  = %q
+  }
+}
+`, testAccMAASInstanceConfigSetup(vmHost, hostname), architecture)
 }

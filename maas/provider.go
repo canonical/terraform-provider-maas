@@ -6,10 +6,11 @@ import (
 	"os"
 
 	"github.com/canonical/gomaasclient/client"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+const GigaBytes = 1000 * 1000 * 1000
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
@@ -104,6 +105,7 @@ func Provider() *schema.Provider {
 			"maas_resource_pool":              dataSourceMAASResourcePool(),
 			"maas_vm_host":                    dataSourceMAASVMHost(),
 			"maas_rack_controller":            dataSourceMAASRackController(),
+			"maas_rack_controllers":           dataSourceMAASRackControllers(),
 			"maas_zone":                       dataSourceMAASZone(),
 			"maas_package_repository":         dataSourceMAASPackageRepositories(),
 		},
@@ -114,6 +116,7 @@ func Provider() *schema.Provider {
 type ClientConfig struct {
 	Client             *client.Client
 	InstallationMethod string
+	MAASVersion        string
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
@@ -149,5 +152,16 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		return nil, diags
 	}
 
-	return &ClientConfig{Client: c, InstallationMethod: d.Get("installation_method").(string)}, diags
+	v, err := c.Version.Get()
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to get MAAS version",
+			Detail:   fmt.Sprintf("Unable to get MAAS version using the provided configuration: %s", err),
+		})
+
+		return nil, diags
+	}
+
+	return &ClientConfig{Client: c, InstallationMethod: d.Get("installation_method").(string), MAASVersion: v.Version}, diags
 }

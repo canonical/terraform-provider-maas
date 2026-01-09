@@ -24,16 +24,19 @@ func resourceMAASVLAN() *schema.Resource {
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected FABRIC:VLAN", d.Id())
 				}
+
 				client := meta.(*ClientConfig).Client
 
 				fabric, err := getFabric(client, idParts[0])
 				if err != nil {
 					return nil, err
 				}
+
 				vlan, err := getVLAN(client, fabric.ID, idParts[1])
 				if err != nil {
 					return nil, err
 				}
+
 				tfState := map[string]any{
 					"id":     fmt.Sprintf("%v", vlan.ID),
 					"fabric": fmt.Sprintf("%v", fabric.ID),
@@ -42,6 +45,7 @@ func resourceMAASVLAN() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

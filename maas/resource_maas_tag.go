@@ -26,14 +26,17 @@ func resourceMAASTag() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				machines, err := client.Tag.GetMachines(tag.Name)
 				if err != nil {
 					return nil, err
 				}
+
 				machinesSystemIDs := make([]string, len(machines))
 				for i, machine := range machines {
 					machinesSystemIDs[i] = machine.SystemID
 				}
+
 				tfState := map[string]any{
 					"id":       tag.Name,
 					"name":     tag.Name,
@@ -42,6 +45,7 @@ func resourceMAASTag() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

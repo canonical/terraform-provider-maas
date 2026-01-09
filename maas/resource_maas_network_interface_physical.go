@@ -25,18 +25,22 @@ func resourceMAASNetworkInterfacePhysical() *schema.Resource {
 				if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 					return nil, fmt.Errorf("unexpected format of ID (%q), expected MACHINE/NETWORK_INTERFACE", d.Id())
 				}
+
 				client := meta.(*ClientConfig).Client
 
 				machine, err := getMachine(client, idParts[0])
 				if err != nil {
 					return nil, err
 				}
+
 				n, err := getNetworkInterfacePhysical(client, machine.SystemID, idParts[1])
 				if err != nil {
 					return nil, err
 				}
+
 				d.Set("machine", idParts[0])
 				d.SetId(strconv.Itoa(n.ID))
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

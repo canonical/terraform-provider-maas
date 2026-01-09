@@ -26,9 +26,11 @@ func resourceMAASVMHostMachine() *schema.Resource {
 				if err != nil {
 					return nil, err
 				}
+
 				if machine.VMHost.ID == 0 || machine.VMHost.Name == "" || machine.VMHost.ResourceURI == "" {
 					return nil, fmt.Errorf("machine (%s) is not a VM host machine", d.Id())
 				}
+
 				tfState := map[string]any{
 					"id":      machine.SystemID,
 					"vm_host": fmt.Sprintf("%v", machine.VMHost.ID),
@@ -38,6 +40,7 @@ func resourceMAASVMHostMachine() *schema.Resource {
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},
@@ -251,8 +254,8 @@ func getVMHostMachineParams(d *schema.ResourceData) (*entity.VMHostMachineParams
 	return &params, nil
 }
 
-func getVMHostMachineUpdateParams(d *schema.ResourceData) *entity.MachineParams {
-	return &entity.MachineParams{
+func getVMHostMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams {
+	return &entity.MachineUpdateParams{
 		Hostname: d.Get("hostname").(string),
 		Domain:   d.Get("domain").(string),
 		Zone:     d.Get("zone").(string),

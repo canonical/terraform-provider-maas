@@ -47,6 +47,7 @@ resource "maas_instance" "kvm" {
 
 ### Read-Only
 
+- `architecture` (String) The deployed MAAS machine architecture.
 - `cpu_count` (Number) The number of CPU cores of the deployed MAAS machine.
 - `fqdn` (String) The deployed MAAS machine FQDN.
 - `hostname` (String) The deployed MAAS machine hostname.
@@ -62,6 +63,7 @@ resource "maas_instance" "kvm" {
 
 Optional:
 
+- `architecture` (String) The architecture type of the machine. Defaults to `amd64/generic`.
 - `hostname` (String) The hostname of the MAAS machine to be allocated.
 - `min_cpu_count` (Number) The minimum number of cores used to allocate the MAAS machine.
 - `min_memory` (Number) The minimum RAM memory size (in MB) used to allocate the MAAS machine.
@@ -107,6 +109,7 @@ Optional:
 - `erase` (Boolean) Erase the disk when releasing.
 - `force` (Boolean) Force the release of the machine.
 - `quick_erase` (Boolean) Use quick erase. Wipe 2MiB at the start and at the end of the drive to make data recovery inconvenient and unlikely to happen by accident. This is not secure.
+- `scripts` (List of String) List of the names of existing node release scripts to run when releasing the machine. These scripts run on an ephemeral copy of Ubuntu that is loaded after the deployed OS has been shut down. Only available in MAAS 3.5 and later.
 - `secure_erase` (Boolean) Use the drive's secure erase feature if available.  In some cases, this can be much faster than overwriting the drive. Some drives implement secure erasure by overwriting themselves so this could still be slow.
 
 

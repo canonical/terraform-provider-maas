@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -76,7 +77,7 @@ func resourceMAASRAID() *schema.Resource {
 			"size_gigabytes": {
 				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "The volume size (given in GiB).",
+				Description: "The volume size (given in GB).",
 			},
 			"spare_devices": {
 				Type:        schema.TypeSet,
@@ -171,7 +172,7 @@ func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		"mount_point":      raid.VirtualDevice.Filesystem.MountPoint,
 		"name":             raid.Name,
 		"partitions":       partitions,
-		"size_gigabytes":   int64(raid.Size / (1024 * 1024 * 1024)),
+		"size_gigabytes":   int(math.Round(float64(raid.Size) / GigaBytes)),
 		"spare_devices":    spareDevices,
 		"spare_partitions": sparePartitions,
 	}

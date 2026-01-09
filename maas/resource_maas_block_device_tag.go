@@ -24,12 +24,14 @@ func resourceMAASBlockDeviceTag() *schema.Resource {
 				}
 
 				client := meta.(*ClientConfig).Client
+
 				blockDevice, err := client.BlockDevice.Get(systemID, blockDeviceID)
 				if err != nil {
 					return nil, err
 				}
 
 				d.SetId(fmt.Sprintf("%v/%v", blockDevice.SystemID, blockDevice.ID))
+
 				return []*schema.ResourceData{d}, nil
 			},
 		},

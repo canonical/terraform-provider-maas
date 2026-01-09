@@ -28,7 +28,7 @@ linters:
     - tagliatelle
     - unused
     - whitespace
-    - wsl
+    - wsl_v5
     - zerologlint
   settings:
     gosec:
@@ -57,7 +57,53 @@ linters:
           severity: warning
           disabled: false
     staticcheck:
-      initialisms: ["MAAS", "VLAN", "ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS", "SIP", "RTP", "AMQP", "DB", "TS"]
+      initialisms:
+        [
+          "MAAS",
+          "VLAN",
+          "ACL",
+          "API",
+          "ASCII",
+          "CPU",
+          "CSS",
+          "DNS",
+          "EOF",
+          "GUID",
+          "HTML",
+          "HTTP",
+          "HTTPS",
+          "ID",
+          "IP",
+          "JSON",
+          "QPS",
+          "RAM",
+          "RPC",
+          "SLA",
+          "SMTP",
+          "SQL",
+          "SSH",
+          "TCP",
+          "TLS",
+          "TTL",
+          "UDP",
+          "UI",
+          "GID",
+          "UID",
+          "UUID",
+          "URI",
+          "URL",
+          "UTF8",
+          "VM",
+          "XML",
+          "XMPP",
+          "XSRF",
+          "XSS",
+          "SIP",
+          "RTP",
+          "AMQP",
+          "DB",
+          "TS",
+        ]
       checks:
         - all
     tagliatelle:
@@ -65,6 +111,10 @@ linters:
         rules:
           json: snake
           yaml: snake
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
   exclusions:
     generated: lax
     rules:
@@ -76,27 +126,27 @@ linters:
         path: _test\.go
       - linters:
           - lll
-        source: '^//go:generate '
+        source: "^//go:generate "
       - linters:
           - staticcheck
         path: internal/
-        text: 'ST1000:'
+        text: "ST1000:"
       - linters:
           - revive
         path: internal/
-        text: 'package-comments:'
+        text: "package-comments:"
       - linters:
           - revive
         path: internal/
-        text: 'exported:'
+        text: "exported:"
       - linters:
           - revive
         path: main\.go
-        text: 'package-comments:'
+        text: "package-comments:"
       - linters:
           - govet
         path: _test\.go
-        text: 'fieldalignment:'
+        text: "fieldalignment:"
     paths:
       - .*\.my\.go$
       - lib/bad.go
