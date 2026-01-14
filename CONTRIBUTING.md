@@ -75,9 +75,9 @@ Where
 ## Create a development environment
 ### Setup
 1. Run `make build` to build the provider binary locally, located in `./bin`.
-1. Run `make create-dev-overrides` and follow any output instructions. More info [here](https://developer.hashicorp.com/terraform/cli/config/config-file#development-overrides-for-provider-developers).
-1. Run `make dev-env` to create a development directory and follow any output instructions.
-1. In your dev-env directory, use these commands to get started:
+1. Run `make create_dev_overrides` and follow any output instructions. More info [here](https://developer.hashicorp.com/terraform/cli/config/config-file#development-overrides-for-provider-developers).
+1. Run `make create_dev_env` to create a development directory and follow any output instructions.
+1. In your `.devenv` directory, use these commands to get started:
    1. Run `terraform fmt` to format the `main.tf` file.
    1. Run `terraform init` to initialize the provider.
    1. Run `terraform plan` to see the changes that will be applied.
@@ -94,7 +94,7 @@ Assuming you have already setup dev-overrides:
 Tests are written as advised in the [Terraform docs](https://developer.hashicorp.com/terraform/plugin/sdkv2/testing). They are split into unit tests and acceptance tests, with the latter creating real resources in the MAAS environment. Therefore, you will need to ensure MAAS is running locally for these tests to pass.
 
 To run the tests:
-1. Ensure `MAAS_API_KEY` and `MAAS_API_URL` environment variables are set in your shell, corresponding to your running MAAS installation.
+1. Ensure `MAAS_API_KEY`, `MAAS_API_URL`, and `MAAS_VERSION` environment variables are set in your shell, corresponding to your running MAAS installation.
 
 2. Run the tests:
     - Run the unit tests:
