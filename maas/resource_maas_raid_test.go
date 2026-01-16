@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -12,16 +13,17 @@ import (
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceMAASRAID_basic(t *testing.T) {
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
-	blockDevice1Name := "raid_bd1"
-	blockDevice2Name := "raid_bd2"
-	blockDevice3Name := "raid_bd3"
-	blockDevice4Name := "raid_bd4"
+	blockDevice1Name := acctest.RandomWithPrefix("tf-raid-bd")
+	blockDevice2Name := acctest.RandomWithPrefix("tf-raid-bd")
+	blockDevice3Name := acctest.RandomWithPrefix("tf-raid-bd")
+	blockDevice4Name := acctest.RandomWithPrefix("tf-raid-bd")
 
 	// RAID 1 has the smallest disk requirement that still allows testing hot spares.
 	level := "1"
@@ -40,7 +42,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 
 	// we include a separate unused boot disk to avoid the boot disk/partition behavior
 	baseConfig := testAccRAIDMachine(machine) +
-		testAccRAIDBlockDevice("boot", 2, true) +
+		testAccRAIDBlockDevice(acctest.RandomWithPrefix("boot"), 2, true) +
 		testAccRAIDBlockDevice(blockDevice1Name, 2, false) +
 		testAccRAIDPartition(blockDevice2Name, 2, false) +
 		testAccRAIDBlockDevice(blockDevice3Name, 2, false) +
@@ -128,6 +130,75 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPair("maas_raid.test", "partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice2Name), "partitions.0.id"),
 					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "spare_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice1Name), "id"),
 					resource.TestCheckResourceAttrPair("maas_raid.test", "spare_partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice4Name), "partitions.0.id"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceMAASRAID_formatAndMount(t *testing.T) {
+	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
+	blockDevice1Name := acctest.RandomWithPrefix("tf-raid-bd")
+	blockDevice2Name := acctest.RandomWithPrefix("tf-raid-bd")
+	blockDevice3Name := acctest.RandomWithPrefix("tf-raid-bd")
+	blockDevice4Name := acctest.RandomWithPrefix("tf-raid-bd")
+
+	// RAID 1 has the smallest disk requirement that still allows testing hot spares.
+	level := "1"
+
+	// Test 1: `fs_type` not specified
+	test1FsType := ""
+	test1MountPoint := "/var/raidtest"
+
+	// Test 2: `mount_point` not specified
+	test2FsType := "ext4"
+	test2MountPoint := ""
+
+	// we include a separate unused boot disk to avoid the boot disk/partition behavior
+	baseConfig := testAccRAIDMachine(machine) +
+		testAccRAIDBlockDevice(acctest.RandomWithPrefix("boot"), 2, true) +
+		testAccRAIDBlockDevice(blockDevice1Name, 2, false) +
+		testAccRAIDPartition(blockDevice2Name, 2, false) +
+		testAccRAIDBlockDevice(blockDevice3Name, 2, false) +
+		testAccRAIDPartition(blockDevice4Name, 2, false)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: testAccCheclMAASRAIDDestroy,
+		ErrorCheck:   func(err error) error { return err },
+		Steps: []resource.TestStep{
+			// Test initial creation
+			{
+				Config: baseConfig + testAccRAIDConfig("RAID", level, test1FsType, test1MountPoint,
+					generateRAIDBlockDevices([]string{blockDevice1Name}),
+					generateRAIDPartitions([]string{blockDevice2Name}),
+					[]string{},
+					[]string{},
+				),
+				ExpectError: regexp.MustCompile(`invalid block device mount configuration: fs_type must be specified when mount_point is set`),
+			},
+			{
+				Config: baseConfig + testAccRAIDConfig("RAID", level, test2FsType, test2MountPoint,
+					generateRAIDBlockDevices([]string{blockDevice1Name}),
+					generateRAIDPartitions([]string{blockDevice2Name}),
+					[]string{},
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckRAIDExists("maas_raid.test"),
+					resource.TestCheckResourceAttr("maas_raid.test", "name", "RAID"),
+					resource.TestCheckResourceAttr("maas_raid.test", "level", level),
+					resource.TestCheckResourceAttr("maas_raid.test", "fs_type", test2FsType),
+					resource.TestCheckResourceAttr("maas_raid.test", "mount_point", test2MountPoint),
+
+					resource.TestCheckResourceAttr("maas_raid.test", "block_devices.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "partitions.#", "1"),
+					resource.TestCheckResourceAttr("maas_raid.test", "spare_devices.#", "0"),
+					resource.TestCheckResourceAttr("maas_raid.test", "spare_partitions.#", "0"),
+
+					resource.TestCheckTypeSetElemAttrPair("maas_raid.test", "block_devices.0", fmt.Sprintf("maas_block_device.%v", blockDevice1Name), "id"),
+					resource.TestCheckResourceAttrPair("maas_raid.test", "partitions.0", fmt.Sprintf("maas_block_device.%v", blockDevice2Name), "partitions.0.id"),
 				),
 			},
 		},
