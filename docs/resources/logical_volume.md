@@ -76,7 +76,7 @@ resource "maas_logical_volume" "lvm1" {
 ### Optional
 
 - `fs_type` (String) The file system type (e.g. `ext4`). If this is not set, the volume is unformatted.
-- `mount_options` (String) Comma seperated options used for the logical volume mount.
+- `mount_options` (String) Comma separated options used for the logical volume mount.
 - `mount_point` (String) The mount point used. If this is not set, the logical volume is not mounted.
 
 ### Read-Only

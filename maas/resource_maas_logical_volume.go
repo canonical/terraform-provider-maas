@@ -35,7 +35,7 @@ func resourceMAASLogicalVolume() *schema.Resource {
 			"mount_options": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Comma seperated options used for the logical volume mount.",
+				Description: "Comma separated options used for the logical volume mount.",
 			},
 			"mount_point": {
 				Type:        schema.TypeString,
@@ -64,6 +64,14 @@ func resourceMAASLogicalVolume() *schema.Resource {
 
 func resourceLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
+
+	// Validate the file system and mounting information before attempting to create the logical volume
+	// If a mount point is specified, then fs_type is required
+	if mountPoint := d.Get("mount_point").(string); mountPoint != "" {
+		if d.Get("fs_type").(string) == "" {
+			return diag.Errorf("invalid block device mount configuration: fs_type must be specified when mount_point is set")
+		}
+	}
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
@@ -200,17 +208,22 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 
 func formatAndMountVirtualBlockDevice(client *client.Client, virtualBlockDevice *entity.BlockDevice, d *schema.ResourceData) (*entity.BlockDevice, error) {
 	var err error
-	if d.Get("fs_type") != nil {
-		virtualBlockDevice, err = client.BlockDevice.Format(virtualBlockDevice.SystemID, virtualBlockDevice.ID, d.Get("fs_type").(string))
+
+	// Format the device if fs_type is specified
+	if fsType := d.Get("fs_type").(string); fsType != "" {
+		virtualBlockDevice, err = client.BlockDevice.Format(virtualBlockDevice.SystemID, virtualBlockDevice.ID, fsType)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to format block device: %w", err)
 		}
 	}
 
-	if d.Get("mount_point") != nil {
-		virtualBlockDevice, err = client.BlockDevice.Mount(virtualBlockDevice.SystemID, virtualBlockDevice.ID, d.Get("mount_point").(string), d.Get("mount_options").(string))
+	// Mount the device if mount_point is specified
+	if mountPoint := d.Get("mount_point").(string); mountPoint != "" {
+		mountOptions := d.Get("mount_options").(string)
+
+		virtualBlockDevice, err = client.BlockDevice.Mount(virtualBlockDevice.SystemID, virtualBlockDevice.ID, mountPoint, mountOptions)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to mount block device: %w", err)
 		}
 	}
 

@@ -98,6 +98,14 @@ func resourceMAASRAID() *schema.Resource {
 func resourceRAIDCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	// Validate the file system and mounting information before attempting to create the RAID
+	// If a mount point is specified, then fs_type is required
+	if mountPoint := d.Get("mount_point").(string); mountPoint != "" {
+		if d.Get("fs_type").(string) == "" {
+			return diag.Errorf("invalid block device mount configuration: fs_type must be specified when mount_point is set")
+		}
+	}
+
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)

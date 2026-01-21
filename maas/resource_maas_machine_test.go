@@ -7,6 +7,7 @@ import (
 
 	"terraform-provider-maas/maas/testutils"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -27,7 +28,7 @@ import (
 // Terraform does not allow passing system_id directly into the maas_machine
 // data source, so we validate lookup-by-ID indirectly by passing the ID into
 // another resource that internally resolves the machine using getMachine().
-func testAccDataSourceMAASMachineLookup(hostname string) string {
+func testAccDataSourceMAASMachineLookup(hostname string, macAddress1 string, nicName1 string, macAddress2 string, nicName2 string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "test" {
   hostname = "%s"
@@ -35,23 +36,27 @@ data "maas_machine" "test" {
 
 resource "maas_network_interface_physical" "test_nic1" {
   machine     = data.maas_machine.test.id
-  mac_address = "52:54:00:7c:f7:77"
-  name        = "tf-nic-lookup-by-id"
+  mac_address = "%s"
+  name        = "%s"
 }
 
 resource "maas_network_interface_physical" "test_nic2" {
   machine     = "%s"
-  mac_address = "52:54:00:7c:f7:78"
-  name        = "tf-nic-lookup-by-hostname"
+  mac_address = "%s"
+  name        = "%s"
 }
-`, hostname, hostname)
+`, hostname, macAddress1, nicName1, hostname, macAddress2, nicName2)
 }
 
 // TestAccResourceMAASMachine_Lookup verifies that an existing MAAS machine
 // can be resolved correctly using both its system_id and its hostname.
 // The machine hostname is supplied via TF_ACC_MACHINE_HOSTNAME.
 func TestAccResourceMAASMachine_Lookup(t *testing.T) {
+	nicName1 := fmt.Sprintf("tf-nic-lookup-%d", acctest.RandIntRange(0, 9))
+	nicName2 := fmt.Sprintf("tf-nic-lookup-2-%d", acctest.RandIntRange(0, 9))
 	hostname := os.Getenv("TF_ACC_MACHINE_HOSTNAME")
+	macAddress1 := testutils.RandomMAC()
+	macAddress2 := testutils.RandomMAC()
 
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttr("data.maas_machine.test", "hostname", hostname),
@@ -64,7 +69,7 @@ func TestAccResourceMAASMachine_Lookup(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMAASMachineLookup(hostname),
+				Config: testAccDataSourceMAASMachineLookup(hostname, macAddress1, nicName1, macAddress2, nicName2),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
