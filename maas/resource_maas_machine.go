@@ -426,6 +426,12 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 }
 
 func getMachine(client *client.Client, identifier string) (*entity.Machine, error) {
+	// Direct lookup via system_id
+	machine, err := client.Machine.Get(identifier)
+	if err == nil {
+		return machine, nil
+	}
+	// Fallback: iterate over all machines to find a match.
 	machines, err := client.Machines.Get(&entity.MachinesParams{})
 	if err != nil {
 		return nil, err
