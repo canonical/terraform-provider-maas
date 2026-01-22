@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/bflad/tfproviderlint v0.31.0
-	github.com/canonical/gomaasclient v0.18.0
+	github.com/canonical/gomaasclient v0.19.0
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-set/v2 v2.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
@@ -34,7 +34,7 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/cli v1.1.7 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
