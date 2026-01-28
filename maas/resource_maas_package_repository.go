@@ -12,13 +12,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceMAASPackageRepositories() *schema.Resource {
+func resourceMAASPackageRepository() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage MAAS package repositories.\n*Note*: The two Ubuntu archives that ship with MAAS are import-only Terraform resources, only custom repositories can be created or destroyed.",
-		CreateContext: resourcePackageRepositoriesCreate,
-		ReadContext:   resourcePackageRepositoriesRead,
-		UpdateContext: resourcePackageRepositoriesUpdate,
-		DeleteContext: resourcePackageRepositoriesDelete,
+		CreateContext: resourcePackageRepositoryCreate,
+		ReadContext:   resourcePackageRepositoryRead,
+		UpdateContext: resourcePackageRepositoryUpdate,
+		DeleteContext: resourcePackageRepositoryDelete,
 
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
@@ -39,6 +39,7 @@ func resourceMAASPackageRepositories() *schema.Resource {
 			"arches": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 					ValidateFunc: validation.StringInSlice(
@@ -120,7 +121,7 @@ func resourceMAASPackageRepositories() *schema.Resource {
 	}
 }
 
-func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePackageRepositoryCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	disabledComponents := d.Get("disabled_components").(*schema.Set).List()
@@ -128,6 +129,9 @@ func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceDa
 	if len(disabledComponents) > 0 {
 		return diag.Errorf("`disabled_components` are used for Ubuntu repos, which cannot be created, only imported. Specify `components` for custom repos instead.")
 	}
+
+	enabledPtr := new(bool)
+	*enabledPtr = d.Get("enabled").(bool)
 
 	params := &entity.PackageRepositoryParams{
 		Name:               d.Get("name").(string),
@@ -139,7 +143,7 @@ func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceDa
 		Arches:             listAsString(d.Get("arches").(*schema.Set).List()),
 		Key:                d.Get("key").(string),
 		DisableSources:     d.Get("disable_sources").(bool),
-		Enabled:            d.Get("enabled").(bool),
+		Enabled:            enabledPtr,
 	}
 
 	repo, err := client.PackageRepositories.Create(params)
@@ -149,10 +153,10 @@ func resourcePackageRepositoriesCreate(ctx context.Context, d *schema.ResourceDa
 
 	d.SetId(fmt.Sprintf("%v", repo.ID))
 
-	return resourcePackageRepositoriesRead(ctx, d, meta)
+	return resourcePackageRepositoryRead(ctx, d, meta)
 }
 
-func resourcePackageRepositoriesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePackageRepositoryRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
@@ -168,7 +172,7 @@ func resourcePackageRepositoriesRead(ctx context.Context, d *schema.ResourceData
 	d.SetId(fmt.Sprintf("%v", repo.ID))
 
 	// Update the Terraform state
-	tfstate := map[string]interface{}{
+	tfstate := map[string]any{
 		"arches":              repo.Arches,
 		"components":          repo.Components,
 		"disable_sources":     repo.DisableSources,
@@ -188,13 +192,16 @@ func resourcePackageRepositoriesRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-func resourcePackageRepositoriesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePackageRepositoryUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	enabledPtr := new(bool)
+	*enabledPtr = d.Get("enabled").(bool)
 
 	params := &entity.PackageRepositoryParams{
 		Name:               d.Get("name").(string),
@@ -206,17 +213,17 @@ func resourcePackageRepositoriesUpdate(ctx context.Context, d *schema.ResourceDa
 		Arches:             listAsString(d.Get("arches").(*schema.Set).List()),
 		Key:                d.Get("key").(string),
 		DisableSources:     d.Get("disable_sources").(bool),
-		Enabled:            d.Get("enabled").(bool),
+		Enabled:            enabledPtr,
 	}
 
 	if _, err := client.PackageRepository.Update(id, params); err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourcePackageRepositoriesRead(ctx, d, meta)
+	return resourcePackageRepositoryRead(ctx, d, meta)
 }
 
-func resourcePackageRepositoriesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePackageRepositoryDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())

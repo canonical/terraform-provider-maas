@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccDataSourceMAASPackageRepositories_basic(t *testing.T) {
+func TestAccDataSourceMAASPackageRepository_basic(t *testing.T) {
 	resourceName := "main_archive"
 
 	checks := []resource.TestCheckFunc{
@@ -33,14 +33,14 @@ func TestAccDataSourceMAASPackageRepositories_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMAASPackageRepositories(resourceName),
+				Config: testAccDataSourceMAASPackageRepository(resourceName),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMAASPackageRepositories(name string) string {
+func testAccDataSourceMAASPackageRepository(name string) string {
 	return fmt.Sprintf(`
 data "maas_package_repository" "test" {
   name = %q

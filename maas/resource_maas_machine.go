@@ -365,8 +365,8 @@ func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams 
 		Domain:               d.Get("domain").(string),
 		Zone:                 d.Get("zone").(string),
 		Pool:                 d.Get("pool").(string),
-		CommissioningScripts: listAsStringBase(d.Get("commissioning_scripts").([]any)),
-		TestingScripts:       listAsStringBase(d.Get("testing_scripts").([]any)),
+		CommissioningScripts: listAsString(d.Get("commissioning_scripts").([]any)),
+		TestingScripts:       listAsString(d.Get("testing_scripts").([]any)),
 		ScriptParams:         d.Get("script_parameters").(map[string]any),
 	}
 }
@@ -387,8 +387,8 @@ func getMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams 
 
 func getMachineCommissionParams(d *schema.ResourceData) *entity.MachineCommissionParams {
 	return &entity.MachineCommissionParams{
-		CommissioningScripts: listAsStringBase(d.Get("commissioning_scripts").([]any)),
-		TestingScripts:       listAsStringBase(d.Get("testing_scripts").([]any)),
+		CommissioningScripts: listAsString(d.Get("commissioning_scripts").([]any)),
+		TestingScripts:       listAsString(d.Get("testing_scripts").([]any)),
 		ScriptParams:         d.Get("script_parameters").(map[string]any),
 	}
 }

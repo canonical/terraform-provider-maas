@@ -202,3 +202,36 @@ func TestCheckSemverConstraint(t *testing.T) {
 		})
 	}
 }
+
+func TestListAsString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []any
+		expected string
+	}{
+		{
+			name:     "empty list",
+			input:    []any{},
+			expected: "",
+		},
+		{
+			name:     "single element",
+			input:    []any{"foo"},
+			expected: "foo",
+		},
+		{
+			name:     "multiple elements",
+			input:    []any{"foo", "bar", "baz"},
+			expected: "foo,bar,baz",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := listAsString(testCase.input)
+			if result != testCase.expected {
+				t.Errorf("listAsString() result = %v, expected %v", result, testCase.expected)
+			}
+		})
+	}
+}

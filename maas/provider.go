@@ -79,7 +79,7 @@ func Provider() *schema.Provider {
 			"maas_block_device_tag":           resourceMAASBlockDeviceTag(),
 			"maas_tag":                        resourceMAASTag(),
 			"maas_network_interface_tag":      resourceMAASNetworkInterfaceTag(),
-			"maas_package_repository":         resourceMAASPackageRepositories(),
+			"maas_package_repository":         resourceMAASPackageRepository(),
 			"maas_user":                       resourceMAASUser(),
 			"maas_ssh_keys":                   resourceMAASSSHKeys(),
 			"maas_resource_pool":              resourceMAASResourcePool(),
@@ -107,7 +107,7 @@ func Provider() *schema.Provider {
 			"maas_rack_controller":            dataSourceMAASRackController(),
 			"maas_rack_controllers":           dataSourceMAASRackControllers(),
 			"maas_zone":                       dataSourceMAASZone(),
-			"maas_package_repository":         dataSourceMAASPackageRepositories(),
+			"maas_package_repository":         dataSourceMAASPackageRepository(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

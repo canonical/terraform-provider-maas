@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMAASPackageRepositories() *schema.Resource {
+func dataSourceMAASPackageRepository() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceMAASPackageRepositoriesRead,
+		ReadContext: dataSourceMAASPackageRepositoryRead,
 		Description: "Provides a data source to fetch MAAS package repositories.",
 
 		Schema: map[string]*schema.Schema{
@@ -74,7 +74,7 @@ func dataSourceMAASPackageRepositories() *schema.Resource {
 	}
 }
 
-func dataSourceMAASPackageRepositoriesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func dataSourceMAASPackageRepositoryRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	repo, err := getRepo(client, d.Get("name").(string))
@@ -82,7 +82,7 @@ func dataSourceMAASPackageRepositoriesRead(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	tfstate := map[string]interface{}{
+	tfstate := map[string]any{
 		"arches":              repo.Arches,
 		"components":          repo.Components,
 		"disable_sources":     repo.DisableSources,
