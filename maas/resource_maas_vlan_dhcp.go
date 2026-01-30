@@ -184,7 +184,19 @@ func resourceVLANDHCPDelete(ctx context.Context, d *schema.ResourceData, meta in
 	// gomaasclient requires a pointer to an empty string in order to nil the values below
 	nilValue := ""
 
+	// INFO: This is a workaround for this bug: https://bugs.launchpad.net/maas/+bug/2139359
+	// TODO: Add an acceptance test for this use-case when we've implemented testing with multiple rack controllers.
+	// First we remove the secondary rack controller to stop MAAS promoting it
+	// once the primary gets reset
 	_, err := client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
+		SecondaryRack: &nilValue,
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Then we reset the rest of the VLAN parameters to properly clear it without side effects
+	_, err = client.VLAN.Update(fabricID, vlanID, &entity.VLANParams{
 		PrimaryRack: &nilValue, SecondaryRack: &nilValue, RelayVLAN: &nilValue, DHCPOn: false,
 	})
 	if err != nil {
