@@ -52,8 +52,7 @@ func resourceMAASInstance() *schema.Resource {
 							Type:        schema.TypeString,
 							ForceNew:    true,
 							Optional:    true,
-							Default:     "amd64/generic",
-							Description: "The architecture type of the machine. Defaults to `amd64/generic`.",
+							Description: "The architecture type of the machine.",
 						},
 						"hostname": {
 							Type:        schema.TypeString,

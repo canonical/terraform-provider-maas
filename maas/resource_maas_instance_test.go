@@ -86,11 +86,7 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 			// Test creation
 			{
 				Config: testAccMAASInstanceConfigBasic(vmHost, hostname),
-				Check: resource.ComposeTestCheckFunc(append(
-					baseChecks,
-					resource.TestCheckResourceAttr("maas_instance.test", "architecture", "amd64/generic"),
-				)...,
-				),
+				Check:  resource.ComposeTestCheckFunc(baseChecks...),
 			},
 			// Test different architecture
 			{

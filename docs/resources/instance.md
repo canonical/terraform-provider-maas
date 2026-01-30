@@ -63,7 +63,7 @@ resource "maas_instance" "kvm" {
 
 Optional:
 
-- `architecture` (String) The architecture type of the machine. Defaults to `amd64/generic`.
+- `architecture` (String) The architecture type of the machine.
 - `hostname` (String) The hostname of the MAAS machine to be allocated.
 - `min_cpu_count` (Number) The minimum number of cores used to allocate the MAAS machine.
 - `min_memory` (Number) The minimum RAM memory size (in MB) used to allocate the MAAS machine.
