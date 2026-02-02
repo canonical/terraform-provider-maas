@@ -33,7 +33,7 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.0", "*"),
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheckMAASBootSourceSelectionDestroy,
@@ -85,7 +85,7 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 func TestAccResourceMAASBootSourceSelection_defaultCommissioningAdoption(t *testing.T) {
 	var bootSourceSelection entity.BootSourceSelection
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheckMAASBootSourceSelectionDefaultStillExists,

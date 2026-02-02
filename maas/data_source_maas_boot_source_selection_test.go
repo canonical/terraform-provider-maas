@@ -25,7 +25,7 @@ func TestAccDataSourceMAASBootSourceSelection_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "labels.0", "*"),
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheckMAASBootSourceSelectionDestroy,

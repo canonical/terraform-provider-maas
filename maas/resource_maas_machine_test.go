@@ -52,8 +52,8 @@ resource "maas_network_interface_physical" "test_nic2" {
 // can be resolved correctly using both its system_id and its hostname.
 // The machine hostname is supplied via TF_ACC_MACHINE_HOSTNAME.
 func TestAccResourceMAASMachine_Lookup(t *testing.T) {
-	nicName1 := fmt.Sprintf("tf-nic-lookup-%d", acctest.RandIntRange(0, 9))
-	nicName2 := fmt.Sprintf("tf-nic-lookup-2-%d", acctest.RandIntRange(0, 9))
+	nicName1 := fmt.Sprintf("tf-lookup-1-%d", acctest.RandIntRange(0, 9))
+	nicName2 := fmt.Sprintf("tf-lookup-2-%d", acctest.RandIntRange(0, 9))
 	hostname := os.Getenv("TF_ACC_MACHINE_HOSTNAME")
 	macAddress1 := testutils.RandomMAC()
 	macAddress2 := testutils.RandomMAC()
