@@ -26,7 +26,7 @@ func TestAccResourceMAASVolumeGroup_basic(t *testing.T) {
 		resource.TestCheckResourceAttrPair("maas_volume_group.test", "machine", "data.maas_machine.machine", "id"),
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheckMAASVolumeGroupDestroy,

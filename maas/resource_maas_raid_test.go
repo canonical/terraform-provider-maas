@@ -48,7 +48,7 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 		testAccRAIDBlockDevice(blockDevice3Name, 2, false) +
 		testAccRAIDPartition(blockDevice4Name, 2, false)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheclMAASRAIDDestroy,
@@ -162,7 +162,7 @@ func TestAccResourceMAASRAID_formatAndMount(t *testing.T) {
 		testAccRAIDBlockDevice(blockDevice3Name, 2, false) +
 		testAccRAIDPartition(blockDevice4Name, 2, false)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
 		CheckDestroy: testAccCheclMAASRAIDDestroy,
@@ -222,7 +222,7 @@ func TestAccResourceMAASRAID_differentLevels(t *testing.T) {
 			blockDevice3Name := fmt.Sprintf("raid_level_%s_test_bd3", thisLevel)
 			blockDevice4Name := fmt.Sprintf("raid_level_%s_test_bd4", thisLevel)
 
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 				Providers:    testutils.TestAccProviders,
 				CheckDestroy: testAccCheclMAASRAIDDestroy,

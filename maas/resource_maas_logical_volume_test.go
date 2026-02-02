@@ -31,7 +31,7 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 	changedMountPoint := "/var/changed"
 	changedSize := 2
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
@@ -76,7 +76,7 @@ func TestAccResourceMAASLogicalVolume_formatAndMount(t *testing.T) {
 	test2FsType := "fat32"
 	test2MountPoint := ""
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
 		Providers:    testutils.TestAccProviders,
 		ErrorCheck:   func(err error) error { return err },
