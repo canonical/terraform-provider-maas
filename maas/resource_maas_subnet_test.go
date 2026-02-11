@@ -140,19 +140,19 @@ func TestAccResourceMAASSubnet_basic(t *testing.T) {
 			},
 			// Test import by ID
 			{
-				ResourceName:      subnetAttrName,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{"ip_ranges"},  // IP ranges are not imported, this should be done using `resourceMAASSubnetIPRange` 
-			
+				ResourceName:            subnetAttrName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_ranges"}, // IP ranges are not imported, this should be done using `resourceMAASSubnetIPRange`
+
 			},
 			// Test import by CIDR
 			{
-				ResourceName:      subnetAttrName,
-				ImportState:       true,
-				ImportStateVerify: false,
-				ImportStateVerifyIgnore: []string{"ip_ranges"},  // IP ranges are not imported, this should be done using `resourceMAASSubnetIPRange`
-				ImportStateId:     cidr,
+				ResourceName:            subnetAttrName,
+				ImportState:             true,
+				ImportStateVerify:       false,
+				ImportStateVerifyIgnore: []string{"ip_ranges"}, // IP ranges are not imported, this should be done using `resourceMAASSubnetIPRange`
+				ImportStateId:           cidr,
 			},
 		},
 	})
