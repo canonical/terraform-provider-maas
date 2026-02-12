@@ -322,6 +322,8 @@ func testAccCheckMAASSubnetDestroy(s *terraform.State) error {
 		if err == nil {
 			if response != nil && response.ID == id {
 				exists = true
+			} else {
+				return fmt.Errorf("unexpected response when checking for subnet existence: %#v", response) 
 			}
 		}
 
