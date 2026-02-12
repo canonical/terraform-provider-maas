@@ -18,12 +18,12 @@ Provides a resource to manage MAAS package repositories.
 resource "maas_package_repository" "repo1" {
   name = "my public repo"
   key  = "supersecretkey"
-  url  = "http://repo_url:8000/public"
+  url  = "http://foo.bar.com/foobar"
 
   disable_sources = true
   enabled         = true
 
-  arches = ["amd64", "arm64", "ppcel64"]
+  arches = ["amd64", "arm64", "ppc64el"]
   components = [
     "main"
   ]
