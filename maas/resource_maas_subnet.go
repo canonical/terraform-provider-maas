@@ -232,10 +232,10 @@ func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, meta any)
 }
 
 func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int) error {
-	p, ok := d.GetOk("ip_ranges")
-	if !ok {
+	if !d.HasChange("ip_ranges") {
 		return nil
 	}
+
 	// Removing existing IP ranges on this subnet
 	ipRanges, err := client.IPRanges.Get()
 	if err != nil {
@@ -251,7 +251,13 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 			return err
 		}
 	}
+
 	// Create the new IP ranges on this subnet
+	p, ok := d.GetOk("ip_ranges")
+	if !ok {
+		return nil
+	}
+
 	for _, i := range p.(*schema.Set).List() {
 		ipr := i.(map[string]any)
 
