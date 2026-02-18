@@ -72,6 +72,7 @@ resource "maas_machine" "myvm" {
 resource "maas_machine" "dpu1" {
   hostname        = "my-dpu-machine"
   architecture    = "arm64/generic"
+  min_hwe_kernel  = "hwe-22.04"
   power_type      = "redfish"
   pxe_mac_address = "00:11:22:33:44:55"
   power_parameters = jsonencode({
