@@ -243,3 +243,12 @@ func checkSemverConstraint(currentVersion, semverConstraint string) error {
 
 	return nil
 }
+
+// optionalStringPtr returns a pointer to the given string, or nil if the string is empty.
+func optionalStringPtr(value string) *string {
+	if value == "" {
+		return nil
+	}
+
+	return &value
+}
