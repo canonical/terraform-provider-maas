@@ -123,6 +123,12 @@ func resourceMAASMachine() *schema.Resource {
 				Computed:    true,
 				Description: "The machine hostname. This is computed if it's not set.",
 			},
+			"is_dpu": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "A flag to set whether this machine is a DPU or not.",
+			},
 			"min_hwe_kernel": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -210,6 +216,21 @@ func resourceMAASMachine() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
 			Update: schema.DefaultTimeout(30 * time.Minute),
+		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
+			isDPU, ok := d.GetOk("is_dpu")
+			if !ok {
+				return nil
+			}
+
+			if isDPU.(bool) {
+				err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, ">=3.6.0")
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
 		},
 	}
 }
@@ -355,8 +376,10 @@ func getMachinePowerParams(d *schema.ResourceData) (map[string]any, error) {
 }
 
 func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams {
+	commission := true
+
 	return &entity.MachineCreateParams{
-		Commission:           true,
+		Commission:           &commission,
 		PowerType:            d.Get("power_type").(string),
 		MACAddresses:         []string{d.Get("pxe_mac_address").(string)},
 		Architecture:         d.Get("architecture").(string),
@@ -368,16 +391,19 @@ func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams 
 		CommissioningScripts: listAsString(d.Get("commissioning_scripts").([]any)),
 		TestingScripts:       listAsString(d.Get("testing_scripts").([]any)),
 		ScriptParams:         d.Get("script_parameters").(map[string]any),
+		IsDPU:                d.Get("is_dpu").(bool),
 	}
 }
 
 func getMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams {
+	commission := true
+
 	return &entity.MachineUpdateParams{
-		Commission:   true,
+		Commission:   &commission,
 		PowerType:    d.Get("power_type").(string),
 		MACAddresses: []string{d.Get("pxe_mac_address").(string)},
 		Architecture: d.Get("architecture").(string),
-		MinHWEKernel: d.Get("min_hwe_kernel").(string),
+		MinHWEKernel: optionalStringPtr(d.Get("min_hwe_kernel").(string)),
 		Hostname:     d.Get("hostname").(string),
 		Domain:       d.Get("domain").(string),
 		Zone:         d.Get("zone").(string),

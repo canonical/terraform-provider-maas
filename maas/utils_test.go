@@ -235,3 +235,36 @@ func TestListAsString(t *testing.T) {
 		})
 	}
 }
+
+func TestOptionalStringPtr(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected *string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: nil,
+		},
+		{
+			name:     "non-empty string",
+			input:    "foo",
+			expected: func() *string { s := "foo"; return &s }(),
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := optionalStringPtr(testCase.input)
+			switch {
+			case result == nil && testCase.expected != nil:
+				t.Errorf("optionalStringPtr() result = nil, expected %v", *testCase.expected)
+			case result != nil && testCase.expected == nil:
+				t.Errorf("optionalStringPtr() result = %v, expected nil", *result)
+			case result != nil && testCase.expected != nil && *result != *testCase.expected:
+				t.Errorf("optionalStringPtr() result = %v, expected %v", *result, *testCase.expected)
+			}
+		})
+	}
+}

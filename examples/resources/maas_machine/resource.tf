@@ -51,3 +51,19 @@ resource "maas_machine" "myvm" {
   }
   commissioning_scripts = [maas_node_script.my-script.name]
 }
+
+# Add a DPU machine, which will be treated as a DPU by MAAS and have the appropriate hardware type set.
+# MAAS version >= 3.6 is required for this.
+resource "maas_machine" "dpu1" {
+  hostname        = "my-dpu-machine"
+  architecture    = "arm64/generic"
+  min_hwe_kernel  = "hwe-22.04"
+  power_type      = "redfish"
+  pxe_mac_address = "00:11:22:33:44:55"
+  power_parameters = jsonencode({
+    power_address = "10.10.10.42",
+    power_user    = "admin",
+    power_pass    = "admin",
+  })
+  is_dpu = true
+}
