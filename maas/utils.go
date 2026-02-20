@@ -230,17 +230,71 @@ func checkSemverConstraint(currentVersion, semverConstraint string) error {
 		return nil
 	}
 
-	version := semver.MustParse(currentVersion)
+	version, err := semver.NewVersion(strings.ReplaceAll(currentVersion, "~", "-"))
+	if err != nil {
+		return err
+	}
 
 	c, err := semver.NewConstraint(semverConstraint)
 	if err != nil {
 		return err
 	}
 
-	if !c.Check(version) {
+	if c.Check(version) {
+		return nil
+	}
+
+	// semver library doesn't match pre-releases to stable constraints.
+	// We handle this manually using the rule: X.Y.Z-pre < X.Y.Z always.
+	if version.Prerelease() == "" {
 		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", currentVersion, semverConstraint)
 	}
 
+	base := baseVersion(version)
+	prev := decrementVersion(base)
+
+	if c.Check(base) {
+		// Base satisfies constraint. Determine if we're at exact boundary.
+		atBoundary := prev != nil && !c.Check(prev)
+
+		if !atBoundary {
+			return nil // Strictly above/below boundary: pass
+		}
+
+		// At boundary: pre-release passes for < but fails for >=
+		// For strict >: base being above prev's failure point means pass
+		if strings.Contains(semverConstraint, "<") || !strings.Contains(semverConstraint, ">=") {
+			return nil
+		}
+		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", currentVersion, semverConstraint)
+	}
+
+	// Base fails. Pre-release passes only for strict < at upper boundary.
+	if prev != nil && c.Check(prev) && strings.Contains(semverConstraint, "<") && !strings.Contains(semverConstraint, "=") {
+		return nil
+	}
+
+	return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", currentVersion, semverConstraint)
+}
+
+func baseVersion(v *semver.Version) *semver.Version {
+	ver, _ := semver.NewVersion(fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor(), v.Patch()))
+	return ver
+}
+
+func decrementVersion(v *semver.Version) *semver.Version {
+	if v.Patch() > 0 {
+		ver, _ := semver.NewVersion(fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor(), v.Patch()-1))
+		return ver
+	}
+	if v.Minor() > 0 {
+		ver, _ := semver.NewVersion(fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor()-1, 0))
+		return ver
+	}
+	if v.Major() > 0 {
+		ver, _ := semver.NewVersion(fmt.Sprintf("%d.%d.%d", v.Major()-1, 0, 0))
+		return ver
+	}
 	return nil
 }
 
