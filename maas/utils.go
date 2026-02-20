@@ -266,6 +266,7 @@ func checkSemverConstraint(currentVersion, semverConstraint string) error {
 		if strings.Contains(semverConstraint, "<") || !strings.Contains(semverConstraint, ">=") {
 			return nil
 		}
+
 		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", currentVersion, semverConstraint)
 	}
 
@@ -287,14 +288,17 @@ func decrementVersion(v *semver.Version) *semver.Version {
 		ver, _ := semver.NewVersion(fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor(), v.Patch()-1))
 		return ver
 	}
+
 	if v.Minor() > 0 {
 		ver, _ := semver.NewVersion(fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor()-1, 0))
 		return ver
 	}
+
 	if v.Major() > 0 {
 		ver, _ := semver.NewVersion(fmt.Sprintf("%d.%d.%d", v.Major()-1, 0, 0))
 		return ver
 	}
+
 	return nil
 }
 
