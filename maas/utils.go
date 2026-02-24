@@ -230,12 +230,17 @@ func checkSemverConstraint(currentVersion, semverConstraint string) error {
 		return nil
 	}
 
-	version := semver.MustParse(currentVersion)
+	version, err := semver.NewVersion(strings.ReplaceAll(currentVersion, "~", "-"))
+	if err != nil {
+		return err
+	}
 
 	c, err := semver.NewConstraint(semverConstraint)
 	if err != nil {
 		return err
 	}
+
+	c.IncludePrerelease = true
 
 	if !c.Check(version) {
 		return fmt.Errorf("MAAS version `%s`, does not satisfy constraint `%s`", currentVersion, semverConstraint)
