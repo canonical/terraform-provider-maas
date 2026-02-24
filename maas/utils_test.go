@@ -214,7 +214,7 @@ func TestCheckSemverConstraint(t *testing.T) {
 			ErrString:        "MAAS version `2.5.0~beta`, does not satisfy constraint `>= 3.0.0`",
 		},
 		{
-			name:             "debian-style prerelease at boundary satisfies constraint",
+			name:             "debian-style prerelease at boundary does not satisfy constraint",
 			MAASVersion:      "3.0.0~rc1",
 			semverConstraint: ">= 3.0.0",
 			expectedErr:      true,
