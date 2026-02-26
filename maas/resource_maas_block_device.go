@@ -10,6 +10,7 @@ import (
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
+	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -286,6 +287,14 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	//
+	// Scenarios to consider:
+	// 1. Machine no longer exists
+	// 2. Machine in a valid state
+	// 3. Machine in a transitional state
+	// 4. Machine in a non-transitional state
+	// 5. Machine in a manually-selected state
+
 	client := meta.(*ClientConfig).Client
 
 	id, err := strconv.Atoi(d.Id())
@@ -295,11 +304,64 @@ func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		// The machine no longer exists, so we no-op
+		return nil
 	}
 
-	if err := client.BlockDevice.Delete(machine.SystemID, id); err != nil {
-		return diag.FromErr(err)
+	switch machine.Status {
+	// Valid states
+	case
+		node.StatusNew,
+		node.StatusReady,
+		node.StatusAllocated,
+		node.StatusBroken,
+		node.StatusFailedTesting:
+		err = client.BlockDevice.Delete(machine.SystemID, id)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+	// Transitional states
+	case
+		node.StatusCommissioning,
+		node.StatusDeploying,
+		node.StatusReleasing,
+		node.StatusDiskErasing,
+		node.StatusEnteringRescueMode,
+		node.StatusExitingRescueMode,
+		node.StatusTesting:
+		return diag.Errorf("cannot delete block device while machine %s in transitional state %s", machine.SystemID, machine.StatusName)
+
+	// Non-transitional states
+	case
+		node.StatusFailedCommissioning,
+		node.StatusMissing,
+		node.StatusRetired,
+		node.StatusFailedEnteringRescueMode,
+		node.StatusFailedExitingRescueMode,
+		node.StatusFailedDeployment,
+		node.StatusFailedDiskErasing,
+		node.StatusFailedReleasing:
+		_, err := client.Machine.MarkBroken(machine.SystemID, "Marked broken by Terraform to delete block device")
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		err = client.BlockDevice.Delete(machine.SystemID, id)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+	// Intentionally-selected states
+	// A machine is likely in one of these states if an admin placed it in this state intentionally.
+	case
+		node.StatusDeployed,
+		node.StatusReserved,
+		node.StatusRescueMode:
+		return diag.Errorf("cannot delete block device while machine %s is deployed, reserved, or in rescue mode (current status: %s)", machine.SystemID, machine.StatusName)
+
+	default:
+		return diag.Errorf("cannot delete block device %d on machine %s: machine is in an invalid state", id, machine.SystemID)
 	}
 
 	return nil
