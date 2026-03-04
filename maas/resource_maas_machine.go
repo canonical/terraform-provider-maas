@@ -187,7 +187,7 @@ func resourceMAASMachine() *schema.Resource {
 			},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				Description: "The MAC address of the machine's PXE boot NIC.",
 			},
 			"script_parameters": {
@@ -238,6 +238,13 @@ func resourceMAASMachine() *schema.Resource {
 func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	powerType := d.Get("power_type").(string)
+	pxeMacAddress, hasPxe := d.GetOk("pxe_mac_address")
+
+	if powerType != "ipmi" && (!hasPxe || pxeMacAddress.(string) == "") {
+		return diag.FromErr(fmt.Errorf("pxe_mac_address is required when power_type is not 'ipmi'"))
+	}
+
 	// Create MAAS machine
 	powerParams, err := getMachinePowerParams(d)
 	if err != nil {
@@ -246,8 +253,19 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 
 	machine, err := client.Machines.Create(getMachineCreateParams(d), powerParams)
 	if err != nil {
+		identifier := ""
+		if macAddr, ok := d.GetOk("pxe_mac_address"); ok && macAddr.(string) != "" {
+			identifier = macAddr.(string)
+		} else if hostname, ok := d.GetOk("hostname"); ok && hostname.(string) != "" {
+			identifier = hostname.(string)
+		}
+
+		if identifier == "" {
+			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to get the trailing resource: No valid identifier provided", err))
+		}
+
 		// Clean up trailing resources, as the gomaasclient does not return the created machine on error
-		badMachine, errDel := getMachine(client, d.Get("pxe_mac_address").(string))
+		badMachine, errDel := getMachine(client, identifier)
 		if errDel != nil {
 			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to get the trailing resource: %v", err, errDel))
 		}
@@ -315,6 +333,13 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	powerType := d.Get("power_type").(string)
+	pxeMacAddress, hasPxe := d.GetOk("pxe_mac_address")
+
+	if powerType != "ipmi" && (!hasPxe || pxeMacAddress.(string) == "") {
+		return diag.FromErr(fmt.Errorf("pxe_mac_address is required when power_type is not 'ipmi'"))
+	}
+
 	scriptsHaveChanged := d.HasChanges("commissioning_scripts", "testing_scripts", "script_parameters")
 	// Update machine
 	machine, err := client.Machine.Get(d.Id())
@@ -378,10 +403,15 @@ func getMachinePowerParams(d *schema.ResourceData) (map[string]any, error) {
 func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams {
 	commission := true
 
+	var macAddresses []string
+	if macAddr, ok := d.GetOk("pxe_mac_address"); ok && macAddr.(string) != "" {
+		macAddresses = []string{macAddr.(string)}
+	}
+
 	return &entity.MachineCreateParams{
 		Commission:           &commission,
 		PowerType:            d.Get("power_type").(string),
-		MACAddresses:         []string{d.Get("pxe_mac_address").(string)},
+		MACAddresses:         macAddresses,
 		Architecture:         d.Get("architecture").(string),
 		MinHWEKernel:         d.Get("min_hwe_kernel").(string),
 		Hostname:             d.Get("hostname").(string),
@@ -398,10 +428,15 @@ func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams 
 func getMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams {
 	commission := true
 
+	var macAddresses []string
+	if macAddr, ok := d.GetOk("pxe_mac_address"); ok && macAddr.(string) != "" {
+		macAddresses = []string{macAddr.(string)}
+	}
+
 	return &entity.MachineUpdateParams{
 		Commission:   &commission,
 		PowerType:    d.Get("power_type").(string),
-		MACAddresses: []string{d.Get("pxe_mac_address").(string)},
+		MACAddresses: macAddresses,
 		Architecture: d.Get("architecture").(string),
 		MinHWEKernel: optionalStringPtr(d.Get("min_hwe_kernel").(string)),
 		Hostname:     d.Get("hostname").(string),

@@ -2,6 +2,7 @@ package maas
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
@@ -56,8 +57,8 @@ func resourceMAASMachineResourceV0() *schema.Resource {
 			},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The MAC address of the machine's PXE boot NIC.",
+				Optional:    true,
+				Description: "The MAC address of the machine's PXE boot NIC, Required for non IPMI power Types",
 			},
 			"zone": {
 				Type:        schema.TypeString,
@@ -65,6 +66,16 @@ func resourceMAASMachineResourceV0() *schema.Resource {
 				Computed:    true,
 				Description: "The zone of the machine. This is computed if it's not set.",
 			},
+		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
+			powerType := d.Get("power_type").(string)
+			pxeMacAddress, hasPxe := d.GetOk("pxe_mac_address")
+
+			if powerType != "ipmi" && (!hasPxe || pxeMacAddress.(string) == "") {
+				return fmt.Errorf("pxe_mac_address is required when power_type is not 'ipmi'")
+			}
+
+			return nil
 		},
 	}
 }

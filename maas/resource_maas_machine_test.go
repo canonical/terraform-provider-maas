@@ -3,6 +3,7 @@ package maas_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"terraform-provider-maas/maas/testutils"
@@ -74,4 +75,32 @@ func TestAccResourceMAASMachine_Lookup(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceMAASMachine_NoPXE(t *testing.T) {
+	testVMIP := "10.10.10.10"
+
+	resource.ParallelTest(t, resource.TestCase{
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: func(s *terraform.State) error { return nil },
+		ErrorCheck:   func(err error) error { return err },
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccMAASLXDMachineNoPXE(testVMIP),
+				ExpectError: regexp.MustCompile(`pxe_mac_address is required when power_type is not 'ipmi'`),
+			},
+		},
+	})
+}
+
+func testAccMAASLXDMachineNoPXE(ipAddress string) string {
+	return fmt.Sprintf(`
+resource "maas_machine" "test" {
+  power_type = "lxd"
+  power_parameters = jsonencode({
+    power_address = %q
+    instance_name = "test"
+  })
+}
+`, ipAddress)
 }
