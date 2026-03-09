@@ -86,20 +86,39 @@ func TestAccResourceMAASMachine_NoPXE(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccMAASLXDMachineNoPXE(testVMIP),
+				Config:      testAccMAASMachineLXDNoPXE(testVMIP),
 				ExpectError: regexp.MustCompile(`pxe_mac_address is required when power_type is not 'ipmi'`),
+			},
+			{
+				Config: testAccMAASMachineIPMINoPXE(testVMIP),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("maas_machine.test", "power_type", "ipmi"),
+				),
 			},
 		},
 	})
 }
 
-func testAccMAASLXDMachineNoPXE(ipAddress string) string {
+func testAccMAASMachineLXDNoPXE(ipAddress string) string {
 	return fmt.Sprintf(`
 resource "maas_machine" "test" {
   power_type = "lxd"
   power_parameters = jsonencode({
     power_address = %q
     instance_name = "test"
+  })
+}
+`, ipAddress)
+}
+
+func testAccMAASMachineIPMINoPXE(ipAddress string) string {
+	return fmt.Sprintf(`
+resource "maas_machine" "test" {
+  power_type = "ipmi"
+  power_parameters = jsonencode({
+    power_address = %q
+    power_user    = "admin"
+    power_pass    = "password"
   })
 }
 `, ipAddress)
