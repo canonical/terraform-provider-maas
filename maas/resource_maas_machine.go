@@ -121,8 +121,7 @@ func resourceMAASMachine() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				AtLeastOneOf: []string{"hostname", "pxe_mac_address"},
-				Description:  "The machine hostname. This is computed if it's not set.",
+				Description:  "The machine hostname. This is computed if it's not set. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
 			},
 			"is_dpu": {
 				Type:        schema.TypeBool,
@@ -189,8 +188,7 @@ func resourceMAASMachine() *schema.Resource {
 			"pxe_mac_address": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				AtLeastOneOf: []string{"hostname", "pxe_mac_address"},
-				Description:  "The MAC address of the machine's PXE boot NIC.",
+				Description:  "The MAC address of the machine's PXE boot NIC. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
 			},
 			"script_parameters": {
 				Type:        schema.TypeMap,
@@ -261,7 +259,6 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 		} else if hostname, ok := d.GetOk("hostname"); ok && hostname.(string) != "" {
 			identifier = hostname.(string)
 		}
-
 		if identifier == "" {
 			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to get the trailing resource: No valid identifier provided", err))
 		}

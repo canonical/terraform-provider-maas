@@ -94,6 +94,9 @@ func TestAccResourceMAASMachine_NoPXE(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("maas_machine.test", "power_type", "ipmi"),
 				),
+				// Verify the plan is valid, don't actually create the machines.
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
