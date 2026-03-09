@@ -118,10 +118,11 @@ func resourceMAASMachine() *schema.Resource {
 				Description: "The domain of the machine. This is computed if it's not set.",
 			},
 			"hostname": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The machine hostname. This is computed if it's not set.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				AtLeastOneOf: []string{"hostname", "pxe_mac_address"},
+				Description:  "The machine hostname. This is computed if it's not set.",
 			},
 			"is_dpu": {
 				Type:        schema.TypeBool,
@@ -186,9 +187,10 @@ func resourceMAASMachine() *schema.Resource {
 					false)),
 			},
 			"pxe_mac_address": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The MAC address of the machine's PXE boot NIC.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				AtLeastOneOf: []string{"hostname", "pxe_mac_address"},
+				Description:  "The MAC address of the machine's PXE boot NIC.",
 			},
 			"script_parameters": {
 				Type:        schema.TypeMap,

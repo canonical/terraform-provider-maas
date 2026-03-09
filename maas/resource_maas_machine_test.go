@@ -107,6 +107,7 @@ resource "maas_machine" "test" {
     power_address = %q
     instance_name = "test"
   })
+  hostname = "lxdTestMachineNoPxe"
 }
 `, ipAddress)
 }
@@ -120,6 +121,7 @@ resource "maas_machine" "test" {
     power_user    = "admin"
     power_pass    = "password"
   })
+  hostname = "ipmiTestMachineNoPxe"
 }
 `, ipAddress)
 }
