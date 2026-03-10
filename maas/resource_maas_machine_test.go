@@ -78,7 +78,9 @@ func TestAccResourceMAASMachine_Lookup(t *testing.T) {
 }
 
 func TestAccResourceMAASMachine_NoPXE(t *testing.T) {
-	testVMIP := "10.10.10.10"
+	testLXDIP := "10.0.0.10"
+	// This could pull from TF args for the actual BMC address of a machine and remove the PlanOnly below.
+	testIPMIIP := "10.10.0.100"
 
 	resource.ParallelTest(t, resource.TestCase{
 		Providers:    testutils.TestAccProviders,
@@ -86,11 +88,11 @@ func TestAccResourceMAASMachine_NoPXE(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccMAASMachineLXDNoPXE(testVMIP),
+				Config:      testAccMAASMachineLXDNoPXE(testLXDIP),
 				ExpectError: regexp.MustCompile(`pxe_mac_address is required when power_type is not 'ipmi'`),
 			},
 			{
-				Config: testAccMAASMachineIPMINoPXE(testVMIP),
+				Config: testAccMAASMachineIPMINoPXE(testIPMIIP),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("maas_machine.test", "power_type", "ipmi"),
 				),
@@ -119,6 +121,7 @@ func testAccMAASMachineIPMINoPXE(ipAddress string) string {
 	return fmt.Sprintf(`
 resource "maas_machine" "test" {
   power_type = "ipmi"
+  architecture = "amd64/generic"
   power_parameters = jsonencode({
     power_address = %q
     power_user    = "admin"

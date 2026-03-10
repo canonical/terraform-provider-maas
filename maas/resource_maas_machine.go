@@ -259,9 +259,6 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 		} else if hostname, ok := d.GetOk("hostname"); ok && hostname.(string) != "" {
 			identifier = hostname.(string)
 		}
-		if identifier == "" {
-			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to get the trailing resource: No valid identifier provided", err))
-		}
 
 		// Clean up trailing resources, as the gomaasclient does not return the created machine on error
 		badMachine, errDel := getMachine(client, identifier)
