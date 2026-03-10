@@ -118,10 +118,10 @@ func resourceMAASMachine() *schema.Resource {
 				Description: "The domain of the machine. This is computed if it's not set.",
 			},
 			"hostname": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				Description:  "The machine hostname. This is computed if it's not set. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The machine hostname. This is computed if it's not set. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
 			},
 			"is_dpu": {
 				Type:        schema.TypeBool,
@@ -186,9 +186,9 @@ func resourceMAASMachine() *schema.Resource {
 					false)),
 			},
 			"pxe_mac_address": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Description:  "The MAC address of the machine's PXE boot NIC. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The MAC address of the machine's PXE boot NIC. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
 			},
 			"script_parameters": {
 				Type:        schema.TypeMap,
