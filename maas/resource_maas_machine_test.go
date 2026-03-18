@@ -80,7 +80,7 @@ func TestAccResourceMAASMachine_Lookup(t *testing.T) {
 func TestAccResourceMAASMachine_NoPXE(t *testing.T) {
 	testLXDIP := "10.0.0.10"
 	// This could pull from TF args for the actual BMC address of a machine and remove the PlanOnly below.
-	testIPMIIP := "10.10.0.100"
+	testIPMIIP := "10.0.0.10"
 
 	resource.ParallelTest(t, resource.TestCase{
 		Providers:    testutils.TestAccProviders,

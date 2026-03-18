@@ -188,7 +188,7 @@ func resourceMAASMachine() *schema.Resource {
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The MAC address of the machine's PXE boot NIC. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
+				Description: "The MAC address of the machine's PXE boot NIC, optional for IPMI machines but required for all other power types. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
 			},
 			"script_parameters": {
 				Type:        schema.TypeMap,
