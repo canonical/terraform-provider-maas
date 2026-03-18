@@ -230,6 +230,13 @@ func resourceMAASMachine() *schema.Resource {
 				}
 			}
 
+			powerType := d.Get("power_type").(string)
+			pxeMacAddress, hasPxe := d.GetOk("pxe_mac_address")
+
+			if powerType != "ipmi" && (!hasPxe || pxeMacAddress.(string) == "") {
+				return fmt.Errorf("pxe_mac_address is required when power_type is not 'ipmi'")
+			}
+
 			return nil
 		},
 	}
@@ -406,9 +413,6 @@ func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams 
 		Domain:               d.Get("domain").(string),
 		Zone:                 d.Get("zone").(string),
 		Pool:                 d.Get("pool").(string),
-		CommissioningScripts: listAsString(d.Get("commissioning_scripts").([]any)),
-		TestingScripts:       listAsString(d.Get("testing_scripts").([]any)),
-		ScriptParams:         d.Get("script_parameters").(map[string]any),
 		IsDPU:                d.Get("is_dpu").(bool),
 	}
 }
