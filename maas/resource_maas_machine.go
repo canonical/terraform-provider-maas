@@ -253,20 +253,17 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 
 	machine, err := client.Machines.Create(getMachineCreateParams(d), powerParams)
 	if err != nil {
-		identifier := ""
-		if macAddr, ok := d.GetOk("pxe_mac_address"); ok && macAddr.(string) != "" {
-			identifier = macAddr.(string)
-		} else if hostname, ok := d.GetOk("hostname"); ok && hostname.(string) != "" {
-			identifier = hostname.(string)
-		}
+		return diag.FromErr(err)
+	}
 
-		// Clean up trailing resources, as the gomaasclient does not return the created machine on error
-		badMachine, errDel := getMachine(client, identifier)
-		if errDel != nil {
-			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to get the trailing resource: %v", err, errDel))
-		}
+	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{}, []string{"New"}, d.Timeout(schema.TimeoutUpdate))
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-		errDel = client.Machine.Delete(badMachine.SystemID)
+	commissionMachine, err := client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
+	if err != nil {
+		errDel := client.Machine.Delete(machine.SystemID)
 		if errDel != nil {
 			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to delete the trailing resource: %v", err, errDel))
 		}
@@ -274,16 +271,11 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
-	// Save Id
-	d.SetId(machine.SystemID)
-
-	// Wait for machine to be ready
-	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
+	_, err = waitForMachineStatus(ctx, client, commissionMachine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutUpdate))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// Read machine info
 	return resourceMachineRead(ctx, d, meta)
 }
 
@@ -397,7 +389,7 @@ func getMachinePowerParams(d *schema.ResourceData) (map[string]any, error) {
 }
 
 func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams {
-	commission := true
+	commission := false
 
 	var macAddresses []string
 	if macAddr, ok := d.GetOk("pxe_mac_address"); ok && macAddr.(string) != "" {
