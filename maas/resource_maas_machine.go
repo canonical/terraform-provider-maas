@@ -404,16 +404,16 @@ func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams 
 	}
 
 	return &entity.MachineCreateParams{
-		Commission:           &commission,
-		PowerType:            d.Get("power_type").(string),
-		MACAddresses:         macAddresses,
-		Architecture:         d.Get("architecture").(string),
-		MinHWEKernel:         d.Get("min_hwe_kernel").(string),
-		Hostname:             d.Get("hostname").(string),
-		Domain:               d.Get("domain").(string),
-		Zone:                 d.Get("zone").(string),
-		Pool:                 d.Get("pool").(string),
-		IsDPU:                d.Get("is_dpu").(bool),
+		Commission:   &commission,
+		PowerType:    d.Get("power_type").(string),
+		MACAddresses: macAddresses,
+		Architecture: d.Get("architecture").(string),
+		MinHWEKernel: d.Get("min_hwe_kernel").(string),
+		Hostname:     d.Get("hostname").(string),
+		Domain:       d.Get("domain").(string),
+		Zone:         d.Get("zone").(string),
+		Pool:         d.Get("pool").(string),
+		IsDPU:        d.Get("is_dpu").(bool),
 	}
 }
 
