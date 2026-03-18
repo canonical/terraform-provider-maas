@@ -126,7 +126,7 @@ resource "maas_machine" "ipmi_machine" {
 - `is_dpu` (Boolean) A flag to set whether this machine is a DPU or not.
 - `min_hwe_kernel` (String) The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.
 - `pool` (String) The resource pool of the machine. This is computed if it's not set.
-- `pxe_mac_address` (String) The MAC address of the machine's PXE boot NIC, optional for IPMI machines but required for all other power types. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.
+- `pxe_mac_address` (String) The MAC address of the machine's PXE boot NIC, optional for IPMI machines but required for all other power types.
 - `script_parameters` (Map of String) Scripts specified to run may define their own parameters. These parameters may be passed as parameter name (key) value pairs as a map. Optionally a parameter may have the script name prepended to have that parameter only apply to that specific script, e.g. my-script_param=value.
 - `testing_scripts` (List of String) Testing scripts names and tags to be run after commissioning. By default all tests tagged 'testing' will be run. Set to ['none'] to disable running tests.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
