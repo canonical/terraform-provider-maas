@@ -121,7 +121,7 @@ func resourceMAASMachine() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "The machine hostname. This is computed if it's not set. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.",
+				Description: "The machine hostname. This is computed if it's not set.",
 			},
 			"is_dpu": {
 				Type:        schema.TypeBool,

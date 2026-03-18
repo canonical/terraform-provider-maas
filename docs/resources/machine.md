@@ -122,7 +122,7 @@ resource "maas_machine" "ipmi_machine" {
 - `architecture` (String) The architecture type of the machine. Defaults to `amd64/generic`.
 - `commissioning_scripts` (List of String) Commissioning script names and tags to be run. By default all custom commissioning scripts are run. Built-in commissioning scripts always run. Selecting 'update_firmware' or 'configure_hba' will run firmware updates or configure HBA's on matching machines.
 - `domain` (String) The domain of the machine. This is computed if it's not set.
-- `hostname` (String) The machine hostname. This is computed if it's not set. If one of `hostname` or `pxe_mac_address` is not set, terraform may fail to clean dangling resources.
+- `hostname` (String) The machine hostname. This is computed if it's not set.
 - `is_dpu` (Boolean) A flag to set whether this machine is a DPU or not.
 - `min_hwe_kernel` (String) The minimum kernel version allowed to run on this machine. Only used when deploying Ubuntu. This is computed if it's not set.
 - `pool` (String) The resource pool of the machine. This is computed if it's not set.
