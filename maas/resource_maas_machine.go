@@ -230,13 +230,6 @@ func resourceMAASMachine() *schema.Resource {
 				}
 			}
 
-			powerType := d.Get("power_type").(string)
-			pxeMacAddress, hasPxe := d.GetOk("pxe_mac_address")
-
-			if powerType != "ipmi" && (!hasPxe || pxeMacAddress.(string) == "") {
-				return fmt.Errorf("pxe_mac_address is required when power_type is not 'ipmi'")
-			}
-
 			return nil
 		},
 	}
