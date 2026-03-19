@@ -56,8 +56,8 @@ func resourceMAASMachineResourceV0() *schema.Resource {
 			},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The MAC address of the machine's PXE boot NIC, required for non IPMI power Types",
+				Required:    true,
+				Description: "The MAC address of the machine's PXE boot NIC.",
 			},
 			"zone": {
 				Type:        schema.TypeString,
