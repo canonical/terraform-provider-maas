@@ -256,11 +256,6 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
-	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{}, []string{"New"}, d.Timeout(schema.TimeoutUpdate))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	commissionedMachine, err := client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
 	if err != nil {
 		log.Printf("[DEBUG] Machine (%s) cleaning up trailing resources\n", machine.SystemID)
@@ -277,7 +272,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 	d.SetId(machine.SystemID)
 
 	// Wait for machine to be ready
-	_, err = waitForMachineStatus(ctx, client, commissionedMachine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutUpdate))
+	_, err = waitForMachineStatus(ctx, client, commissionedMachine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return diag.FromErr(err)
 	}
