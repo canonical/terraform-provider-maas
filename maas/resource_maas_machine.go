@@ -263,6 +263,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 
 	commissionMachine, err := client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
 	if err != nil {
+		log.Printf("[DEBUG] Machine (%s) cleaning up trailing resources\n", machine.SystemID)
 		errDel := client.Machine.Delete(machine.SystemID)
 		if errDel != nil {
 			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to delete the trailing resource: %v", err, errDel))
@@ -275,6 +276,9 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	// Save Id
+	d.SetId(machine.SystemID)
 
 	return resourceMachineRead(ctx, d, meta)
 }
