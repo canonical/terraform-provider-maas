@@ -67,3 +67,28 @@ resource "maas_machine" "dpu1" {
   })
   is_dpu = true
 }
+
+# Add an IPMI and non-IPMI machine, note the optionality of pxe_mac_address *only* for the IPMI power type
+
+resource "maas_machine" "non_ipmi_machine" {
+  power_type   = "redfish"
+  architecture = "amd64/generic"
+  power_parameters = jsonencode({
+    power_address = "10.10.10.26"
+    power_user    = "admin"
+    power_pass    = "password"
+  })
+  hostname        = "redfishTestMachine"
+  pxe_mac_address = "00:11:22:33:44:55"
+}
+
+resource "maas_machine" "ipmi_machine" {
+  power_type   = "ipmi"
+  architecture = "amd64/generic"
+  power_parameters = jsonencode({
+    power_address = "10.10.10.26"
+    power_user    = "admin"
+    power_pass    = "password"
+  })
+  hostname = "ipmiTestMachineNoPxe"
+}

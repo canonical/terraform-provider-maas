@@ -187,8 +187,8 @@ func resourceMAASMachine() *schema.Resource {
 			},
 			"pxe_mac_address": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The MAC address of the machine's PXE boot NIC.",
+				Optional:    true,
+				Description: "The MAC address of the machine's PXE boot NIC, optional for IPMI machines but required for all other power types.",
 			},
 			"script_parameters": {
 				Type:        schema.TypeMap,
@@ -238,6 +238,13 @@ func resourceMAASMachine() *schema.Resource {
 func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	powerType := d.Get("power_type").(string)
+	pxeMacAddress, hasPxe := d.GetOk("pxe_mac_address")
+
+	if powerType != "ipmi" && (!hasPxe || pxeMacAddress.(string) == "") {
+		return diag.FromErr(fmt.Errorf("pxe_mac_address is required when power_type is not 'ipmi'"))
+	}
+
 	// Create MAAS machine
 	powerParams, err := getMachinePowerParams(d)
 	if err != nil {
@@ -246,13 +253,14 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 
 	machine, err := client.Machines.Create(getMachineCreateParams(d), powerParams)
 	if err != nil {
-		// Clean up trailing resources, as the gomaasclient does not return the created machine on error
-		badMachine, errDel := getMachine(client, d.Get("pxe_mac_address").(string))
-		if errDel != nil {
-			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to get the trailing resource: %v", err, errDel))
-		}
+		return diag.FromErr(err)
+	}
 
-		errDel = client.Machine.Delete(badMachine.SystemID)
+	commissionedMachine, err := client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
+	if err != nil {
+		log.Printf("[DEBUG] Machine (%s) cleaning up trailing resources\n", machine.SystemID)
+
+		errDel := client.Machine.Delete(machine.SystemID)
 		if errDel != nil {
 			return diag.FromErr(fmt.Errorf("error creating MAAS machine: %v;\nAdditionally, error when attempting to delete the trailing resource: %v", err, errDel))
 		}
@@ -264,7 +272,7 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 	d.SetId(machine.SystemID)
 
 	// Wait for machine to be ready
-	_, err = waitForMachineStatus(ctx, client, machine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
+	_, err = waitForMachineStatus(ctx, client, commissionedMachine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -314,6 +322,13 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 
 func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
+
+	powerType := d.Get("power_type").(string)
+	pxeMacAddress, hasPxe := d.GetOk("pxe_mac_address")
+
+	if powerType != "ipmi" && (!hasPxe || pxeMacAddress.(string) == "") {
+		return diag.FromErr(fmt.Errorf("pxe_mac_address is required when power_type is not 'ipmi'"))
+	}
 
 	scriptsHaveChanged := d.HasChanges("commissioning_scripts", "testing_scripts", "script_parameters")
 	// Update machine
@@ -376,32 +391,39 @@ func getMachinePowerParams(d *schema.ResourceData) (map[string]any, error) {
 }
 
 func getMachineCreateParams(d *schema.ResourceData) *entity.MachineCreateParams {
-	commission := true
+	commission := false
+
+	var macAddresses []string
+	if macAddr, ok := d.GetOk("pxe_mac_address"); ok && macAddr.(string) != "" {
+		macAddresses = []string{macAddr.(string)}
+	}
 
 	return &entity.MachineCreateParams{
-		Commission:           &commission,
-		PowerType:            d.Get("power_type").(string),
-		MACAddresses:         []string{d.Get("pxe_mac_address").(string)},
-		Architecture:         d.Get("architecture").(string),
-		MinHWEKernel:         d.Get("min_hwe_kernel").(string),
-		Hostname:             d.Get("hostname").(string),
-		Domain:               d.Get("domain").(string),
-		Zone:                 d.Get("zone").(string),
-		Pool:                 d.Get("pool").(string),
-		CommissioningScripts: listAsString(d.Get("commissioning_scripts").([]any)),
-		TestingScripts:       listAsString(d.Get("testing_scripts").([]any)),
-		ScriptParams:         d.Get("script_parameters").(map[string]any),
-		IsDPU:                d.Get("is_dpu").(bool),
+		Commission:   &commission,
+		PowerType:    d.Get("power_type").(string),
+		MACAddresses: macAddresses,
+		Architecture: d.Get("architecture").(string),
+		MinHWEKernel: d.Get("min_hwe_kernel").(string),
+		Hostname:     d.Get("hostname").(string),
+		Domain:       d.Get("domain").(string),
+		Zone:         d.Get("zone").(string),
+		Pool:         d.Get("pool").(string),
+		IsDPU:        d.Get("is_dpu").(bool),
 	}
 }
 
 func getMachineUpdateParams(d *schema.ResourceData) *entity.MachineUpdateParams {
 	commission := true
 
+	var macAddresses []string
+	if macAddr, ok := d.GetOk("pxe_mac_address"); ok && macAddr.(string) != "" {
+		macAddresses = []string{macAddr.(string)}
+	}
+
 	return &entity.MachineUpdateParams{
 		Commission:   &commission,
 		PowerType:    d.Get("power_type").(string),
-		MACAddresses: []string{d.Get("pxe_mac_address").(string)},
+		MACAddresses: macAddresses,
 		Architecture: d.Get("architecture").(string),
 		MinHWEKernel: optionalStringPtr(d.Get("min_hwe_kernel").(string)),
 		Hostname:     d.Get("hostname").(string),

@@ -3,6 +3,7 @@ package maas_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"terraform-provider-maas/maas/testutils"
@@ -74,4 +75,59 @@ func TestAccResourceMAASMachine_Lookup(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceMAASMachine_NoPXE(t *testing.T) {
+	testLXDIP := "10.0.0.10"
+	// This could pull from TF args for the actual BMC address of a machine and remove the PlanOnly below.
+	testIPMIIP := "10.0.0.10"
+
+	resource.ParallelTest(t, resource.TestCase{
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: func(s *terraform.State) error { return nil },
+		ErrorCheck:   func(err error) error { return err },
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccMAASMachineLXDNoPXE(testLXDIP),
+				ExpectError: regexp.MustCompile(`pxe_mac_address is required when power_type is not 'ipmi'`),
+			},
+			{
+				Config: testAccMAASMachineIPMINoPXE(testIPMIIP),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("maas_machine.test", "power_type", "ipmi"),
+				),
+				// Verify the plan is valid, don't actually create the machines.
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func testAccMAASMachineLXDNoPXE(ipAddress string) string {
+	return fmt.Sprintf(`
+resource "maas_machine" "test" {
+  power_type = "lxd"
+  power_parameters = jsonencode({
+    power_address = %q
+    instance_name = "test"
+  })
+  hostname = "lxdTestMachineNoPxe"
+}
+`, ipAddress)
+}
+
+func testAccMAASMachineIPMINoPXE(ipAddress string) string {
+	return fmt.Sprintf(`
+resource "maas_machine" "test" {
+  power_type = "ipmi"
+  architecture = "amd64/generic"
+  power_parameters = jsonencode({
+    power_address = %q
+    power_user    = "admin"
+    power_pass    = "password"
+  })
+  hostname = "ipmiTestMachineNoPxe"
+}
+`, ipAddress)
 }
