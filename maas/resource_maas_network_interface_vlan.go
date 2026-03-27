@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/canonical/gomaasclient/entity"
-	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -160,7 +159,12 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -170,17 +174,29 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	parentID, err := findInterfaceParent(client, machine.SystemID, d.Get("parent").(string))
 	if err != nil {
+		// TODO: Need to filter if physical or virtual interface here?
+		// This would affect if we no-op or return an error if parent interface is missing
 		return diag.FromErr(err)
 	}
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
 
 	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
-		return diag.FromErr(err)
+		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
 
 	params := getNetworkInterfaceVLANUpdateParams(d, parentID, vlan.ID)
@@ -192,45 +208,39 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	return resourceNetworkInterfaceVLANRead(ctx, d, meta)
 }
+
 func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	machine, err := getMachine(client, d.Get("machine").(string))
-	if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
-		return nil
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
-		return nil
+		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
 
 	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string))
 	if err != nil {
-		return nil
-	}
-
-	switch machine.Status {
-	/* Valid states:
-	- node.StatusNew
-	- node.StatusReady
-	- node.StatusAllocated
-	- node.StatusBroken
-	- node.StatusFailedTesting
-	*/
-	case
-		node.StatusNew,
-		node.StatusReady,
-		node.StatusAllocated,
-		node.StatusBroken,
-		node.StatusFailedTesting:
-
-		if err := client.NetworkInterface.Delete(machine.SystemID, vlan.ID); err != nil {
+		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
 			return diag.FromErr(err)
 		}
+	}
 
-	default:
-		return nil
+	if err := client.NetworkInterface.Delete(machine.SystemID, vlan.ID); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil

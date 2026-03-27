@@ -1,3 +1,4 @@
+//nolint:dupl // disable dupl check for now
 package maas
 
 import (
@@ -8,7 +9,6 @@ import (
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
-	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -182,7 +182,12 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -190,14 +195,26 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
+	bridge, err := client.NetworkInterface.Get(machine.SystemID, id)
+	if err != nil {
+		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+
 	parentID, err := findInterfaceParent(client, machine.SystemID, d.Get("parent").(string))
 	if err != nil {
+		// TODO: Need to filter if physical or virtual interface here?
+		// This would affect if we no-op or return an error if parent interface is missing
 		return diag.FromErr(err)
 	}
 
 	params := getNetworkInterfaceBridgeUpdateParams(d, parentID)
 
-	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
+	_, err = client.NetworkInterface.Update(machine.SystemID, bridge.ID, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -210,37 +227,29 @@ func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.Resourc
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return nil
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
-
-	// TODO: Check if bridge has been deleted already or is missing
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	switch machine.Status {
-	/* Valid states:
-	- node.StatusNew
-	- node.StatusReady
-	- node.StatusAllocated
-	- node.StatusBroken
-	- node.StatusFailedTesting
-	*/
-	case
-		node.StatusNew,
-		node.StatusReady,
-		node.StatusAllocated,
-		node.StatusBroken,
-		node.StatusFailedTesting:
-
-		if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
+	bridge, err := client.NetworkInterface.Get(machine.SystemID, id)
+	if err != nil {
+		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
 			return diag.FromErr(err)
 		}
+	}
 
-	default:
-		return nil
+	if err := client.NetworkInterface.Delete(machine.SystemID, bridge.ID); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil

@@ -10,6 +10,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
+	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-cty/cty/gocty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -256,4 +257,18 @@ func optionalStringPtr(value string) *string {
 	}
 
 	return &value
+}
+
+func isMachineInPermittedState(machine *entity.Machine) bool {
+	switch machine.Status {
+	case
+		node.StatusNew,
+		node.StatusReady,
+		node.StatusAllocated,
+		node.StatusBroken,
+		node.StatusFailedTesting:
+		return true
+	default:
+		return false
+	}
 }

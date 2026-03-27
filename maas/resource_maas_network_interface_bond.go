@@ -9,7 +9,6 @@ import (
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
-	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -222,7 +221,12 @@ func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -230,14 +234,26 @@ func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
+	bond, err := client.NetworkInterface.Get(machine.SystemID, id)
+	if err != nil {
+		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+
 	p, err := findBondParentsID(client, machine.SystemID, d.Get("parents").(*schema.Set).List())
 	if err != nil {
+		// TODO: Need to filter if physical or virtual interface here?
+		// This would affect if we no-op or return an error if parent interface is missing
 		return diag.FromErr(err)
 	}
 
 	params := getNetworkInterfaceBondUpdateParams(d, p)
 
-	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
+	_, err = client.NetworkInterface.Update(machine.SystemID, bond.ID, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -250,37 +266,29 @@ func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return nil
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
-
-	// TODO: Check if bond has been deleted already or is missing
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	switch machine.Status {
-	/* Valid states:
-	- node.StatusNew
-	- node.StatusReady
-	- node.StatusAllocated
-	- node.StatusBroken
-	- node.StatusFailedTesting
-	*/
-	case
-		node.StatusNew,
-		node.StatusReady,
-		node.StatusAllocated,
-		node.StatusBroken,
-		node.StatusFailedTesting:
-
-		if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
+	bond, err := client.NetworkInterface.Get(machine.SystemID, id)
+	if err != nil {
+		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
 			return diag.FromErr(err)
 		}
+	}
 
-	default:
-		return nil
+	if err := client.NetworkInterface.Delete(machine.SystemID, bond.ID); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
