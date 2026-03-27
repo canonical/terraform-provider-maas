@@ -103,64 +103,6 @@ func resourceLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 	return resourceLogicalVolumeRead(ctx, d, meta)
 }
 
-func resourceLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
-
-	machine, err := getMachine(client, d.Get("machine").(string))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	volumeGroup, err := getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := client.VolumeGroup.DeleteLogicalVolume(machine.SystemID, volumeGroup.ID, id); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return nil
-}
-
-func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
-
-	machine, err := getMachine(client, d.Get("machine").(string))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	params := entity.BlockDeviceParams{
-		Name: d.Get("name").(string),
-		Size: int64(d.Get("size_gigabytes").(int)) * GigaBytes,
-	}
-
-	updatedLVM, err := client.BlockDevice.Update(machine.SystemID, id, &params)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	formattedDevice, err := formatAndMountVirtualBlockDevice(client, updatedLVM, d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(fmt.Sprintf("%v", formattedDevice.ID))
-
-	return resourceLogicalVolumeRead(ctx, d, meta)
-}
-
 func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
@@ -201,6 +143,102 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.Errorf("Could not set logical volume state: %v", err)
+	}
+
+	return nil
+}
+
+func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+
+	_, err = getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	lvm, err := client.BlockDevice.Get(machine.SystemID, id)
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+
+	params := entity.BlockDeviceParams{
+		Name: d.Get("name").(string),
+		Size: int64(d.Get("size_gigabytes").(int)) * GigaBytes,
+	}
+
+	updatedLVM, err := client.BlockDevice.Update(machine.SystemID, lvm.ID, &params)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	formattedDevice, err := formatAndMountVirtualBlockDevice(client, updatedLVM, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(fmt.Sprintf("%v", formattedDevice.ID))
+
+	return resourceLogicalVolumeRead(ctx, d, meta)
+}
+
+func resourceLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	volumeGroup, err := getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	lvm, err := client.BlockDevice.Get(machine.SystemID, id)
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+
+	if err := client.VolumeGroup.DeleteLogicalVolume(machine.SystemID, volumeGroup.ID, lvm.ID); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
