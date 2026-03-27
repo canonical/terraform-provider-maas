@@ -10,7 +10,6 @@ import (
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
-	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -254,32 +253,47 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta a
 func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	machine, err := getMachine(client, d.Get("machine").(string))
+	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	blockDevice, err := client.BlockDevice.Update(machine.SystemID, id, getBlockDeviceParams(d))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := setBlockDeviceTags(client, d, blockDevice); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if p, ok := d.GetOk("is_boot_device"); ok && p.(bool) {
-		if err := client.BlockDevice.SetBootDisk(machine.SystemID, id); err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
+			return nil
+		} else {
 			return diag.FromErr(err)
 		}
 	}
 
-	if err := updateBlockDevicePartitions(client, d, blockDevice); err != nil {
+	updatedBlockDevice, err := client.BlockDevice.Update(machine.SystemID, blockDevice.ID, getBlockDeviceParams(d))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := setBlockDeviceTags(client, d, updatedBlockDevice); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if p, ok := d.GetOk("is_boot_device"); ok && p.(bool) {
+		if err := client.BlockDevice.SetBootDisk(machine.SystemID, updatedBlockDevice.ID); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if err := updateBlockDevicePartitions(client, d, updatedBlockDevice); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -287,81 +301,48 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	//
-	// Scenarios to consider:
-	// 1. Machine no longer exists
-	// 2. Machine in a valid state
-	// 3. Machine in a transitional state
-	// 4. Machine in a non-transitional state
-	// 5. Machine in a manually-selected state
-
 	client := meta.(*ClientConfig).Client
+
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
+	}
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	machine, err := getMachine(client, d.Get("machine").(string))
+	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
 	if err != nil {
-		// The machine no longer exists, so we no-op
-		return nil
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil
+		} else {
+			return diag.FromErr(err)
+		}
 	}
 
-	switch machine.Status {
-	// Valid states
-	case
-		node.StatusNew,
-		node.StatusReady,
-		node.StatusAllocated,
-		node.StatusBroken,
-		node.StatusFailedTesting:
-		err = client.BlockDevice.Delete(machine.SystemID, id)
+	// We choose to delete the partitions and tags associated with a physical block device
+	// rather than delete it because it makes more sense for a physical device with permanence
+	// outside of Terraform. Virtual devices are expected to be entirely managed by Terraform.
+
+	// Remove existing partitions
+	for _, part := range blockDevice.Partitions {
+		if err := client.BlockDevicePartition.Delete(blockDevice.SystemID, blockDevice.ID, part.ID); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// Remove existing tags
+	for _, tag := range blockDevice.Tags {
+		_, err := client.BlockDevice.RemoveTag(machine.SystemID, blockDevice.ID, tag)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-
-	// Transitional states
-	case
-		node.StatusCommissioning,
-		node.StatusDeploying,
-		node.StatusReleasing,
-		node.StatusDiskErasing,
-		node.StatusEnteringRescueMode,
-		node.StatusExitingRescueMode,
-		node.StatusTesting:
-		return diag.Errorf("cannot delete block device while machine %s in transitional state %s", machine.SystemID, machine.StatusName)
-
-	// Non-transitional states
-	case
-		node.StatusFailedCommissioning,
-		node.StatusMissing,
-		node.StatusRetired,
-		node.StatusFailedEnteringRescueMode,
-		node.StatusFailedExitingRescueMode,
-		node.StatusFailedDeployment,
-		node.StatusFailedDiskErasing,
-		node.StatusFailedReleasing:
-		_, err := client.Machine.MarkBroken(machine.SystemID, "Marked broken by Terraform to delete block device")
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		err = client.BlockDevice.Delete(machine.SystemID, id)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-	// Intentionally-selected states
-	// A machine is likely in one of these states if an admin placed it in this state intentionally.
-	case
-		node.StatusDeployed,
-		node.StatusReserved,
-		node.StatusRescueMode:
-		return diag.Errorf("cannot delete block device while machine %s is deployed, reserved, or in rescue mode (current status: %s)", machine.SystemID, machine.StatusName)
-
-	default:
-		return diag.Errorf("cannot delete block device %d on machine %s: machine is in an invalid state", id, machine.SystemID)
 	}
 
 	return nil
