@@ -166,6 +166,7 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
 			return nil
 		} else {
 			return diag.FromErr(err)
@@ -180,6 +181,7 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 	volumeGroup, err := client.VolumeGroup.Get(machine.SystemID, id)
 	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
+			d.SetId("")
 			return nil
 		} else {
 			return diag.FromErr(err)
