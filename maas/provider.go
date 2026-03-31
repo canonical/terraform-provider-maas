@@ -88,6 +88,7 @@ func Provider() *schema.Provider {
 			"maas_logical_volume":             resourceMAASLogicalVolume(),
 			"maas_zone":                       resourceMAASZone(),
 			"maas_node_script":                resourceMAASNodeScript(),
+			"maas_api_key":                    resourceMAASAPIKey(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"maas_boot_resources":             dataSourceMAASBootResources(),
@@ -108,6 +109,7 @@ func Provider() *schema.Provider {
 			"maas_rack_controllers":           dataSourceMAASRackControllers(),
 			"maas_zone":                       dataSourceMAASZone(),
 			"maas_package_repository":         dataSourceMAASPackageRepository(),
+			"maas_api_key":                    dataSourceMAASAPIKey(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
