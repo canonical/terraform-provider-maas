@@ -181,7 +181,7 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return unsetIfNotFoundError(client, d, err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -191,21 +191,19 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 
 	bridge, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(client, d, machine, err)
+		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}
 
 	parentID, err := findInterfaceParent(client, machine.SystemID, d.Get("parent").(string))
 	if err != nil {
-		// TODO: Need to filter if physical or virtual interface here?
-		// This would affect if we no-op or return an error if parent interface is missing
-		return diag.FromErr(err)
+		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}
 
 	params := getNetworkInterfaceBridgeUpdateParams(d, parentID)
 
 	_, err = client.NetworkInterface.Update(machine.SystemID, bridge.ID, params)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}
 
 	return resourceNetworkInterfaceBridgeRead(ctx, d, meta)
@@ -216,7 +214,7 @@ func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.Resourc
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return noOpIfNotFoundError(client, d, err)
+		return noOpIfNotFoundError(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -226,11 +224,11 @@ func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.Resourc
 
 	bridge, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		return noOpIfMachinePermittedAndNotFoundError(client, d, machine, err)
+		return noOpIfMachinePermittedAndNotFoundError(machine, err)
 	}
 
 	if err := client.NetworkInterface.Delete(machine.SystemID, bridge.ID); err != nil {
-		return diag.FromErr(err)
+		return noOpIfMachinePermittedAndNotFoundError(machine, err)
 	}
 
 	return nil

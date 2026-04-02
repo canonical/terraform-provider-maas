@@ -159,7 +159,7 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return unsetIfNotFoundError(client, d, err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -169,26 +169,24 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	parentID, err := findInterfaceParent(client, machine.SystemID, d.Get("parent").(string))
 	if err != nil {
-		// TODO: Need to filter if physical or virtual interface here?
-		// This would affect if we no-op or return an error if parent interface is missing
-		return diag.FromErr(err)
+		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(client, d, machine, err)
+		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}
 
 	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(client, d, machine, err)
+		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}
 
 	params := getNetworkInterfaceVLANUpdateParams(d, parentID, vlan.ID)
 
 	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}
 
 	return resourceNetworkInterfaceVLANRead(ctx, d, meta)
@@ -199,21 +197,21 @@ func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return noOpIfNotFoundError(client, d, err)
+		return noOpIfNotFoundError(err)
 	}
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
-		return noOpIfMachinePermittedAndNotFoundError(client, d, machine, err)
+		return noOpIfMachinePermittedAndNotFoundError(machine, err)
 	}
 
 	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string))
 	if err != nil {
-		return noOpIfMachinePermittedAndNotFoundError(client, d, machine, err)
+		return noOpIfMachinePermittedAndNotFoundError(machine, err)
 	}
 
 	if err := client.NetworkInterface.Delete(machine.SystemID, vlan.ID); err != nil {
-		return diag.FromErr(err)
+		return noOpIfMachinePermittedAndNotFoundError(machine, err)
 	}
 
 	return nil
