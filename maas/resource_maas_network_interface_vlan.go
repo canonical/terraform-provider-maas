@@ -159,12 +159,7 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return unsetIfNotFoundError(client, d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -181,22 +176,12 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
-		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return unsetIfMachinePermittedAndNotFoundError(client, d, machine, err)
 	}
 
 	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
-		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return unsetIfMachinePermittedAndNotFoundError(client, d, machine, err)
 	}
 
 	params := getNetworkInterfaceVLANUpdateParams(d, parentID, vlan.ID)
@@ -214,29 +199,17 @@ func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return noOpIfNotFoundError(client, d, err)
 	}
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
-		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return noOpIfMachinePermittedAndNotFoundError(client, d, machine, err)
 	}
 
 	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string))
 	if err != nil {
-		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return noOpIfMachinePermittedAndNotFoundError(client, d, machine, err)
 	}
 
 	if err := client.NetworkInterface.Delete(machine.SystemID, vlan.ID); err != nil {

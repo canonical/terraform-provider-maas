@@ -272,3 +272,37 @@ func isMachineInPermittedState(machine *entity.Machine) bool {
 		return false
 	}
 }
+
+func unsetIfNotFoundError(client *client.Client, d *schema.ResourceData, err error) diag.Diagnostics {
+	if strings.Contains(err.Error(), "404 Not Found") {
+		d.SetId("")
+		return nil
+	}
+
+	return diag.FromErr(err)
+}
+
+func noOpIfNotFoundError(client *client.Client, d *schema.ResourceData, err error) diag.Diagnostics {
+	if strings.Contains(err.Error(), "404 Not Found") {
+		return nil
+	}
+
+	return diag.FromErr(err)
+}
+
+func unsetIfMachinePermittedAndNotFoundError(client *client.Client, d *schema.ResourceData, machine *entity.Machine, err error) diag.Diagnostics {
+	if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+		d.SetId("")
+		return nil
+	}
+
+	return diag.FromErr(err)
+}
+
+func noOpIfMachinePermittedAndNotFoundError(client *client.Client, d *schema.ResourceData, machine *entity.Machine, err error) diag.Diagnostics {
+	if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
+		return nil
+	}
+
+	return diag.FromErr(err)
+}

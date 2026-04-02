@@ -1,4 +1,3 @@
-//nolint:dupl // disable dupl check for now
 package maas
 
 import (
@@ -182,12 +181,7 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return unsetIfNotFoundError(client, d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -197,12 +191,7 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 
 	bridge, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return unsetIfMachinePermittedAndNotFoundError(client, d, machine, err)
 	}
 
 	parentID, err := findInterfaceParent(client, machine.SystemID, d.Get("parent").(string))
@@ -227,11 +216,7 @@ func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.Resourc
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return noOpIfNotFoundError(client, d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -241,11 +226,7 @@ func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.Resourc
 
 	bridge, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return noOpIfMachinePermittedAndNotFoundError(client, d, machine, err)
 	}
 
 	if err := client.NetworkInterface.Delete(machine.SystemID, bridge.ID); err != nil {
