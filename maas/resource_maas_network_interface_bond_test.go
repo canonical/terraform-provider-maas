@@ -133,6 +133,97 @@ func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 	})
 }
 
+func TestAccResourceMAASNetworkInterfaceBond_unsetOnError(t *testing.T) {
+	// Verify a machine in an acceptable state causes the resource to be unset on an error, rather than raise an error
+	var networkInterfaceBond entity.NetworkInterface
+
+	name := fmt.Sprintf("tf-nic-bond-%d", acctest.RandIntRange(0, 9))
+	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
+	macAddress := testutils.RandomMAC()
+	macAddressPhysOne := testutils.RandomMAC()
+	macAddressPhysTwo := testutils.RandomMAC()
+
+	resourceName := "maas_network_interface_bond.test"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: testAccCheckMAASNetworkInterfaceBondDestroy,
+		ErrorCheck:   func(err error) error { return err },
+		Steps: []resource.TestStep{
+			// Create the resource
+			{
+				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
+				Check:  testAccMAASNetworkInterfaceBondCheckExists(resourceName, &networkInterfaceBond),
+			},
+			// Delete the resource out of band, verify the update function unsets the resource
+			{
+				PreConfig: func() {
+					conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
+					err := conn.NetworkInterface.Delete(machine, networkInterfaceBond.ID)
+					if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
+						panic(fmt.Sprintf("failed to delete bond: %s", err))
+					}
+				},
+				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr(resourceName, "id"),
+					testAccCheckResourceUnset(resourceName),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceMAASNetworkInterfaceBond_noOpOnDeleteError(t *testing.T) {
+	// Verify a machine in an acceptable state causes the resource to be unset on an error, rather than raise an error
+	var networkInterfaceBond entity.NetworkInterface
+
+	name := fmt.Sprintf("tf-nic-bond-%d", acctest.RandIntRange(0, 9))
+	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
+	macAddress := testutils.RandomMAC()
+	macAddressPhysOne := testutils.RandomMAC()
+	macAddressPhysTwo := testutils.RandomMAC()
+
+	resourceName := "maas_network_interface_bond.test"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:   func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
+		Providers:  testutils.TestAccProviders,
+		ErrorCheck: func(err error) error { return err },
+		Steps: []resource.TestStep{
+			// Create the resource
+			{
+				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
+				Check:  testAccMAASNetworkInterfaceBondCheckExists(resourceName, &networkInterfaceBond),
+			},
+			// Delete the resource out of band, verify the delete function no-ops
+			{
+				PreConfig: func() {
+					conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
+					err := conn.NetworkInterface.Delete(machine, networkInterfaceBond.ID)
+					if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
+						panic(fmt.Sprintf("failed to delete bond: %s", err))
+					}
+				},
+				Config: "",
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr(resourceName, "id"),
+					testAccCheckResourceUnset(resourceName),
+				),
+				Destroy: true,
+			},
+			// Verify the delete is idempotent
+			{
+				Config:  "",
+				Destroy: true,
+			},
+		},
+	})
+}
+
 func testAccMAASNetworkInterfaceBondCheckExists(rn string, networkInterfaceBond *entity.NetworkInterface) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
@@ -196,4 +287,14 @@ func testAccCheckMAASNetworkInterfaceBondDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func testAccCheckResourceUnset(rn string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if _, ok := s.RootModule().Resources[rn]; ok {
+			return fmt.Errorf("Resource %s still exists in state", rn)
+		}
+
+		return nil
+	}
 }
