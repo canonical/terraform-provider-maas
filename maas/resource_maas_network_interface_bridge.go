@@ -189,11 +189,6 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	bridge, err := client.NetworkInterface.Get(machine.SystemID, id)
-	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
-	}
-
 	parentID, err := findInterfaceParent(client, machine.SystemID, d.Get("parent").(string))
 	if err != nil {
 		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
@@ -201,7 +196,7 @@ func resourceNetworkInterfaceBridgeUpdate(ctx context.Context, d *schema.Resourc
 
 	params := getNetworkInterfaceBridgeUpdateParams(d, parentID)
 
-	_, err = client.NetworkInterface.Update(machine.SystemID, bridge.ID, params)
+	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
 		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}

@@ -229,11 +229,6 @@ func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	bond, err := client.NetworkInterface.Get(machine.SystemID, id)
-	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
-	}
-
 	p, err := findBondParentsID(client, machine.SystemID, d.Get("parents").(*schema.Set).List())
 	if err != nil {
 		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
@@ -241,7 +236,7 @@ func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceD
 
 	params := getNetworkInterfaceBondUpdateParams(d, p)
 
-	_, err = client.NetworkInterface.Update(machine.SystemID, bond.ID, params)
+	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
 		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
 	}

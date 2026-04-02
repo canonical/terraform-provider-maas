@@ -200,17 +200,17 @@ func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceD
 		return noOpIfNotFoundError(err)
 	}
 
-	fabric, err := getFabric(client, d.Get("fabric").(string))
+	_, err = getFabric(client, d.Get("fabric").(string))
 	if err != nil {
 		return noOpIfMachinePermittedAndNotFoundError(machine, err)
 	}
 
-	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string))
+	id, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return noOpIfMachinePermittedAndNotFoundError(machine, err)
+		return diag.FromErr(err)
 	}
 
-	if err := client.NetworkInterface.Delete(machine.SystemID, vlan.ID); err != nil {
+	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
 		return noOpIfMachinePermittedAndNotFoundError(machine, err)
 	}
 
