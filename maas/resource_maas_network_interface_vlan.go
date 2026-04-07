@@ -159,7 +159,7 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return unsetIfNotFoundError(d, err)
+		return unsetIfNotFoundError(d, err, nil)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -169,24 +169,24 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	parentID, err := findInterfaceParent(client, machine.SystemID, d.Get("parent").(string))
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
+		return unsetIfNotFoundError(d, err, machine)
 	}
 
 	fabric, err := getFabric(client, d.Get("fabric").(string))
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
+		return unsetIfNotFoundError(d, err, machine)
 	}
 
 	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
+		return unsetIfNotFoundError(d, err, machine)
 	}
 
 	params := getNetworkInterfaceVLANUpdateParams(d, parentID, vlan.ID)
 
 	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
+		return unsetIfNotFoundError(d, err, machine)
 	}
 
 	return resourceNetworkInterfaceVLANRead(ctx, d, meta)
@@ -197,12 +197,12 @@ func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return noOpIfNotFoundError(err)
+		return noOpIfNotFoundError(err, nil)
 	}
 
 	_, err = getFabric(client, d.Get("fabric").(string))
 	if err != nil {
-		return noOpIfMachinePermittedAndNotFoundError(machine, err)
+		return noOpIfNotFoundError(err, machine)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -211,7 +211,7 @@ func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceD
 	}
 
 	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
-		return noOpIfMachinePermittedAndNotFoundError(machine, err)
+		return noOpIfNotFoundError(err, machine)
 	}
 
 	return nil

@@ -221,7 +221,7 @@ func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return unsetIfNotFoundError(d, err)
+		return unsetIfNotFoundError(d, err, nil)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -231,14 +231,14 @@ func resourceNetworkInterfaceBondUpdate(ctx context.Context, d *schema.ResourceD
 
 	p, err := findBondParentsID(client, machine.SystemID, d.Get("parents").(*schema.Set).List())
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
+		return unsetIfNotFoundError(d, err, machine)
 	}
 
 	params := getNetworkInterfaceBondUpdateParams(d, p)
 
 	_, err = client.NetworkInterface.Update(machine.SystemID, id, params)
 	if err != nil {
-		return unsetIfMachinePermittedAndNotFoundError(d, machine, err)
+		return unsetIfNotFoundError(d, err, machine)
 	}
 
 	return resourceNetworkInterfaceBondRead(ctx, d, meta)
@@ -249,7 +249,7 @@ func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return noOpIfNotFoundError(err)
+		return noOpIfNotFoundError(err, nil)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -259,11 +259,11 @@ func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceD
 
 	bond, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		return noOpIfMachinePermittedAndNotFoundError(machine, err)
+		return noOpIfNotFoundError(err, machine)
 	}
 
 	if err := client.NetworkInterface.Delete(machine.SystemID, bond.ID); err != nil {
-		return noOpIfMachinePermittedAndNotFoundError(machine, err)
+		return noOpIfNotFoundError(err, machine)
 	}
 
 	return nil

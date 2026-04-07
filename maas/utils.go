@@ -273,7 +273,11 @@ func isMachineInPermittedState(machine *entity.Machine) bool {
 	}
 }
 
-func unsetIfNotFoundError(d *schema.ResourceData, err error) diag.Diagnostics {
+func unsetIfNotFoundError(d *schema.ResourceData, err error, machine *entity.Machine) diag.Diagnostics {
+	if machine != nil && !isMachineInPermittedState(machine) {
+		return diag.FromErr(err)
+	}
+
 	if strings.Contains(err.Error(), "404 Not Found") {
 		d.SetId("")
 		return nil
@@ -282,25 +286,12 @@ func unsetIfNotFoundError(d *schema.ResourceData, err error) diag.Diagnostics {
 	return diag.FromErr(err)
 }
 
-func noOpIfNotFoundError(err error) diag.Diagnostics {
+func noOpIfNotFoundError(err error, machine *entity.Machine) diag.Diagnostics {
+	if machine != nil && !isMachineInPermittedState(machine) {
+		return diag.FromErr(err)
+	}
+
 	if strings.Contains(err.Error(), "404 Not Found") {
-		return nil
-	}
-
-	return diag.FromErr(err)
-}
-
-func unsetIfMachinePermittedAndNotFoundError(d *schema.ResourceData, machine *entity.Machine, err error) diag.Diagnostics {
-	if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
-		d.SetId("")
-		return nil
-	}
-
-	return diag.FromErr(err)
-}
-
-func noOpIfMachinePermittedAndNotFoundError(machine *entity.Machine, err error) diag.Diagnostics {
-	if isMachineInPermittedState(machine) && strings.Contains(err.Error(), "404 Not Found") {
 		return nil
 	}
 
