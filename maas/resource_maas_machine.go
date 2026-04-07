@@ -53,13 +53,13 @@ func resourceMAASMachine() *schema.Resource {
 				}
 
 				tfState := map[string]any{
-					"id":               machine.SystemID,
-					"pxe_mac_address":  machine.BootInterface.MACAddress,
-					"architecture":     machine.Architecture,
+					"id":              machine.SystemID,
+					"pxe_mac_address": machine.BootInterface.MACAddress,
+					"architecture":    machine.Architecture,
 				}
-				
-				// Do not read power parameters into state for machine in state "New". 
-				// These would ideally be empty in the state, so we know we should trigger recommissioning during Update. 
+
+				// Do not read power parameters into state for machine in state "New".
+				// These would ideally be empty in the state, so we know we should trigger recommissioning during Update.
 				if machine.StatusName != "New" {
 					tfState["power_type"] = machine.PowerType
 					tfState["power_parameters"] = powerParamsString
@@ -354,7 +354,7 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
-	// One of the below cases is a special case for when machine is in "New" state. A user has imported this machine into Terraform and it needs to be commissioned to get to "Ready" state. Power parameters are assuming to be empty in the state at this point. 
+	// One of the below cases is a special case for when machine is in "New" state. A user has imported this machine into Terraform and it needs to be commissioned to get to "Ready" state. Power parameters are assuming to be empty in the state at this point.
 	if scriptsHaveChanged || (powerParamsHaveChanged && machine.StatusName == "New") {
 		machine, err = client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
 		if err != nil {
