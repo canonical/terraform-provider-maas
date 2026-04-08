@@ -59,7 +59,7 @@ func resourceMAASMachine() *schema.Resource {
 				}
 
 				// Do not read power parameters into state for machine in state "New".
-				// These would ideally be empty in the state, so we know we should trigger recommissioning during Update.
+				// These would ideally be empty in the state, so we know we should trigger commissioning during Update.
 				if machine.StatusName != "New" {
 					tfState["power_type"] = machine.PowerType
 					tfState["power_parameters"] = powerParamsString
