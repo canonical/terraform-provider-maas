@@ -3,6 +3,7 @@ package maas_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"terraform-provider-maas/maas"
@@ -16,10 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMAASNetworkInterfaceBond(name string, machine string, macAddress string, macAddressPhysOne string, macAddressPhysTwo string, mtu int) string {
+func testAccMAASNetworkInterfaceSetup(machine string, fabricName string, physOneName string, physOneMAC string, physTwoName string, physTwoMAC string) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
-	name = "tf-fabric-bond"
+	name = "tf-fabric-%s"
 }
 
 data "maas_machine" "machine" {
@@ -33,17 +34,24 @@ data "maas_vlan" "default" {
 
 resource "maas_network_interface_physical" "nic1" {
 	machine     = data.maas_machine.machine.id
+	name        = "%s"
 	mac_address = "%s"
-	name        = "enp109s0f0"
 	vlan        = data.maas_vlan.default.id
 }
 
 resource "maas_network_interface_physical" "nic2" {
 	machine     = data.maas_machine.machine.id
+	name        = "%s"
 	mac_address = "%s"
-	name        = "enp109s0f1"
 	vlan        = data.maas_vlan.default.id
+}`, fabricName, machine, physOneName, physOneMAC, physTwoName, physTwoMAC)
 }
+
+func testAccMAASNetworkInterfaceBond(name string, machine string, fabric string, physOneName string, physTwoName string, macAddress string, macAddressPhysOne string, macAddressPhysTwo string, mtu int) string {
+	setup := testAccMAASNetworkInterfaceSetup(machine, fabric, physOneName, macAddressPhysOne, physTwoName, macAddressPhysTwo)
+
+	return fmt.Sprintf(`
+%v
 
 resource "maas_network_interface_bond" "test" {
 	machine               = data.maas_machine.machine.id
@@ -62,13 +70,16 @@ resource "maas_network_interface_bond" "test" {
 	tags                  = ["tag1", "tag2"]
 	vlan                  = data.maas_vlan.default.id
 }
-`, machine, macAddressPhysOne, macAddressPhysTwo, name, macAddress, mtu)
+`, setup, name, macAddress, mtu)
 }
 
 func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 	var networkInterfaceBond entity.NetworkInterface
 
 	name := fmt.Sprintf("tf-nic-bond-%d", acctest.RandIntRange(0, 9))
+	fabric := "bond"
+	physOne := "enp109s0f0"
+	physTwo := "enp109s0f1"
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddress := testutils.RandomMAC()
 	macAddressPhysOne := testutils.RandomMAC()
@@ -87,8 +98,8 @@ func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "bond_xmit_hash_policy", "layer2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mac_address", macAddress),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.#", "2"),
-		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.0", "enp109s0f0"),
-		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.1", "enp109s0f1"),
+		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.0", physOne),
+		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.1", physTwo),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "tags.#", "2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "tags.0", "tag1"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "tags.1", "tag2"),
@@ -102,13 +113,13 @@ func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
+				Config: testAccMAASNetworkInterfaceBond(name, machine, fabric, physOne, physTwo, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
+				Config: testAccMAASNetworkInterfaceBond(name, machine, fabric, physOne, physTwo, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "9000"))...),
 			},
@@ -135,112 +146,116 @@ func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 }
 
 func TestAccResourceMAASNetworkInterfaceBond_404Handling(t *testing.T) {
-	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
-	if machine == "" {
-		t.Fatal("TF_ACC_NETWORK_INTERFACE_MACHINE must be set")
-	}
+    machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
+    if machine == "" {
+        t.Fatal("TF_ACC_NETWORK_INTERFACE_MACHINE must be set")
+    }
 
-	resourceName := "maas_network_interface_bond.test"
+    resourceName := "maas_network_interface_bond.test"
 
-	testMatrix := []struct {
-		name           string
-		checks         []resource.TestCheckFunc
-		DeleteFunction func(client *client.Client, bondID int) error
-		testUpdate     bool
-	}{
-		{
-			name: "Update bond when missing unsets resource",
-			DeleteFunction: func(client *client.Client, bondID int) error {
-				return client.NetworkInterface.Delete(machine, bondID)
-			},
-			checks: []resource.TestCheckFunc{
-				resource.TestCheckNoResourceAttr(resourceName, "id"),
-				testAccCheckResourceUnset(resourceName),
-			},
-			testUpdate: true,
-		},
-		{
-			name: "Update bond with missing parent unsets resource",
-			DeleteFunction: func(client *client.Client, bondID int) error {
-				return deleteBondParent(client, machine, bondID)
-			},
-			checks: []resource.TestCheckFunc{
-				resource.TestCheckNoResourceAttr(resourceName, "id"),
-				testAccCheckResourceUnset(resourceName),
-			},
-			testUpdate: true,
-		},
-		{
-			name: "Delete bond when missing no-ops",
-			DeleteFunction: func(client *client.Client, bondID int) error {
-				return client.NetworkInterface.Delete(machine, bondID)
-			},
-		},
-		{
-			name: "Delete bond with missing parent no-ops",
-			DeleteFunction: func(client *client.Client, bondID int) error {
-				return deleteBondParent(client, machine, bondID)
-			},
-		},
-	}
+    testMatrix := []struct {
+        name           string
+        DeleteFunction func(client *client.Client, systemID string, bondID int) error
+        testUpdate     bool
+    }{
+        {
+            name: "Update bond when missing triggers error",
+            DeleteFunction: func(client *client.Client, systemID string, bondID int) error {
+                return client.NetworkInterface.Delete(systemID, bondID)
+            },
+            testUpdate: true,
+        },
+        {
+            name: "Update bond with missing parent triggers error",
+            DeleteFunction: func(client *client.Client, systemID string, bondID int) error {
+                return deleteBondParent(client, systemID, bondID)
+            },
+            testUpdate: true,
+        },
+        {
+            name: "Delete bond when missing triggers error",
+            DeleteFunction: func(client *client.Client, systemID string, bondID int) error {
+                return client.NetworkInterface.Delete(systemID, bondID)
+            },
+            testUpdate: false,
+        },
+        {
+            name: "Delete bond with missing parent triggers error",
+            DeleteFunction: func(client *client.Client, systemID string, bondID int) error {
+                return deleteBondParent(client, systemID, bondID)
+            },
+            testUpdate: false,
+        },
+    }
 
-	for _, thisTest := range testMatrix {
-		t.Run(thisTest.name, func(t *testing.T) {
-			var networkInterfaceBond entity.NetworkInterface
+    for _, thisTest := range testMatrix {
+        t.Run(thisTest.name, func(t *testing.T) {
+            var networkInterfaceBond entity.NetworkInterface
+            var systemID string
 
-			name := fmt.Sprintf("tf-nic-bond-%d", acctest.RandIntRange(0, 9))
-			macAddress := testutils.RandomMAC()
-			macAddressPhysOne := testutils.RandomMAC()
-			macAddressPhysTwo := testutils.RandomMAC()
+            name := fmt.Sprintf("tf-bond-%s", acctest.RandString(4))
+            fabric := fmt.Sprintf("bond-%s", acctest.RandString(10))
+            physOne := fmt.Sprintf("enp109s0f-%s", acctest.RandString(4))
+            physTwo := fmt.Sprintf("enp109s0f-%s", acctest.RandString(4))
 
-			resource.ParallelTest(t, resource.TestCase{
-				PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
-				Providers:    testutils.TestAccProviders,
-				CheckDestroy: testAccCheckMAASNetworkInterfaceBondDestroy,
-				ErrorCheck:   func(err error) error { return err },
-				Steps: []resource.TestStep{
-					// Create the resource
-					{
-						Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
-						Check:  testAccMAASNetworkInterfaceBondCheckExists(resourceName, &networkInterfaceBond),
-					},
-					// if we are testing an update, then delete a resource out of band
-					{
-						PreConfig: func() {
-							if thisTest.testUpdate {
-								conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+            macAddress := testutils.RandomMAC()
+            macAddressPhysOne := testutils.RandomMAC()
+            macAddressPhysTwo := testutils.RandomMAC()
 
-								if err := thisTest.DeleteFunction(conn, networkInterfaceBond.ID); err != nil && !strings.Contains(err.Error(), "404 Not Found") {
-									t.Fatalf("failed unexpectedly on resource deletion: %s", err)
-								}
-							}
-						},
-						Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
-						Check:  resource.ComposeAggregateTestCheckFunc(thisTest.checks...),
-					},
-					// if we didn't test the update, we should now test the deletion
-					{
-						PreConfig: func() {
-							if !thisTest.testUpdate {
-								conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+            resource.ParallelTest(t, resource.TestCase{
+                PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
+                Providers:    testutils.TestAccProviders,
+                CheckDestroy: testAccCheckMAASNetworkInterfaceBondDestroy,
+                ErrorCheck:   func(err error) error { return err },
+                Steps: func() []resource.TestStep {
+                    steps := []resource.TestStep{
+                        {
+                            Config: testAccMAASNetworkInterfaceBond(name, machine, fabric, physOne, physTwo, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
+                            Check: resource.ComposeTestCheckFunc(
+                                testAccMAASNetworkInterfaceBondCheckExists(resourceName, &networkInterfaceBond),
+                                func(s *terraform.State) error {
+                                    rs, ok := s.RootModule().Resources[resourceName]
+                                    if !ok {
+                                        return fmt.Errorf("Resource not found in state: %s", resourceName)
+                                    }
+                                    systemID = rs.Primary.Attributes["machine"]
+                                    return nil
+                                },
+                            ),
+                        },
+                    }
 
-								if err := thisTest.DeleteFunction(conn, networkInterfaceBond.ID); err != nil && !strings.Contains(err.Error(), "404 Not Found") {
-									t.Fatalf("failed unexpectedly on resource deletion: %s", err)
-								}
-							}
-						},
-						Config:  "resource \"null_resource\" \"noop\" {}",
-						Destroy: true,
-					},
-					// Because deletion is idempotent, we should be able to do multiple
-					{
-						Config:  "resource \"null_resource\" \"noop\" {}",
-						Destroy: true,
-					},
-				},
-			})
-		})
-	}
+                    // Change the test based on delete or update
+                    if thisTest.testUpdate {
+                        steps = append(steps, resource.TestStep{
+                            PreConfig: func() {
+                                conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+                                if err := thisTest.DeleteFunction(conn, systemID, networkInterfaceBond.ID); err != nil {
+                                    t.Fatalf("PreConfig failed to delete resource: %v", err)
+                                }
+                            },
+                            Config: testAccMAASNetworkInterfaceBond(name, machine, fabric, physOne, physTwo, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
+                            ExpectError: regexp.MustCompile(`404 Not Found`),
+                        })
+                    } else {
+                        steps = append(steps, resource.TestStep{
+                            PreConfig: func() {
+                                conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+                                if err := thisTest.DeleteFunction(conn, systemID, networkInterfaceBond.ID); err != nil {
+                                    t.Fatalf("PreConfig failed to delete resource: %v", err)
+                                }
+                            },
+                            Config:  " ",
+                            Destroy: true,
+                            ExpectError: regexp.MustCompile(`404 Not Found`),
+                        })
+                    }
+
+                    return steps
+                }(),
+            })
+        })
+    }
 }
 
 func testAccMAASNetworkInterfaceBondCheckExists(rn string, networkInterfaceBond *entity.NetworkInterface) resource.TestCheckFunc {
@@ -354,8 +369,8 @@ func findBondParentsID(client *client.Client, machineSystemID string, parents []
 	return result, nil
 }
 
-func deleteBondParent(client *client.Client, machine string, bondID int) error {
-	bond, err := client.NetworkInterface.Get(machine, bondID)
+func deleteBondParent(client *client.Client, systemID string, bondID int) error {
+	bond, err := client.NetworkInterface.Get(systemID, bondID)
 	if err != nil {
 		return err
 	}
@@ -366,12 +381,12 @@ func deleteBondParent(client *client.Client, machine string, bondID int) error {
 			parentsAny[i] = p
 		}
 
-		parents, err := findBondParentsID(client, machine, parentsAny)
+		parents, err := findBondParentsID(client, systemID, parentsAny)
 		if err != nil {
 			return err
 		}
 
-		return client.NetworkInterface.Delete(machine, parents[0])
+		return client.NetworkInterface.Delete(systemID, parents[0])
 	}
 
 	return nil
