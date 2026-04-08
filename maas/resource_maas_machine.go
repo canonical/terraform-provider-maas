@@ -349,7 +349,7 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
-	machine, err = client.Machine.Update(machine.SystemID, getMachineUpdateParams(d), powerParams)
+	_, err = client.Machine.Update(machine.SystemID, getMachineUpdateParams(d), powerParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
