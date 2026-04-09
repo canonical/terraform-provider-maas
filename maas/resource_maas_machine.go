@@ -53,12 +53,18 @@ func resourceMAASMachine() *schema.Resource {
 				}
 
 				tfState := map[string]any{
-					"id":               machine.SystemID,
-					"power_type":       machine.PowerType,
-					"power_parameters": powerParamsString,
-					"pxe_mac_address":  machine.BootInterface.MACAddress,
-					"architecture":     machine.Architecture,
+					"id":              machine.SystemID,
+					"pxe_mac_address": machine.BootInterface.MACAddress,
+					"architecture":    machine.Architecture,
 				}
+
+				// Do not read power parameters into state for machine in state "New".
+				// These would ideally be empty in the state, so we know we should trigger commissioning during Update.
+				if machine.StatusName != "New" {
+					tfState["power_type"] = machine.PowerType
+					tfState["power_parameters"] = powerParamsString
+				}
+
 				if err := setTerraformState(d, tfState); err != nil {
 					return nil, err
 				}
@@ -331,6 +337,7 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any
 	}
 
 	scriptsHaveChanged := d.HasChanges("commissioning_scripts", "testing_scripts", "script_parameters")
+	powerParamsHaveChanged := d.HasChanges("power_parameters", "power_type")
 	// Update machine
 	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
@@ -347,7 +354,8 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
-	if scriptsHaveChanged {
+	// One of the below cases is a special case for when machine is in "New" state. A user has imported this machine into Terraform and it needs to be commissioned to get to "Ready" state. Power parameters are assuming to be empty in the state at this point.
+	if scriptsHaveChanged || (powerParamsHaveChanged && machine.StatusName == "New") {
 		machine, err = client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
 		if err != nil {
 			return diag.FromErr(err)
