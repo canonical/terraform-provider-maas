@@ -16,7 +16,6 @@ import (
 )
 
 func testAccMAASNetworkInterfaceBridge(name string, machine string, macAddress string, macAddressPhys string, mtu int) string {
-	// setup := testAccMAASNetworkInterfaceSetup()
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
 	name = "tf-fabric-bridge"
