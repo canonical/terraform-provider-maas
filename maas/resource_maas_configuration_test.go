@@ -374,7 +374,7 @@ func TestAccResourceMAASConfiguration_basic(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.key, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_CONFIGURATION_DISTRO_SERIES"}) },
 				Providers:    testutils.TestAccProviders,
 				ErrorCheck:   func(err error) error { return err },
