@@ -10,7 +10,6 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
-	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-cty/cty/gocty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
