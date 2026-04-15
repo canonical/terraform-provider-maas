@@ -153,7 +153,7 @@ func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceDat
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return unsetIfNotFoundError(d, err, nil)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -163,7 +163,7 @@ func resourceNetworkInterfaceBondRead(ctx context.Context, d *schema.ResourceDat
 
 	networkInterface, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		return unsetIfNotFoundError(d, err, machine)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	p := networkInterface.Params.(map[string]any)

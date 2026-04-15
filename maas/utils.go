@@ -259,25 +259,7 @@ func optionalStringPtr(value string) *string {
 	return &value
 }
 
-func isMachineInPermittedState(machine *entity.Machine) bool {
-	switch machine.Status {
-	case
-		node.StatusNew,
-		node.StatusReady,
-		node.StatusAllocated,
-		node.StatusBroken,
-		node.StatusFailedTesting:
-		return true
-	default:
-		return false
-	}
-}
-
-func unsetIfNotFoundError(d *schema.ResourceData, err error, machine *entity.Machine) diag.Diagnostics {
-	if machine != nil && !isMachineInPermittedState(machine) {
-		return diag.FromErr(err)
-	}
-
+func unsetIfNotFoundError(d *schema.ResourceData, err error) diag.Diagnostics {
 	if strings.Contains(err.Error(), "404 Not Found") {
 		d.SetId("")
 		return nil
