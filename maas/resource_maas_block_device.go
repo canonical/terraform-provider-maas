@@ -226,12 +226,12 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta a
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	tfState := map[string]any{
@@ -255,12 +255,7 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -268,32 +263,22 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
-	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
-	}
-
-	updatedBlockDevice, err := client.BlockDevice.Update(machine.SystemID, blockDevice.ID, getBlockDeviceParams(d))
+	blockDevice, err := client.BlockDevice.Update(machine.SystemID, id, getBlockDeviceParams(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := setBlockDeviceTags(client, d, updatedBlockDevice); err != nil {
+	if err := setBlockDeviceTags(client, d, blockDevice); err != nil {
 		return diag.FromErr(err)
 	}
 
 	if p, ok := d.GetOk("is_boot_device"); ok && p.(bool) {
-		if err := client.BlockDevice.SetBootDisk(machine.SystemID, updatedBlockDevice.ID); err != nil {
+		if err := client.BlockDevice.SetBootDisk(machine.SystemID, blockDevice.ID); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if err := updateBlockDevicePartitions(client, d, updatedBlockDevice); err != nil {
+	if err := updateBlockDevicePartitions(client, d, blockDevice); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -305,11 +290,7 @@ func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -319,11 +300,7 @@ func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta
 
 	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	// We choose to delete the partitions and tags associated with a physical block device

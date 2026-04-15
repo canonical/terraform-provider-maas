@@ -108,12 +108,12 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	volumeGroup, err := getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -124,7 +124,7 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 	// logical volumes are technically block devices
 	logicalVolume, err := client.BlockDevice.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// this has the format VG name-BD Name, we only want BD Name
@@ -153,22 +153,12 @@ func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	_, err = getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -176,27 +166,17 @@ func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	lvm, err := client.BlockDevice.Get(machine.SystemID, id)
-	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
-	}
-
 	params := entity.BlockDeviceParams{
 		Name: d.Get("name").(string),
 		Size: int64(d.Get("size_gigabytes").(int)) * GigaBytes,
 	}
 
-	updatedLVM, err := client.BlockDevice.Update(machine.SystemID, lvm.ID, &params)
+	lvm, err := client.BlockDevice.Update(machine.SystemID, id, &params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	formattedDevice, err := formatAndMountVirtualBlockDevice(client, updatedLVM, d)
+	formattedDevice, err := formatAndMountVirtualBlockDevice(client, lvm, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -216,11 +196,7 @@ func resourceLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, me
 
 	volumeGroup, err := getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -228,16 +204,7 @@ func resourceLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	lvm, err := client.BlockDevice.Get(machine.SystemID, id)
-	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
-	}
-
-	if err := client.VolumeGroup.DeleteLogicalVolume(machine.SystemID, volumeGroup.ID, lvm.ID); err != nil {
+	if err := client.VolumeGroup.DeleteLogicalVolume(machine.SystemID, volumeGroup.ID, id); err != nil {
 		return diag.FromErr(err)
 	}
 

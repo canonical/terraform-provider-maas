@@ -147,7 +147,7 @@ func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -157,7 +157,7 @@ func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	raid, err := client.RAID.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// block devices and partitions are stored on the same object, we need to split them out
@@ -198,27 +198,12 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
-	}
-
-	raid, err := client.RAID.Get(machine.SystemID, id)
-	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
 	}
 
 	// Check the RAID configuration is valid
@@ -239,7 +224,7 @@ func resourceRAIDUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	// add new disks, remove spare disks, add spare->active, remove active, add active->spare
 
 	// 1. add all new active and spare disks
-	raid, err = client.RAID.Update(machine.SystemID, raid.ID,
+	raid, err := client.RAID.Update(machine.SystemID, id,
 		&entity.RAIDUpdateParams{
 			Name:               d.Get("name").(string),
 			AddBlockDevices:    newBlockDevice,
@@ -317,11 +302,7 @@ func resourceRAIDDelete(ctx context.Context, d *schema.ResourceData, meta interf
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -329,16 +310,7 @@ func resourceRAIDDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	raid, err := client.RAID.Get(machine.SystemID, id)
-	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
-	}
-
-	err = client.RAID.Delete(machine.SystemID, raid.ID)
+	err = client.RAID.Delete(machine.SystemID, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}

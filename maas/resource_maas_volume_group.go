@@ -130,7 +130,7 @@ func resourceMAASVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -140,7 +140,7 @@ func resourceMAASVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 
 	volumeGroup, err := client.VolumeGroup.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	blockDevices, partitions := findVolumeGroupDevices(volumeGroup)
@@ -166,27 +166,12 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
-	}
-
-	volumeGroup, err := client.VolumeGroup.Get(machine.SystemID, id)
-	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
 	}
 
 	var addBlockDevices []string
@@ -243,7 +228,7 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 		RemovePartitions:   removePartitions,
 	}
 
-	updatedVolumeGroup, err := client.VolumeGroup.Update(machine.SystemID, volumeGroup.ID, &updateParams)
+	updatedVolumeGroup, err := client.VolumeGroup.Update(machine.SystemID, id, &updateParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -258,11 +243,7 @@ func resourceMAASVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, 
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -270,16 +251,7 @@ func resourceMAASVolumeGroupDelete(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	volumeGroup, err := client.VolumeGroup.Get(machine.SystemID, id)
-	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		} else {
-			return diag.FromErr(err)
-		}
-	}
-
-	err = client.VolumeGroup.Delete(machine.SystemID, volumeGroup.ID)
+	err = client.VolumeGroup.Delete(machine.SystemID, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
