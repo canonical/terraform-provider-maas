@@ -116,7 +116,7 @@ func resourceNetworkInterfaceVLANRead(ctx context.Context, d *schema.ResourceDat
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -126,7 +126,7 @@ func resourceNetworkInterfaceVLANRead(ctx context.Context, d *schema.ResourceDat
 
 	networkInterface, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	p := networkInterface.Params.(map[string]any)
@@ -191,6 +191,7 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 
 	return resourceNetworkInterfaceVLANRead(ctx, d, meta)
 }
+
 func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 

@@ -125,7 +125,7 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -135,7 +135,7 @@ func resourceNetworkInterfaceBridgeRead(ctx context.Context, d *schema.ResourceD
 
 	networkInterface, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	if len(networkInterface.Parents) != 1 {

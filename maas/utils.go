@@ -257,3 +257,12 @@ func optionalStringPtr(value string) *string {
 
 	return &value
 }
+
+func unsetIfNotFoundError(d *schema.ResourceData, err error) diag.Diagnostics {
+	if strings.Contains(err.Error(), "404 Not Found") {
+		d.SetId("")
+		return nil
+	}
+
+	return diag.FromErr(err)
+}
