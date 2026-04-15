@@ -200,11 +200,6 @@ func resourceNetworkInterfaceVLANDelete(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	_, err = getFabric(client, d.Get("fabric").(string))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)

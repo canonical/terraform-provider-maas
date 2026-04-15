@@ -257,12 +257,7 @@ func resourceNetworkInterfaceBondDelete(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	bond, err := client.NetworkInterface.Get(machine.SystemID, id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := client.NetworkInterface.Delete(machine.SystemID, bond.ID); err != nil {
+	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}
 

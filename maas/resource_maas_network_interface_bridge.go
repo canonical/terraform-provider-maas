@@ -217,12 +217,7 @@ func resourceNetworkInterfaceBridgeDelete(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	bridge, err := client.NetworkInterface.Get(machine.SystemID, id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := client.NetworkInterface.Delete(machine.SystemID, bridge.ID); err != nil {
+	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}
 
