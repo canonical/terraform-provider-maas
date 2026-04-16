@@ -128,6 +128,39 @@ func resourceLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, me
 	return nil
 }
 
+func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	params := entity.BlockDeviceParams{
+		Name: d.Get("name").(string),
+		Size: int64(d.Get("size_gigabytes").(int)) * GigaBytes,
+	}
+
+	updatedLVM, err := client.BlockDevice.Update(machine.SystemID, id, &params)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	formattedDevice, err := formatAndMountVirtualBlockDevice(client, updatedLVM, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(fmt.Sprintf("%v", formattedDevice.ID))
+
+	return resourceLogicalVolumeRead(ctx, d, meta)
+}
+
 func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
@@ -171,39 +204,6 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	return nil
-}
-
-func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
-
-	machine, err := getMachine(client, d.Get("machine").(string))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	params := entity.BlockDeviceParams{
-		Name: d.Get("name").(string),
-		Size: int64(d.Get("size_gigabytes").(int)) * GigaBytes,
-	}
-
-	updatedLVM, err := client.BlockDevice.Update(machine.SystemID, id, &params)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	formattedDevice, err := formatAndMountVirtualBlockDevice(client, updatedLVM, d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(fmt.Sprintf("%v", formattedDevice.ID))
-
-	return resourceLogicalVolumeRead(ctx, d, meta)
 }
 
 func formatAndMountVirtualBlockDevice(client *client.Client, virtualBlockDevice *entity.BlockDevice, d *schema.ResourceData) (*entity.BlockDevice, error) {
