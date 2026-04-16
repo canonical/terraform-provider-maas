@@ -103,6 +103,31 @@ func resourceLogicalVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 	return resourceLogicalVolumeRead(ctx, d, meta)
 }
 
+func resourceLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	volumeGroup, err := getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := client.VolumeGroup.DeleteLogicalVolume(machine.SystemID, volumeGroup.ID, id); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
+}
+
 func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
@@ -156,11 +181,6 @@ func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	_, err = getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -171,12 +191,12 @@ func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, me
 		Size: int64(d.Get("size_gigabytes").(int)) * GigaBytes,
 	}
 
-	lvm, err := client.BlockDevice.Update(machine.SystemID, id, &params)
+	updatedLVM, err := client.BlockDevice.Update(machine.SystemID, id, &params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	formattedDevice, err := formatAndMountVirtualBlockDevice(client, lvm, d)
+	formattedDevice, err := formatAndMountVirtualBlockDevice(client, updatedLVM, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -184,31 +204,6 @@ func resourceLogicalVolumeUpdate(ctx context.Context, d *schema.ResourceData, me
 	d.SetId(fmt.Sprintf("%v", formattedDevice.ID))
 
 	return resourceLogicalVolumeRead(ctx, d, meta)
-}
-
-func resourceLogicalVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
-
-	machine, err := getMachine(client, d.Get("machine").(string))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	volumeGroup, err := getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := client.VolumeGroup.DeleteLogicalVolume(machine.SystemID, volumeGroup.ID, id); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return nil
 }
 
 func formatAndMountVirtualBlockDevice(client *client.Client, virtualBlockDevice *entity.BlockDevice, d *schema.ResourceData) (*entity.BlockDevice, error) {

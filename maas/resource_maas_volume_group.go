@@ -227,12 +227,12 @@ func resourceMAASVolumeGroupUpdate(ctx context.Context, d *schema.ResourceData, 
 		RemovePartitions:   removePartitions,
 	}
 
-	updatedVolumeGroup, err := client.VolumeGroup.Update(machine.SystemID, id, &updateParams)
+	volumeGroup, err := client.VolumeGroup.Update(machine.SystemID, id, &updateParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fmt.Sprintf("%v", updatedVolumeGroup.ID))
+	d.SetId(fmt.Sprintf("%v", volumeGroup.ID))
 
 	return resourceMAASVolumeGroupRead(ctx, d, meta)
 }

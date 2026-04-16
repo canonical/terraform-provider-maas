@@ -219,14 +219,14 @@ func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta
 func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	machine, err := getMachine(client, d.Get("machine").(string))
-	if err != nil {
-		return unsetIfNotFoundError(d, err)
-	}
-
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	machine, err := getMachine(client, d.Get("machine").(string))
+	if err != nil {
+		return unsetIfNotFoundError(d, err)
 	}
 
 	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
