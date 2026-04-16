@@ -1,4 +1,3 @@
-//nolint:dupl // disable dupl check for now
 package maas
 
 import (
