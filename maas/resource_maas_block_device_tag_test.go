@@ -18,10 +18,10 @@ import (
 func TestAccBlockDeviceTag_basic(t *testing.T) {
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 
-	blockDeviceName := acctest.RandomWithPrefix("tf")
-	tagName := acctest.RandomWithPrefix("tag")
-	tagName2 := acctest.RandomWithPrefix("tag")
-	tagName3 := acctest.RandomWithPrefix("tag")
+	blockDeviceName := acctest.RandomWithPrefix("tf-bd")
+	tagName := acctest.RandomWithPrefix("tf-tag")
+	tagName2 := acctest.RandomWithPrefix("tf-tag")
+	tagName3 := acctest.RandomWithPrefix("tf-tag")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testutils.PreCheck(t, nil) },
@@ -39,7 +39,7 @@ func TestAccBlockDeviceTag_basic(t *testing.T) {
 					resource.TestCheckTypeSetElemAttr("maas_block_device_tag.test", "tags.*", tagName2),
 				),
 			},
-			// Test update. Expected behaviour is that the previous tag is removed and the new tag is added.
+			// Test update. Expected behavior is that the previous tag is removed and the new tag is added.
 			{
 				Config: testAccBlockDeviceTagConfig(machine, blockDeviceName, tagName2, tagName3),
 				Check: resource.ComposeTestCheckFunc(
@@ -143,16 +143,16 @@ func testAccCheckMAASBlockDeviceTagDestroy(s *terraform.State) error {
 			return err
 		}
 
-		// Check the block device doesn't exist
+		// Check the block device tags are empty
 		response, err := conn.BlockDevice.Get(systemID, blockDeviceID)
-		if err == nil {
-			if response != nil && response.ID == blockDeviceID {
-				return fmt.Errorf("MAAS Block Device (%s) still exists.", rs.Primary.ID)
-			}
-		}
-		// If the error is a 404, the block device is destroyed as expected
-		if !strings.Contains(err.Error(), "404 Not Found") {
+		if err != nil {
 			return err
+		}
+
+		for _, tag := range response.Tags {
+			if strings.HasPrefix(tag, "tf-tag") {
+				return fmt.Errorf("MAAS Block Device (%d) still has tag: %s", blockDeviceID, tag)
+			}
 		}
 	}
 

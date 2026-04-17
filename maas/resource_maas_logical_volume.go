@@ -166,12 +166,12 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	volumeGroup, err := getVolumeGroup(client, machine.SystemID, d.Get("volume_group").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -182,7 +182,7 @@ func resourceLogicalVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 	// logical volumes are technically block devices
 	logicalVolume, err := client.BlockDevice.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// this has the format VG name-BD Name, we only want BD Name

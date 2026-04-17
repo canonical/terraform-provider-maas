@@ -114,7 +114,7 @@ func resourceBlockDeviceTagRead(ctx context.Context, d *schema.ResourceData, met
 
 	blockDevice, err := client.BlockDevice.Get(systemID, blockDeviceID)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// Set the attributes in state

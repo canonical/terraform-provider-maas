@@ -129,7 +129,7 @@ func resourceMAASVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -139,7 +139,7 @@ func resourceMAASVolumeGroupRead(ctx context.Context, d *schema.ResourceData, me
 
 	volumeGroup, err := client.VolumeGroup.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	blockDevices, partitions := findVolumeGroupDevices(volumeGroup)

@@ -146,7 +146,7 @@ func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -156,7 +156,7 @@ func resourceRAIDRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	raid, err := client.RAID.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// block devices and partitions are stored on the same object, we need to split them out

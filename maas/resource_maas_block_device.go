@@ -226,12 +226,12 @@ func resourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta a
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	tfState := map[string]any{
@@ -273,7 +273,7 @@ func resourceBlockDeviceUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if p, ok := d.GetOk("is_boot_device"); ok && p.(bool) {
-		if err := client.BlockDevice.SetBootDisk(machine.SystemID, id); err != nil {
+		if err := client.BlockDevice.SetBootDisk(machine.SystemID, blockDevice.ID); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -298,8 +298,28 @@ func resourceBlockDeviceDelete(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	if err := client.BlockDevice.Delete(machine.SystemID, id); err != nil {
+	blockDevice, err := client.BlockDevice.Get(machine.SystemID, id)
+	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// We choose to delete the partitions and tags associated with a physical block device
+	// rather than delete it because it makes more sense for a physical device with permanence
+	// outside of Terraform. Virtual devices are expected to be entirely managed by Terraform.
+
+	// Remove existing partitions
+	for _, part := range blockDevice.Partitions {
+		if err := client.BlockDevicePartition.Delete(blockDevice.SystemID, blockDevice.ID, part.ID); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// Remove existing tags
+	for _, tag := range blockDevice.Tags {
+		_, err := client.BlockDevice.RemoveTag(machine.SystemID, blockDevice.ID, tag)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	return nil
