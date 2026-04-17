@@ -10,6 +10,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
+	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-cty/cty/gocty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -150,7 +151,7 @@ func setTerraformState(d *schema.ResourceData, tfState map[string]any) error {
 func getMachineOrDeviceSystemID(client *client.Client, d *schema.ResourceData) (string, error) {
 	if d.Get("machine") != "" {
 		machine, err := getMachine(client, d.Get("machine").(string))
-		if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
+		if err != nil {
 			return "", err
 		}
 
@@ -159,7 +160,7 @@ func getMachineOrDeviceSystemID(client *client.Client, d *schema.ResourceData) (
 
 	if d.Get("device") != "" {
 		device, err := getDevice(client, d.Get("device").(string))
-		if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
+		if err != nil {
 			return "", err
 		}
 
@@ -258,6 +259,9 @@ func optionalStringPtr(value string) *string {
 	return &value
 }
 
+// unsetIfNotFoundError checks if the given error is a 404 Not Found error, and if so,
+// unsets the ID of the resource data and returns no diagnostics.
+// Otherwise, it returns diagnostics containing the error.
 func unsetIfNotFoundError(d *schema.ResourceData, err error) diag.Diagnostics {
 	if strings.Contains(err.Error(), "404 Not Found") {
 		d.SetId("")
@@ -265,4 +269,19 @@ func unsetIfNotFoundError(d *schema.ResourceData, err error) diag.Diagnostics {
 	}
 
 	return diag.FromErr(err)
+}
+
+// isNotFoundError checks if the given error is a 404 Not Found error.
+func isMachineInPermittedState(machine *entity.Machine) bool {
+	switch machine.Status {
+	case
+		node.StatusNew,
+		node.StatusReady,
+		node.StatusAllocated,
+		node.StatusBroken,
+		node.StatusFailedTesting:
+		return true
+	default:
+		return false
+	}
 }

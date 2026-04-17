@@ -136,12 +136,12 @@ func resourceNetworkInterfaceTagRead(ctx context.Context, d *schema.ResourceData
 
 	systemID, interfaceID, err := SplitTagStateID(d.Id())
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 	// Get the existing interface
 	existingInterface, err := client.NetworkInterface.Get(systemID, interfaceID)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 	// Set the tags in state
 	if err := d.Set("tags", existingInterface.Tags); err != nil {

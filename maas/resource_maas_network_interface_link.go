@@ -112,18 +112,18 @@ func resourceNetworkInterfaceLinkRead(ctx context.Context, d *schema.ResourceDat
 
 	systemID, err := getMachineOrDeviceSystemID(client, d)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	networkInterface, err := getNetworkInterface(client, systemID, d.Get("network_interface").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// Get the network interface link
-	link, err := getNetworkInterfaceLink(client, systemID, networkInterface.ID, linkID)
+	link, err := getNetworkInterfaceLink(client, networkInterface, linkID)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// Set the Terraform state
@@ -143,17 +143,25 @@ func resourceNetworkInterfaceLinkUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	systemID, err := getMachineOrDeviceSystemID(client, d)
+	// Update only happens when default_gateway changes (the only non-ForceNew field).
+	// Since default_gateway has ConflictsWith device, we know this must be a machine.
+	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	if !isMachineInPermittedState(machine) {
+		return diag.Errorf("machine is not in a permitted state for update")
+	}
+
+	systemID := machine.SystemID
 
 	networkInterface, err := getNetworkInterface(client, systemID, d.Get("network_interface").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// Run update operation
+	// Clear existing default gateways before potentially setting a new one
 	if _, err := client.Machine.ClearDefaultGateways(systemID); err != nil {
 		return diag.FromErr(err)
 	}
@@ -221,19 +229,14 @@ func createNetworkInterfaceLink(client *client.Client, machineSystemID string, n
 	return &networkInterface.Links[0], nil
 }
 
-func getNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterfaceID int, linkID int) (*entity.NetworkInterfaceLink, error) {
-	networkInterface, err := client.NetworkInterface.Get(machineSystemID, networkInterfaceID)
-	if err != nil {
-		return nil, err
-	}
-
+func getNetworkInterfaceLink(client *client.Client, networkInterface *entity.NetworkInterface, linkID int) (*entity.NetworkInterfaceLink, error) {
 	for _, link := range networkInterface.Links {
 		if link.ID == linkID {
 			return &link, nil
 		}
 	}
 
-	return nil, fmt.Errorf("cannot find link (%v) on the network interface (%v) from machine (%s)", linkID, networkInterfaceID, machineSystemID)
+	return nil, fmt.Errorf("cannot find link (%v) on the network interface (%v) from machine (%s)", linkID, networkInterface.ID, networkInterface.SystemID)
 }
 
 func deleteNetworkInterfaceLink(client *client.Client, machineSystemID string, networkInterfaceID int, linkID int) error {
