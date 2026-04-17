@@ -150,7 +150,7 @@ func testAccCheckMAASBlockDeviceTagDestroy(s *terraform.State) error {
 		}
 
 		for _, tag := range response.Tags {
-			if strings.HasPrefix(tag, "tag") {
+			if strings.HasPrefix(tag, "tf-tag") {
 				return fmt.Errorf("MAAS Block Device (%d) still has tag: %s", blockDeviceID, tag)
 			}
 		}
