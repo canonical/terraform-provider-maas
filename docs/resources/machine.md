@@ -137,7 +137,6 @@ resource "maas_machine" "ipmi_machine" {
 - `block_devices` (List of Object) A list of block devices attached to the machine. (see [below for nested schema](#nestedatt--block_devices))
 - `id` (String) The ID of this resource.
 - `network_interfaces` (Set of String) A set of MAC addresses of network interfaces attached to the machine.
-- `status` (String) The machine status
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
