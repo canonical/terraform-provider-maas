@@ -212,6 +212,11 @@ func resourceMAASMachine() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"status": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The machine status",
+			},
 			"zone": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -304,6 +309,7 @@ func resourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any) 
 		"domain":         machine.Domain.Name,
 		"zone":           machine.Zone.Name,
 		"pool":           machine.Pool.Name,
+		"status":         machine.StatusName,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)

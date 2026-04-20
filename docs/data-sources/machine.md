@@ -48,4 +48,5 @@ data "maas_machine" "test_by_pxe_mac_address" {
 - `pool` (String) The resource pool of the machine.
 - `power_parameters` (String, Sensitive) Serialized JSON string containing the parameters specific to the `power_type`. See [Power types](https://maas.io/docs/api#power-types) section for a list of the available power parameters for each power type.
 - `power_type` (String) The power management type (e.g. `ipmi`) of the machine.
+- `status` (String) The machine status
 - `zone` (String) The zone of the machine.
