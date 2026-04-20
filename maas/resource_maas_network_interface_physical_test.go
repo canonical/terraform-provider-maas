@@ -15,36 +15,39 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMAASNetworkInterfacePhysical(name string, machine string, macAddress string, mtu int) string {
+func testAccMAASNetworkInterfacePhysical(fabricName string, name string, machine string, macAddress string, mtu int) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
-	name = "tf-fabric-physical"
+    name = "%s"
 }
 
 data "maas_machine" "machine" {
-	hostname = "%s"
+    hostname = "%s"
 }
 
 data "maas_vlan" "default" {
-	fabric = maas_fabric.default.id
-	vlan   = 0
+    fabric = maas_fabric.default.id
+    vlan   = 0
 }
 
 resource "maas_network_interface_physical" "test" {
-	machine     = data.maas_machine.machine.id
-	name        = "%s"
-	mac_address = "%s"
-	mtu         = %d
-	tags        = ["tag1", "tag2"]
-	vlan        = data.maas_vlan.default.id
+    machine     = data.maas_machine.machine.id
+    name        = "%s"
+    mac_address = "%s"
+    mtu         = %d
+    tags        = ["tag1", "tag2"]
+    vlan        = data.maas_vlan.default.id
   }
-`, machine, name, macAddress, mtu)
+`, fabricName, machine, name, macAddress, mtu)
 }
 
 func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
 	var networkInterfacePhysical entity.NetworkInterface
 
-	name := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 9))
+	fabricName := acctest.RandomWithPrefix("tf-fab")
+
+	name := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
+
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddress := testutils.RandomMAC()
 
@@ -65,13 +68,14 @@ func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASNetworkInterfacePhysical(name, machine, macAddress, 1500),
+				// Pass the dynamic fabric name into the config generator
+				Config: testAccMAASNetworkInterfacePhysical(fabricName, name, machine, macAddress, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMAASNetworkInterfacePhysical(name, machine, macAddress, 9000),
+				Config: testAccMAASNetworkInterfacePhysical(fabricName, name, machine, macAddress, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "9000"))...),
 			},
@@ -167,9 +171,6 @@ func testAccCheckMAASNetworkInterfacePhysicalDestroy(s *terraform.State) error {
 			if response != nil && response.VLAN.ID != 0 {
 				return fmt.Errorf("MAAS Network interface physical (%s) still exists and is not disconnected from VLAN (%d)", rs.Primary.ID, response.VLAN.ID)
 			}
-
-			// we also need to clean up the dummy mac addresses that are created
-			_ = conn.NetworkInterface.Delete(rs.Primary.Attributes["machine"], id)
 
 			continue
 		}
