@@ -204,6 +204,11 @@ func resourceMAASMachine() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"status": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The machine status",
+			},
 			"testing_scripts": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -211,11 +216,6 @@ func resourceMAASMachine() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-			},
-			"status": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The machine status",
 			},
 			"zone": {
 				Type:        schema.TypeString,
