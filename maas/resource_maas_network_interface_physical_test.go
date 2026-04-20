@@ -163,11 +163,15 @@ func testAccCheckMAASNetworkInterfacePhysicalDestroy(s *terraform.State) error {
 
 		response, err := conn.NetworkInterface.Get(rs.Primary.Attributes["machine"], id)
 		if err == nil {
-			if response != nil && response.ID == id {
-				return fmt.Errorf("MAAS Network interface physical (%s) still exists.", rs.Primary.ID)
+			// because this device is physical, we need to check it was *disconnected*, not destroyed
+			if response != nil && response.VLAN.ID != 0 {
+				return fmt.Errorf("MAAS Network interface physical (%s) still exists and is not disconnected from VLAN (%d)", rs.Primary.ID, response.VLAN.ID)
 			}
 
-			return nil
+			// we also need to clean up the dummy mac addresses that are created
+			_ = conn.NetworkInterface.Delete(rs.Primary.Attributes["machine"], id)
+
+			continue
 		}
 
 		// If the error is equivalent to 404 not found, the maas_network_interface_physical is destroyed.
