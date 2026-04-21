@@ -128,6 +128,7 @@ resource "maas_machine" "ipmi_machine" {
 - `pool` (String) The resource pool of the machine. This is computed if it's not set.
 - `pxe_mac_address` (String) The MAC address of the machine's PXE boot NIC, optional for IPMI machines but required for all other power types.
 - `script_parameters` (Map of String) Scripts specified to run may define their own parameters. These parameters may be passed as parameter name (key) value pairs as a map. Optionally a parameter may have the script name prepended to have that parameter only apply to that specific script, e.g. my-script_param=value.
+- `skip_bmc_config` (Boolean) Optional parameter to skip re-configuration of the BMC for IPMI based machines
 - `testing_scripts` (List of String) Testing scripts names and tags to be run after commissioning. By default all tests tagged 'testing' will be run. Set to ['none'] to disable running tests.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `zone` (String) The zone of the machine. This is computed if it's not set.

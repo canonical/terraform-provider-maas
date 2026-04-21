@@ -204,6 +204,11 @@ func resourceMAASMachine() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"skip_bmc_config": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Optional parameter to skip re-configuration of the BMC for IPMI based machines",
+			},
 			"testing_scripts": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -446,6 +451,7 @@ func getMachineCommissionParams(d *schema.ResourceData) *entity.MachineCommissio
 		CommissioningScripts: listAsString(d.Get("commissioning_scripts").([]any)),
 		TestingScripts:       listAsString(d.Get("testing_scripts").([]any)),
 		ScriptParams:         d.Get("script_parameters").(map[string]any),
+		SkipBMCConfig:        d.Get("skip_bmc_config").(bool),
 	}
 }
 
