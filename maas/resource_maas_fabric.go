@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
@@ -100,12 +99,6 @@ func resourceFabricDelete(ctx context.Context, d *schema.ResourceData, meta any)
 	}
 
 	if err := client.Fabric.Delete(id); err != nil {
-		// fabrics with nothing attached can be automatically cleaned up by MAAS,
-		// we shouldn't error if the fabric is missing
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil
-		}
-
 		return diag.FromErr(err)
 	}
 
