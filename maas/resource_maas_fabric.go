@@ -57,7 +57,7 @@ func resourceFabricCreate(ctx context.Context, d *schema.ResourceData, meta any)
 
 	d.SetId(fmt.Sprintf("%v", fabric.ID))
 
-	return resourceFabricUpdate(ctx, d, meta)
+	return resourceFabricRead(ctx, d, meta)
 }
 
 func resourceFabricRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
