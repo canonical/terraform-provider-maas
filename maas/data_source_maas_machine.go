@@ -58,6 +58,11 @@ func dataSourceMAASMachine() *schema.Resource {
 				ExactlyOneOf: []string{"hostname", "pxe_mac_address"},
 				Description:  "The MAC address of the machine's PXE boot NIC.",
 			},
+			"status": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The machine status",
+			},
 			"zone": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -104,6 +109,7 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 		"power_type":       machine.PowerType,
 		"power_parameters": powerParamsJSON,
 		"pxe_mac_address":  machine.BootInterface.MACAddress,
+		"status":           machine.StatusName,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
