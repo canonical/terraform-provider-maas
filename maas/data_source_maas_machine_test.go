@@ -26,7 +26,7 @@ func TestAccDataSourceMAASMachine_VMHost(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "architecture"),
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "domain"),
 					resource.TestCheckResourceAttr("data.maas_machine.test", "hostname", testMachineName),
-					resource.TestCheckResourceAttrSet("data.maas_machine.test", "min_hw_kernel"),
+					resource.TestCheckNoResourceAttr("data.maas_machine.test", "min_hw_kernel"),
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "pool"),
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "power_parameters"),
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "power_type"),
