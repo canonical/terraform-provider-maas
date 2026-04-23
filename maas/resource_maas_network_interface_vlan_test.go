@@ -35,11 +35,26 @@ resource "maas_vlan" "tf_vlan" {
 	name   = "tf-vlan-42"
 }
 
+resource "maas_subnet" "test_subnet" {
+	fabric       = maas_fabric.default.id
+	vlan         = data.maas_vlan.default.id
+	cidr         = "%s"
+}
+
 resource "maas_network_interface_physical" "nic1" {
 	machine     = data.maas_machine.machine.id
 	mac_address = "%s"
 	name        = "bond0"
 	vlan        = data.maas_vlan.default.id
+
+	# When a physical interface is disconnected from a VLAN, MAAS automatically deletes the fabric
+	# if the VLAN has no other interfaces or subnets attached. To prevent the fabric from being
+	# deleted before the interface is disconnected, we add an explicit dependency on the subnet.
+	# This ensures the subnet (and thus the fabric) remains until after the interface is
+	# disconnected, allowing us to verify the disconnection without the fabric being removed
+	# prematurely.
+	# https://github.com/canonical/maas/commit/885021185340f740355faf13ad17b8fde5d8d285
+	depends_on = [maas_subnet.test_subnet]
 }
 
 resource "maas_network_interface_vlan" "test" {
@@ -51,7 +66,7 @@ resource "maas_network_interface_vlan" "test" {
 	tags      = ["tag1", "tag2"]
 	vlan      = maas_vlan.tf_vlan.id
 }
-  `, machine, macAddressPhys, mtu)
+  `, machine, testutils.GenerateRandomCIDR(), macAddressPhys, mtu)
 }
 
 func TestAccResourceMAASNetworkInterfaceVLAN_basic(t *testing.T) {
