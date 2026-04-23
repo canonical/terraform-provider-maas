@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceMAASMachine_VMHost(t *testing.T) {
+func TestAccDataSourceMAASMachine_basic(t *testing.T) {
 	vmHostID := os.Getenv("TF_ACC_VM_HOST_ID")
 	testMachineName := acctest.RandomWithPrefix("tf-acc-ds-machine")
 
@@ -30,7 +30,7 @@ func TestAccDataSourceMAASMachine_VMHost(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "pool"),
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "power_parameters"),
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "power_type"),
-					resource.TestCheckNoResourceAttr("data.maas_machine.test", "pxe_mac_address"),
+					resource.TestCheckResourceAttrSet("data.maas_machine.test", "pxe_mac_address"),
 					resource.TestCheckResourceAttr("data.maas_machine.test", "status", "Ready"),
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "zone"),
 				),
