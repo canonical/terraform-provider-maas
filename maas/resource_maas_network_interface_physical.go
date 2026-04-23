@@ -133,7 +133,7 @@ func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resourc
 
 	machine, err := getMachine(client, d.Get("machine").(string))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	id, err := strconv.Atoi(d.Id())
@@ -143,7 +143,7 @@ func resourceNetworkInterfacePhysicalRead(ctx context.Context, d *schema.Resourc
 
 	networkInterface, err := client.NetworkInterface.Get(machine.SystemID, id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	tfState := map[string]any{
@@ -205,7 +205,7 @@ func resourceNetworkInterfacePhysicalDelete(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	if err := client.NetworkInterface.Delete(machine.SystemID, id); err != nil {
+	if _, err := client.NetworkInterface.Disconnect(machine.SystemID, id); err != nil {
 		return diag.FromErr(err)
 	}
 

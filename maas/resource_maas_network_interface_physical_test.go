@@ -15,36 +15,54 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMAASNetworkInterfacePhysical(name string, machine string, macAddress string, mtu int) string {
+func testAccMAASNetworkInterfacePhysical(fabricName string, name string, machine string, macAddress string, mtu int) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
-	name = "tf-fabric-physical"
+    name = "%s"
 }
 
 data "maas_machine" "machine" {
-	hostname = "%s"
+    hostname = "%s"
 }
 
 data "maas_vlan" "default" {
-	fabric = maas_fabric.default.id
-	vlan   = 0
+    fabric = maas_fabric.default.id
+    vlan   = 0
+}
+
+resource "maas_subnet" "test_subnet" {
+    fabric       = maas_fabric.default.id
+    vlan         = data.maas_vlan.default.id
+    cidr         = "%s"
 }
 
 resource "maas_network_interface_physical" "test" {
-	machine     = data.maas_machine.machine.id
-	name        = "%s"
-	mac_address = "%s"
-	mtu         = %d
-	tags        = ["tag1", "tag2"]
-	vlan        = data.maas_vlan.default.id
+    machine     = data.maas_machine.machine.id
+    name        = "%s"
+    mac_address = "%s"
+    mtu         = %d
+    tags        = ["tag1", "tag2"]
+    vlan        = data.maas_vlan.default.id
+
+    # When a physical interface is disconnected from a VLAN, MAAS automatically deletes the fabric
+    # if the VLAN has no other interfaces or subnets attached. To prevent the fabric from being
+    # deleted before the interface is disconnected, we add an explicit dependency on the subnet.
+    # This ensures the subnet (and thus the fabric) remains until after the interface is
+    # disconnected, allowing us to verify the disconnection without the fabric being removed
+    # prematurely.
+    # https://github.com/canonical/maas/commit/885021185340f740355faf13ad17b8fde5d8d285
+    depends_on = [maas_subnet.test_subnet]
   }
-`, machine, name, macAddress, mtu)
+`, fabricName, machine, testutils.GenerateRandomCIDR(), name, macAddress, mtu)
 }
 
 func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
 	var networkInterfacePhysical entity.NetworkInterface
 
-	name := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 9))
+	fabricName := acctest.RandomWithPrefix("tf-fab")
+
+	name := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
+
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddress := testutils.RandomMAC()
 
@@ -65,13 +83,14 @@ func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASNetworkInterfacePhysical(name, machine, macAddress, 1500),
+				// Pass the dynamic fabric name into the config generator
+				Config: testAccMAASNetworkInterfacePhysical(fabricName, name, machine, macAddress, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMAASNetworkInterfacePhysical(name, machine, macAddress, 9000),
+				Config: testAccMAASNetworkInterfacePhysical(fabricName, name, machine, macAddress, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_physical.test", "mtu", "9000"))...),
 			},
@@ -163,11 +182,12 @@ func testAccCheckMAASNetworkInterfacePhysicalDestroy(s *terraform.State) error {
 
 		response, err := conn.NetworkInterface.Get(rs.Primary.Attributes["machine"], id)
 		if err == nil {
-			if response != nil && response.ID == id {
-				return fmt.Errorf("MAAS Network interface physical (%s) still exists.", rs.Primary.ID)
+			// because this device is physical, we need to check it was *disconnected*, not destroyed
+			if response != nil && response.VLAN.ID != 0 {
+				return fmt.Errorf("MAAS Network interface physical (%s) still exists and is not disconnected from VLAN (%d)", rs.Primary.ID, response.VLAN.ID)
 			}
 
-			return nil
+			continue
 		}
 
 		// If the error is equivalent to 404 not found, the maas_network_interface_physical is destroyed.
