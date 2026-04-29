@@ -7,6 +7,7 @@ import (
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
+	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -345,7 +346,11 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 	// Get MAAS machine
 	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
+	}
+	if machine.Status != node.StatusDeployed {
+		d.SetId("")
+		return nil
 	}
 	// Set Terraform state
 	ipAddresses := make([]string, len(machine.IPAddresses))
