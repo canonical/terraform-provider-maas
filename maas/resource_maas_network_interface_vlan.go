@@ -216,6 +216,7 @@ func getNetworkInterfaceVLANParams(d *schema.ResourceData, parentID int, vlanID 
 	return &entity.NetworkInterfaceVLANParams{
 		AcceptRA: d.Get("accept_ra").(bool),
 		MTU:      d.Get("mtu").(int),
+		Name:     d.Get("name").(string),
 		Parents:  []int{parentID},
 		Tags:     strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
 		VLAN:     vlanID,
@@ -226,6 +227,7 @@ func getNetworkInterfaceVLANUpdateParams(d *schema.ResourceData, parentID int, v
 	return &entity.NetworkInterfaceUpdateParams{
 		AcceptRA: d.Get("accept_ra").(bool),
 		MTU:      d.Get("mtu").(int),
+		Name:     d.Get("name").(string),
 		Parents:  []int{parentID},
 		Tags:     strings.Join(convertToStringSlice(d.Get("tags").(*schema.Set).List()), ","),
 		VLAN:     vlanID,
