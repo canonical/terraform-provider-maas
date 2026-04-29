@@ -130,6 +130,58 @@ func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
 					return fmt.Sprintf("%s/%s", rs.Primary.Attributes["machine"], rs.Primary.Attributes["mac_address"]), nil
 				},
 			},
+			// Test import by MAC Address irrespective of case
+			{
+				ResourceName:      "maas_network_interface_physical.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["maas_network_interface_physical.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", "maas_network_interface_physical.test")
+					}
+
+					if rs.Primary.ID == "" {
+						return "", fmt.Errorf("resource id not set")
+					}
+
+					return fmt.Sprintf("%s/%s", rs.Primary.Attributes["machine"], strings.ToUpper(rs.Primary.Attributes["mac_address"])), nil
+				},
+			},
+			{
+				ResourceName:      "maas_network_interface_physical.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["maas_network_interface_physical.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", "maas_network_interface_physical.test")
+					}
+
+					if rs.Primary.ID == "" {
+						return "", fmt.Errorf("resource id not set")
+					}
+
+					return fmt.Sprintf("%s/%s", rs.Primary.Attributes["machine"], strings.ToLower(rs.Primary.Attributes["mac_address"])), nil
+				},
+			},
+			{
+				ResourceName:      "maas_network_interface_physical.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["maas_network_interface_physical.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", "maas_network_interface_physical.test")
+					}
+
+					if rs.Primary.ID == "" {
+						return "", fmt.Errorf("resource id not set")
+					}
+
+					return fmt.Sprintf("%s/%s", rs.Primary.Attributes["machine"], strings.ToTitle(rs.Primary.Attributes["mac_address"])), nil
+				},
+			},
 		},
 	})
 }
