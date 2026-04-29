@@ -123,6 +123,24 @@ To run the tests:
         make testacc TESTARGS="-run=TestAcc<resource_name>"
         ```
 
+### Cleaning Up Test Resources
+
+If acceptance tests fail or are interrupted, they may leave resources in your MAAS environment. Use sweepers to clean up these leftover test resources:
+
+```bash
+make sweep
+```
+
+**Important:** Sweepers will delete infrastructure. Only run them in test environments.
+
+Sweepers require the same environment variables as acceptance tests (`MAAS_API_KEY`, `MAAS_API_URL`) plus any resource-specific variables (e.g., `TF_ACC_NETWORK_INTERFACE_MACHINE`). Test resources are identified by naming patterns (e.g., `tf-nic-*` for network interfaces) and will be automatically removed.
+
+To run specific sweepers or pass additional options:
+
+```bash
+make sweep SWEEPARGS="-sweep-run=maas_network_interface"
+```
+
 ## Getting Help
 
 Check for existing issues [here](https://github.com/canonical/terraform-provider-maas/issues), or open a new one for bugs and feature requests.

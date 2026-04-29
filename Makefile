@@ -18,7 +18,7 @@ $(BIN)/%:
 	@echo "Installing tools from tools/tools.go"
 	@cat tools/tools.go | grep _ | awk -F '"' '{print $$2}' | GOBIN=$(BIN) xargs -tI {} go install {}
 
-.PHONY: build install clean clean_install test testacc generate_docs validate_docs tfproviderlintx tfproviderlint
+.PHONY: build install clean clean_install test testacc sweep generate_docs validate_docs tfproviderlintx tfproviderlint
 
 build:
 	mkdir -p $(BIN)
@@ -59,6 +59,11 @@ test:
 
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m -parallel=$(TEST_PARALLELISM)
+
+sweep:
+	@echo "WARNING: This will destroy infrastructure. Use only in test environments."
+	@echo "Running sweepers..."
+	go test ./maas -v -sweep=all -timeout 30m $(SWEEPARGS)
 
 generate_docs: $(BIN)/tfplugindocs
 	$(BIN)/tfplugindocs generate --provider-name $(PROVIDER_NAME)

@@ -36,7 +36,7 @@ resource "maas_vlan" "test" {
 resource "maas_network_interface_physical" "test" {
   machine     = data.maas_machine.machine.id
   mac_address = "%s"
-  name        = "tf0"
+  name        = "%s"
   vlan        = data.maas_vlan.default.id
 
   # When a physical interface is disconnected from a VLAN, MAAS automatically deletes the fabric
@@ -50,6 +50,7 @@ resource "maas_network_interface_physical" "test" {
 }
 
 resource "maas_network_interface_vlan" "test" {
+  name    = "%s"
   machine = data.maas_machine.machine.id
   fabric  = maas_fabric.test.id
   parent  = maas_network_interface_physical.test.name
@@ -60,14 +61,14 @@ resource "maas_network_interface_bridge" "test" {
   machine = data.maas_machine.machine.id
   parent  = maas_network_interface_vlan.test.name
   vlan    = maas_vlan.test.id
-  name    = "tfbr"
+  name    = "%s"
 }
 
 resource "maas_subnet" "test" {
   cidr       = "%s"
   fabric     = maas_fabric.test.id
   vlan       = maas_vlan.test.vid
-  name       = "tf_subnet"
+  name       = "%s"
   gateway_ip = "%s"
 }
 
@@ -79,7 +80,7 @@ resource "maas_network_interface_link" "test" {
   ip_address        = "%s"
   default_gateway   = true
 }
-`, machine, macAddress, cidr, gateway, ip)
+`, machine, macAddress, fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999)), fmt.Sprintf("tf-nic-vlan-%d", acctest.RandIntRange(0, 999)), fmt.Sprintf("tf-nic-br-%d", acctest.RandIntRange(0, 999)), cidr, cidr, gateway, ip)
 }
 
 func testAccMAASNetworkInterfaceLinkDevice(macAddress string, randomName string, cidr string, gateway string, ip string) string {
@@ -110,7 +111,7 @@ resource "maas_network_interface_link" "first" {
   mode              = "STATIC"
   ip_address        = %q
 }
-`, randomName, macAddress, randomName, cidr, randomName, gateway, ip)
+`, randomName, macAddress, randomName, cidr, cidr, gateway, ip)
 }
 
 func TestAccResourceMAASNetworkInterfaceLink_device(t *testing.T) {
