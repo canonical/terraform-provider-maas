@@ -243,7 +243,7 @@ func findNetworkInterfacePhysical(client *client.Client, machineSystemID string,
 			continue
 		}
 
-		if n.MACAddress == identifier || n.Name == identifier || strconv.Itoa(n.ID) == identifier {
+		if strings.EqualFold(n.MACAddress, identifier) || n.Name == identifier || strconv.Itoa(n.ID) == identifier {
 			return &n, nil
 		}
 	}
