@@ -10,11 +10,12 @@ import (
 	"testing"
 
 	"github.com/canonical/gomaasclient/entity"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMAASNetworkInterfaceVLAN(machine string, macAddressPhys string, mtu int) string {
+func testAccMAASNetworkInterfaceVLAN(machine string, name string, parentName string, macAddressPhys string, mtu int) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
 	name = "tf-fabric-vlan"
@@ -36,15 +37,16 @@ resource "maas_vlan" "tf_vlan" {
 }
 
 resource "maas_subnet" "test_subnet" {
+	name         = "%s"
 	fabric       = maas_fabric.default.id
-	vlan         = data.maas_vlan.default.id
+	vlan         = data.maas_vlan.default.vlan
 	cidr         = "%s"
 }
 
 resource "maas_network_interface_physical" "nic1" {
 	machine     = data.maas_machine.machine.id
 	mac_address = "%s"
-	name        = "bond0"
+	name        = "%s"
 	vlan        = data.maas_vlan.default.id
 
 	# When a physical interface is disconnected from a VLAN, MAAS automatically deletes the fabric
@@ -58,6 +60,7 @@ resource "maas_network_interface_physical" "nic1" {
 }
 
 resource "maas_network_interface_vlan" "test" {
+	name	  = "%s"
 	machine   = data.maas_machine.machine.id
 	accept_ra = false
 	fabric    = maas_fabric.default.id
@@ -66,7 +69,7 @@ resource "maas_network_interface_vlan" "test" {
 	tags      = ["tag1", "tag2"]
 	vlan      = maas_vlan.tf_vlan.id
 }
-  `, machine, testutils.GenerateRandomCIDR(), macAddressPhys, mtu)
+  `, machine, acctest.RandomWithPrefix("tf-sub"), testutils.GenerateRandomCIDR(), macAddressPhys, parentName, name, mtu)
 }
 
 func TestAccResourceMAASNetworkInterfaceVLAN_basic(t *testing.T) {
@@ -74,14 +77,17 @@ func TestAccResourceMAASNetworkInterfaceVLAN_basic(t *testing.T) {
 
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddressPhys := testutils.RandomMAC()
+	name := fmt.Sprintf("tf-nic-vlan-%d", acctest.RandIntRange(0, 999))
+	parentName := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASNetworkInterfaceVLANCheckExists("maas_network_interface_vlan.test", &networkInterfaceVLAN),
+		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "name", name),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "accept_ra", "false"),
-		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "parent", "bond0"),
+		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "parent", parentName),
 		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "tags.#", "2"),
-		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "tags.0", "tag1"),
-		resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "tags.1", "tag2"),
+		resource.TestCheckTypeSetElemAttr("maas_network_interface_vlan.test", "tags.*", "tag1"),
+		resource.TestCheckTypeSetElemAttr("maas_network_interface_vlan.test", "tags.*", "tag2"),
 		resource.TestCheckResourceAttrPair("maas_network_interface_vlan.test", "vlan", "maas_vlan.tf_vlan", "id"),
 	}
 
@@ -92,13 +98,13 @@ func TestAccResourceMAASNetworkInterfaceVLAN_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASNetworkInterfaceVLAN(machine, macAddressPhys, 1500),
+				Config: testAccMAASNetworkInterfaceVLAN(machine, name, parentName, macAddressPhys, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMAASNetworkInterfaceVLAN(machine, macAddressPhys, 9000),
+				Config: testAccMAASNetworkInterfaceVLAN(machine, name, parentName, macAddressPhys, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_vlan.test", "mtu", "9000"))...),
 			},
