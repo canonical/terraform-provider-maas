@@ -3,7 +3,7 @@ module terraform-provider-maas
 go 1.25.8
 
 require (
-	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/bflad/tfproviderlint v0.31.0
 	github.com/canonical/gomaasclient v0.20.0
 	github.com/hashicorp/go-cty v1.5.0
