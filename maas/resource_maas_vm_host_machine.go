@@ -196,7 +196,7 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta
 	// Get VM host machine
 	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// Set Terraform state
