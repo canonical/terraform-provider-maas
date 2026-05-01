@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/canonical/gomaasclient/entity"
+	"github.com/canonical/gomaasclient/entity/node"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -197,6 +198,11 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta
 	machine, err := client.Machine.Get(d.Id())
 	if err != nil {
 		return unsetIfNotFoundError(d, err)
+	}
+	// remove from state if not deployed
+	if machine.Status != node.StatusDeployed {
+		d.SetId("")
+		return nil
 	}
 
 	// Set Terraform state

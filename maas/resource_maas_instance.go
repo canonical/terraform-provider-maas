@@ -348,6 +348,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 	if err != nil {
 		return unsetIfNotFoundError(d, err)
 	}
+	// remove from state if not deployed
 	if machine.Status != node.StatusDeployed {
 		d.SetId("")
 		return nil
