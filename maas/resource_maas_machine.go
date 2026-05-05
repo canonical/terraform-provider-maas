@@ -519,19 +519,14 @@ func getMachine(client *client.Client, identifier string) (*entity.Machine, erro
 }
 
 func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) []map[string]any {
-	var physical []entity.BlockDevice
-	for _, bd := range blockDevices {
-		if bd.Type == "physical" {
-			physical = append(physical, bd)
-		}
-	}
-
-	sort.Slice(physical, func(i, j int) bool {
-		return physical[i].ID < physical[j].ID
+	// sort block devices by ID
+	sort.Slice(blockDevices, func(i, j int) bool {
+		return blockDevices[i].ID < blockDevices[j].ID
 	})
 
-	blockDeviceParams := make([]map[string]any, len(physical))
-	for i, blockDevice := range physical {
+	// Create a slice of maps to hold block device parameters
+    blockDeviceParams := make([]map[string]any, len(blockDevices))
+	for i, blockDevice := range blockDevices {
 		blockDeviceParams[i] = map[string]any{
 			"id":             blockDevice.ID,
 			"name":           blockDevice.Name,
