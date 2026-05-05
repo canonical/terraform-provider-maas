@@ -101,6 +101,11 @@ func resourceMAASMachine() *schema.Resource {
 							Computed:    true,
 							Description: "The model of the block device.",
 						},
+						"serial": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The serial number of the block device.",
+						},
 						"name": {
 							Type:        schema.TypeString,
 							Computed:    true,
@@ -514,20 +519,26 @@ func getMachine(client *client.Client, identifier string) (*entity.Machine, erro
 }
 
 func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) []map[string]any {
-	// sort block devices by ID
-	sort.Slice(blockDevices, func(i, j int) bool {
-		return blockDevices[i].ID < blockDevices[j].ID
+	var physical []entity.BlockDevice
+	for _, bd := range blockDevices {
+		if bd.Type == "physical" {
+			physical = append(physical, bd)
+		}
+	}
+
+	sort.Slice(physical, func(i, j int) bool {
+		return physical[i].ID < physical[j].ID
 	})
 
-	// Create a slice of maps to hold block device parameters
-	blockDeviceParams := make([]map[string]any, len(blockDevices))
-	for i, blockDevice := range blockDevices {
+	blockDeviceParams := make([]map[string]any, len(physical))
+	for i, blockDevice := range physical {
 		blockDeviceParams[i] = map[string]any{
 			"id":             blockDevice.ID,
 			"name":           blockDevice.Name,
 			"size_gigabytes": int(math.Round(float64(blockDevice.Size) / GigaBytes)),
 			"id_path":        blockDevice.IDPath,
 			"model":          blockDevice.Model,
+			"serial":         blockDevice.Serial,
 		}
 	}
 
