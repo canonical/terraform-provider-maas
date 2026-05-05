@@ -101,15 +101,15 @@ func resourceMAASMachine() *schema.Resource {
 							Computed:    true,
 							Description: "The model of the block device.",
 						},
-						"serial": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The serial number of the block device.",
-						},
 						"name": {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The block device name.",
+						},
+						"serial": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The serial number of the block device.",
 						},
 						"size_gigabytes": {
 							Type:        schema.TypeInt,
