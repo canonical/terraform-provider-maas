@@ -157,6 +157,7 @@ Read-Only:
 - `id_path` (String)
 - `model` (String)
 - `name` (String)
+- `serial` (String)
 - `size_gigabytes` (Number)
 
 ## Import

@@ -525,7 +525,7 @@ func getAllBlockDeviceMachineParameters(blockDevices []entity.BlockDevice) []map
 	})
 
 	// Create a slice of maps to hold block device parameters
-    blockDeviceParams := make([]map[string]any, len(blockDevices))
+	blockDeviceParams := make([]map[string]any, len(blockDevices))
 	for i, blockDevice := range blockDevices {
 		blockDeviceParams[i] = map[string]any{
 			"id":             blockDevice.ID,
