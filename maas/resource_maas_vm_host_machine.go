@@ -199,11 +199,6 @@ func resourceVMHostMachineRead(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return unsetIfNotFoundError(d, err)
 	}
-	// remove from state if not deployed
-	if machine.Status != node.StatusDeployed {
-		d.SetId("")
-		return nil
-	}
 
 	// Set Terraform state
 	tfState := map[string]any{
