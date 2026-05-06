@@ -371,7 +371,6 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 		"ip_addresses": ipAddresses,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
-		return diag.Errorf("Machine set tfstate failed on read")
 		return diag.FromErr(err)
 	}
 
