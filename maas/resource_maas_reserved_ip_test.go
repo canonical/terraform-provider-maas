@@ -20,7 +20,7 @@ func TestAccResourceMAASReservedIP_basic(t *testing.T) {
 	cidr := testutils.GenerateRandomCIDR()
 	subnetName := acctest.RandomWithPrefix("tf-reserved-ip-test")
 	ip := testutils.GetNetworkPrefixFromCIDR(cidr) + ".50"
-	macAddress := "aa:bb:cc:dd:ee:ff"
+	macAddress := testutils.RandomMAC()
 	comment := "test static lease"
 	commentMod := "updated comment"
 	attrName := "maas_reserved_ip.test"
