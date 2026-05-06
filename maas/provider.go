@@ -84,6 +84,7 @@ func Provider() *schema.Provider {
 			"maas_ssh_keys":                   resourceMAASSSHKeys(),
 			"maas_resource_pool":              resourceMAASResourcePool(),
 			"maas_raid":                       resourceMAASRAID(),
+			"maas_reserved_ip":                resourceMAASReservedIP(),
 			"maas_volume_group":               resourceMAASVolumeGroup(),
 			"maas_logical_volume":             resourceMAASLogicalVolume(),
 			"maas_zone":                       resourceMAASZone(),
