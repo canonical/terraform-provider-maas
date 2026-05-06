@@ -371,6 +371,7 @@ func resourceInstanceRead(ctx context.Context, d *schema.ResourceData, meta any)
 		"ip_addresses": ipAddresses,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
+		return diag.Errorf("Machine set tfstate failed on read")
 		return diag.FromErr(err)
 	}
 
@@ -390,13 +391,13 @@ func resourceInstanceDelete(ctx context.Context, d *schema.ResourceData, meta an
 	// Release MAAS machine
 	_, err := client.Machine.Release(d.Id(), releaseParams)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	// Wait MAAS machine to be released
 	_, err = waitForMachineStatus(ctx, client, d.Id(), []string{"Releasing", "Disk erasing"}, []string{"Ready"}, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
 	return nil
