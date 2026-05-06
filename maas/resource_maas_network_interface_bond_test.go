@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccMAASNetworkInterfaceBond(name string, machine string, macAddress string, macAddressPhysOne string, macAddressPhysTwo string, mtu int) string {
+func testAccMAASNetworkInterfaceBond(name string, parentNameOne string, parentNameTwo string, machine string, macAddress string, macAddressPhysOne string, macAddressPhysTwo string, mtu int) string {
 	return fmt.Sprintf(`
 resource "maas_fabric" "default" {
 	name = "tf-fabric-bond"
@@ -31,15 +31,16 @@ data "maas_vlan" "default" {
 }
 
 resource "maas_subnet" "test_subnet" {
+	name         = "%s"
 	fabric       = maas_fabric.default.id
-	vlan         = data.maas_vlan.default.id
+	vlan         = data.maas_vlan.default.vlan
 	cidr         = "%s"
 }
 
 resource "maas_network_interface_physical" "nic1" {
 	machine     = data.maas_machine.machine.id
 	mac_address = "%s"
-	name        = "enp109s0f0"
+	name        = "%s"
 	vlan        = data.maas_vlan.default.id
 
 	# When a physical interface is disconnected from a VLAN, MAAS automatically deletes the fabric
@@ -55,7 +56,7 @@ resource "maas_network_interface_physical" "nic1" {
 resource "maas_network_interface_physical" "nic2" {
 	machine     = data.maas_machine.machine.id
 	mac_address = "%s"
-	name        = "enp109s0f1"
+	name        = "%s"
 	vlan        = data.maas_vlan.default.id
 
 	# When a physical interface is disconnected from a VLAN, MAAS automatically deletes the fabric
@@ -85,7 +86,7 @@ resource "maas_network_interface_bond" "test" {
 	tags                  = ["tag1", "tag2"]
 	vlan                  = data.maas_vlan.default.id
 }
-`, machine, testutils.GenerateRandomCIDR(), macAddressPhysOne, macAddressPhysTwo, name, macAddress, mtu)
+`, machine, acctest.RandomWithPrefix("tf-sub"), testutils.GenerateRandomCIDR(), macAddressPhysOne, parentNameOne, macAddressPhysTwo, parentNameTwo, name, macAddress, mtu)
 }
 
 func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
@@ -96,6 +97,8 @@ func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 	macAddress := testutils.RandomMAC()
 	macAddressPhysOne := testutils.RandomMAC()
 	macAddressPhysTwo := testutils.RandomMAC()
+	parentNameOne := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
+	parentNameTwo := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASNetworkInterfaceBondCheckExists("maas_network_interface_bond.test", &networkInterfaceBond),
@@ -110,11 +113,11 @@ func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "bond_xmit_hash_policy", "layer2"),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mac_address", macAddress),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.#", "2"),
-		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.0", "enp109s0f0"),
-		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "parents.1", "enp109s0f1"),
+		resource.TestCheckTypeSetElemAttr("maas_network_interface_bond.test", "parents.*", parentNameOne),
+		resource.TestCheckTypeSetElemAttr("maas_network_interface_bond.test", "parents.*", parentNameTwo),
 		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "tags.#", "2"),
-		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "tags.0", "tag1"),
-		resource.TestCheckResourceAttr("maas_network_interface_bond.test", "tags.1", "tag2"),
+		resource.TestCheckTypeSetElemAttr("maas_network_interface_bond.test", "tags.*", "tag1"),
+		resource.TestCheckTypeSetElemAttr("maas_network_interface_bond.test", "tags.*", "tag2"),
 		resource.TestCheckResourceAttrPair("maas_network_interface_bond.test", "vlan", "data.maas_vlan.default", "id"),
 	}
 
@@ -125,13 +128,13 @@ func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 		ErrorCheck:   func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
+				Config: testAccMAASNetworkInterfaceBond(name, parentNameOne, parentNameTwo, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 1500),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "1500"))...),
 			},
 			// Test update
 			{
-				Config: testAccMAASNetworkInterfaceBond(name, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
+				Config: testAccMAASNetworkInterfaceBond(name, parentNameOne, parentNameTwo, machine, macAddress, macAddressPhysOne, macAddressPhysTwo, 9000),
 				Check: resource.ComposeTestCheckFunc(
 					append(checks, resource.TestCheckResourceAttr("maas_network_interface_bond.test", "mtu", "9000"))...),
 			},
