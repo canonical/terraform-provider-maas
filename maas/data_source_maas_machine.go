@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
@@ -17,6 +18,45 @@ func dataSourceMAASMachine() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The architecture type of the machine.",
+			},
+			"block_devices": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "A list of physical block devices attached to the machine.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "The ID of the block device.",
+						},
+						"id_path": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The ID path of the block device.",
+						},
+						"model": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The model of the block device.",
+						},
+						"name": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The block device name.",
+						},
+						"serial": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The serial number of the block device.",
+						},
+						"size_gigabytes": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "The size of the block device (in GB).",
+						},
+					},
+				},
 			},
 			"domain": {
 				Type:        schema.TypeString,
@@ -98,6 +138,22 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
+	allBlockDevices, err := client.BlockDevices.Get(machine.SystemID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Virtual block devices will be managed by Terraform resources, so do not add value
+	// by being here. Filtering them out prevents uneccassary plan changes after
+	// other resources create virtual block devices.
+	physicalBlockDevices := make([]entity.BlockDevice, 0)
+
+	for _, bd := range allBlockDevices {
+		if bd.Type != "physical" {
+			physicalBlockDevices = append(physicalBlockDevices, bd)
+		}
+	}
+
 	tfState := map[string]any{
 		"id":               machine.SystemID,
 		"architecture":     machine.Architecture,
@@ -110,6 +166,7 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 		"power_parameters": powerParamsJSON,
 		"pxe_mac_address":  machine.BootInterface.MACAddress,
 		"status":           machine.StatusName,
+		"block_devices":    getAllBlockDeviceMachineParameters(physicalBlockDevices),
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)

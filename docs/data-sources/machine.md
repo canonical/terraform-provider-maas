@@ -42,6 +42,7 @@ data "maas_machine" "test_by_pxe_mac_address" {
 ### Read-Only
 
 - `architecture` (String) The architecture type of the machine.
+- `block_devices` (List of Object) A list of physical block devices attached to the machine. (see [below for nested schema](#nestedatt--block_devices))
 - `domain` (String) The domain of the machine.
 - `id` (String) The ID of this resource.
 - `min_hwe_kernel` (String) The minimum kernel version allowed to run on this machine.
@@ -50,3 +51,15 @@ data "maas_machine" "test_by_pxe_mac_address" {
 - `power_type` (String) The power management type (e.g. `ipmi`) of the machine.
 - `status` (String) The machine status
 - `zone` (String) The zone of the machine.
+
+<a id="nestedatt--block_devices"></a>
+### Nested Schema for `block_devices`
+
+Read-Only:
+
+- `id` (Number)
+- `id_path` (String)
+- `model` (String)
+- `name` (String)
+- `serial` (String)
+- `size_gigabytes` (Number)
