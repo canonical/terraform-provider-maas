@@ -149,7 +149,7 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 	physicalBlockDevices := make([]entity.BlockDevice, 0)
 
 	for _, bd := range allBlockDevices {
-		if bd.Type != "physical" {
+		if bd.Type == "physical" {
 			physicalBlockDevices = append(physicalBlockDevices, bd)
 		}
 	}
