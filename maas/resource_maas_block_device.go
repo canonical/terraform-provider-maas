@@ -199,9 +199,16 @@ func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	blockDevice, err := findBlockDevice(client, machine.SystemID, d.Get("name").(string))
+	blockDevice, err := findBlockDevice(client, machine.SystemID, d.Get("id_path").(string))
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if blockDevice == nil {
+		blockDevice, err = findBlockDevice(client, machine.SystemID, d.Get("name").(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if blockDevice == nil {

@@ -3,9 +3,13 @@ package maas_test
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -75,6 +79,22 @@ resource "maas_block_device" "test" {
 `, machine)
 }
 
+func testAccMAASBlockDeviceRename(machine, name, idPath string) string {
+	return fmt.Sprintf(`
+data "maas_machine" "machine" {
+  hostname = "%s"
+}
+
+resource "maas_block_device" "test" {
+  machine        = data.maas_machine.machine.id
+  name           = "%s"
+  size_gigabytes = 5
+  block_size     = 512
+  id_path        = "%s"
+}
+`, machine, name, idPath)
+}
+
 func TestAccResourceMAASBlockDevice_basic(t *testing.T) {
 	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
 
@@ -122,4 +142,94 @@ func TestAccResourceMAASBlockDevice_basic(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceMAASBlockDevice_stale(t *testing.T) {
+	machine := os.Getenv("TF_ACC_BLOCK_DEVICE_MACHINE")
+
+	oldName := acctest.RandomWithPrefix("tf-disk")
+	newName := acctest.RandomWithPrefix("tf-disk")
+	idPath := acctest.RandomWithPrefix("/dev/vd")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+		Providers:    testutils.TestAccProviders,
+		ErrorCheck:   func(err error) error { return err },
+		CheckDestroy: testAccCheckMAASBlockDeviceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMAASBlockDeviceRename(machine, oldName, idPath),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("maas_block_device.test", "name", oldName),
+					resource.TestCheckResourceAttr("maas_block_device.test", "id_path", idPath),
+				),
+			},
+			// rename the disk to check there is nothing stale remaining
+			{
+				Config: testAccMAASBlockDeviceRename(machine, newName, idPath),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("maas_block_device.test", "name", newName),
+					resource.TestCheckResourceAttr("maas_block_device.test", "id_path", idPath),
+
+					testAccCheckMAASBlockDeviceStaleRemoved("maas_block_device.test", oldName),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckMAASBlockDeviceStaleRemoved(rn string, oldName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[rn]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", rn)
+		}
+
+		machineID := rs.Primary.Attributes["machine"]
+		client := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
+		devices, err := client.BlockDevices.Get(machineID)
+		if err != nil {
+			return fmt.Errorf("error fetching block devices: %s", err)
+		}
+
+		for _, d := range devices {
+			if d.Name == oldName {
+				return fmt.Errorf("Stale Block device %q still exists", oldName)
+			}
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckMAASBlockDeviceDestroy(s *terraform.State) error {
+	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "maas_block_device" {
+			continue
+		}
+
+		id, err := strconv.Atoi(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		machine := rs.Primary.Attributes["machine"]
+
+		response, err := conn.BlockDevice.Get(machine, id)
+		if err == nil {
+			if response != nil {
+				_ = conn.BlockDevice.Delete(machine, id)
+			}
+			continue
+		}
+
+		if !strings.Contains(err.Error(), "404 Not Found") {
+			return err
+		}
+	}
+
+	return nil
 }
