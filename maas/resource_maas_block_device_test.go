@@ -223,6 +223,7 @@ func testAccCheckMAASBlockDeviceDestroy(s *terraform.State) error {
 			if response != nil {
 				_ = conn.BlockDevice.Delete(machine, id)
 			}
+
 			continue
 		}
 
