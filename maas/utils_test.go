@@ -185,7 +185,7 @@ func TestCheckSemverConstraint(t *testing.T) {
 			MAASVersion:      "3.0.0",
 			semverConstraint: ">> 2.0.0",
 			expectedErr:      true,
-			ErrString:        "improper constraint: >> 2.0.0",
+			ErrString:        "improper constraint: \">> 2.0.0\"",
 		},
 		{
 			name:             "debian-style version with tilde below constraint",
