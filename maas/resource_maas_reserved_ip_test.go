@@ -2,7 +2,6 @@ package maas_test
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"terraform-provider-maas/maas"
@@ -54,7 +53,7 @@ func TestAccResourceMAASReservedIP_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
-			// Test explicit delete: remove reserved IP from config while keeping subnet.
+			// Test explicit destroy: remove reserved IP from config while keeping subnet.
 			// Otherwise check destroy will always pass because subnet deletion will remove
 			// the reserved IP as well.
 			{
@@ -79,7 +78,6 @@ func testAccCheckMAASReservedIPDestroy(s *terraform.State) error {
 		}
 
 		response, err := conn.ReservedIP.Get(id)
-		log.Printf("Checked for deletion of reserved IP with ID %d: response=%v, err=%v", id, response, err)
 
 		if err == nil && response != nil && response.ID == id {
 			return fmt.Errorf("MAAS %s (%s) still exists.", rs.Type, rs.Primary.ID)
@@ -128,6 +126,59 @@ resource "maas_reserved_ip" "test" {
   mac_address = %q
   subnet      = maas_subnet.test.id
   comment     = %q
+}
+`, ip, macAddress, comment)
+}
+
+func TestAccResourceMAASReservedIP_noSubnetField(t *testing.T) {
+	testutils.SkipTestIfNotMAASVersion(t, ">=3.6.0")
+
+	cidr := testutils.GenerateRandomCIDR()
+	subnetName := acctest.RandomWithPrefix("tf-reserved-ip-test")
+	ip := testutils.GetNetworkPrefixFromCIDR(cidr) + ".51"
+	macAddress := testutils.RandomMAC()
+	comment := "test auto-detect subnet"
+	attrName := "maas_reserved_ip.test_no_subnet"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: testAccCheckMAASReservedIPDestroy,
+		ErrorCheck:   func(err error) error { return err },
+		Steps: []resource.TestStep{
+			// Create without explicit subnet
+			{
+				Config: testAccReservedIPConfigNoSubnet(cidr, subnetName, ip, macAddress, comment),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(attrName, "ip", ip),
+					resource.TestCheckResourceAttr(attrName, "mac_address", macAddress),
+					resource.TestCheckResourceAttr(attrName, "comment", comment),
+					resource.TestCheckResourceAttrSet(attrName, "subnet"),
+				),
+			},
+			// Test import
+			{
+				ResourceName:      attrName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Test destroy
+			{
+				Config: testAccSubnetOnlyConfig(cidr, subnetName),
+				Check:  testAccCheckMAASReservedIPDeleted(ip),
+			},
+		},
+	})
+}
+
+func testAccReservedIPConfigNoSubnet(cidr, subnetName, ip, macAddress, comment string) string {
+	return testAccSubnetOnlyConfig(cidr, subnetName) + fmt.Sprintf(`
+resource "maas_reserved_ip" "test_no_subnet" {
+  ip          = %q
+  mac_address = %q
+  comment     = %q
+
+  depends_on = [maas_subnet.test]
 }
 `, ip, macAddress, comment)
 }

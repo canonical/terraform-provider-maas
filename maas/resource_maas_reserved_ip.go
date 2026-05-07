@@ -59,8 +59,11 @@ func resourceReservedIPCreate(ctx context.Context, d *schema.ResourceData, meta 
 		IP:         d.Get("ip").(string),
 		MACAddress: d.Get("mac_address").(string),
 		Comment:    d.Get("comment").(string),
-		Subnet:     d.Get("subnet").(int),
 	}
+	
+	if subnet, ok := d.GetOk("subnet"); ok {
+ 		params.Subnet = subnet.(int)
+ 	}
 
 	reservedIP, err := client.ReservedIPs.Create(params)
 	if err != nil {
