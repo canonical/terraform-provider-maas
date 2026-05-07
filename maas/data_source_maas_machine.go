@@ -144,7 +144,7 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 	}
 
 	// Virtual block devices will be managed by Terraform resources, so do not add value
-	// by being here. Filtering them out prevents uneccassary plan changes after
+	// by being here. Filtering them out prevents unnecessary plan changes after
 	// other resources create virtual block devices.
 	physicalBlockDevices := make([]entity.BlockDevice, 0)
 
