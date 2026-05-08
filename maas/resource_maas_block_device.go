@@ -199,18 +199,14 @@ func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	blockDevice, err := findBlockDevice(client, machine.SystemID, d.Get("id_path").(string))
+	// 1. SMART SEARCH: Check if the disk already exists based on our hierarchy
+	// (id_path > model&serial > name)
+	blockDevice, err := findBlockDeviceFromSchema(client, machine.SystemID, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if blockDevice == nil {
-		blockDevice, err = findBlockDevice(client, machine.SystemID, d.Get("name").(string))
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
+	// 2. CREATE (If not found): If our smart search returned nil, it truly doesn't exist.
 	if blockDevice == nil {
 		blockDevice, err = client.BlockDevices.Create(machine.SystemID, getBlockDeviceParams(d))
 		if err != nil {
@@ -218,8 +214,10 @@ func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
+	// 3. SAVE STATE: Lock in the immutable MAAS database ID
 	d.SetId(fmt.Sprintf("%v", blockDevice.ID))
 
+	// 4. SYNC CONFIG: Pass it to the UpdateContext to apply any name/tag changes
 	return resourceBlockDeviceUpdate(ctx, d, meta)
 }
 
@@ -341,6 +339,43 @@ func getBlockDeviceParams(d *schema.ResourceData) *entity.BlockDeviceParams {
 		Serial:    d.Get("serial").(string),
 		IDPath:    d.Get("id_path").(string),
 	}
+}
+
+func findBlockDeviceFromSchema(client *client.Client, machineID string, d *schema.ResourceData) (*entity.BlockDevice, error) {
+	blockDevices, err := client.BlockDevices.Get(machineID)
+	if err != nil {
+		return nil, err
+	}
+
+	idPath := d.Get("id_path").(string)
+	model := d.Get("model").(string)
+	serial := d.Get("serial").(string)
+	name := d.Get("name").(string)
+
+	var nameMatch *entity.BlockDevice
+
+	for i := range blockDevices {
+		b := blockDevices[i]
+
+		if idPath != "" && (b.IDPath == idPath || b.Path == idPath) {
+			return &blockDevices[i], nil
+		}
+
+		if model != "" && serial != "" && b.Model == model && b.Serial == serial {
+			return &blockDevices[i], nil
+		}
+
+		if name != "" && b.Name == name {
+			nameMatch = &blockDevices[i]
+		}
+	}
+
+	if nameMatch != nil {
+		return nameMatch, nil
+	}
+
+	// No matches found
+	return nil, err
 }
 
 func findBlockDevice(client *client.Client, machineID string, identifier string) (*entity.BlockDevice, error) {
