@@ -8,6 +8,7 @@ import (
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceMAASReservedIP() *schema.Resource {
@@ -34,12 +35,14 @@ func resourceMAASReservedIP() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 				Description: "The IP address to reserve.",
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
 			},
 			"mac_address": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 				Description: "The MAC address of the host to bind the reserved IP to.",
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IsMACAddress),
 			},
 			"subnet": {
 				Type:        schema.TypeInt,
