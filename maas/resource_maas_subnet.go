@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
+	"github.com/hashicorp/go-set/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -19,6 +21,7 @@ func resourceMAASSubnet() *schema.Resource {
 		ReadContext:   resourceSubnetRead,
 		UpdateContext: resourceSubnetUpdate,
 		DeleteContext: resourceSubnetDelete,
+		CustomizeDiff: customizeDiffSubnet,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 				client := meta.(*ClientConfig).Client
@@ -28,19 +31,7 @@ func resourceMAASSubnet() *schema.Resource {
 					return nil, err
 				}
 
-				tfState := map[string]any{
-					"id":          fmt.Sprintf("%v", subnet.ID),
-					"cidr":        subnet.CIDR,
-					"name":        subnet.Name,
-					"fabric":      fmt.Sprintf("%v", subnet.VLAN.FabricID),
-					"vlan":        fmt.Sprintf("%v", subnet.VLAN.VID),
-					"rdns_mode":   subnet.RDNSMode,
-					"allow_dns":   subnet.AllowDNS,
-					"allow_proxy": subnet.AllowProxy,
-				}
-				if err := setTerraformState(d, tfState); err != nil {
-					return nil, err
-				}
+				d.SetId(strconv.Itoa(subnet.ID))
 
 				return []*schema.ResourceData{d}, nil
 			},
@@ -77,7 +68,8 @@ func resourceMAASSubnet() *schema.Resource {
 			"fabric": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The fabric identifier (ID or name) for the new subnet.",
+				Computed:    true,
+				Description: "The fabric identifier (ID or name) for the new subnet. This argument is computed if it's not set.",
 			},
 			"gateway_ip": {
 				Type:             schema.TypeString,
@@ -90,6 +82,7 @@ func resourceMAASSubnet() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Description: "A set of IP ranges configured on the new subnet. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html).",
+				Deprecated:  "This field is deprecated and will be removed in a future release. Use the `maas_subnet_ip_range` resource to manage subnet IP ranges instead.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"comment": {
@@ -102,6 +95,11 @@ func resourceMAASSubnet() *schema.Resource {
 							Required:         true,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPAddress),
 							Description:      "The end IP for the new IP range (inclusive).",
+						},
+						"id": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "The ID of the IP range.",
 						},
 						"start_ip": {
 							Type:             schema.TypeString,
@@ -133,8 +131,9 @@ func resourceMAASSubnet() *schema.Resource {
 			"vlan": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				RequiredWith: []string{"fabric"},
-				Description:  "The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required.",
+				Description:  "The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required. This argument is computed if it's not set.",
 			},
 		},
 	}
@@ -153,9 +152,13 @@ func resourceSubnetCreate(ctx context.Context, d *schema.ResourceData, meta any)
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fmt.Sprintf("%v", subnet.ID))
+	d.SetId(strconv.Itoa(subnet.ID))
 
-	return resourceSubnetUpdate(ctx, d, meta)
+	if err := createIPRanges(client, d, subnet.ID); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return resourceSubnetRead(ctx, d, meta)
 }
 
 func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -168,23 +171,57 @@ func resourceSubnetRead(ctx context.Context, d *schema.ResourceData, meta any) d
 
 	subnet, err := client.Subnet.Get(id)
 	if err != nil {
-		return diag.FromErr(err)
+		return unsetIfNotFoundError(d, err)
 	}
 
-	gatewayIP := subnet.GatewayIP.String()
-	if gatewayIP == "<nil>" {
-		gatewayIP = ""
-	}
+	// Handle potential "<nil>" value from net.IP
+	gatewayIP := ipToString(subnet.GatewayIP)
 
+	// Populate dns_servers from MAAS
+	// CustomizeDiff will handle detecting when it should be cleared
 	dnsServers := make([]string, len(subnet.DNSServers))
 	for i, ip := range subnet.DNSServers {
-		dnsServers[i] = ip.String()
+		dnsServers[i] = ipToString(ip)
 	}
 
 	tfState := map[string]any{
-		"gateway_ip":  gatewayIP,
+		"allow_dns":   subnet.AllowDNS,
+		"allow_proxy": subnet.AllowProxy,
+		"cidr":        subnet.CIDR,
 		"dns_servers": dnsServers,
+		"fabric":      strconv.Itoa(subnet.VLAN.FabricID),
+		"gateway_ip":  gatewayIP,
+		"name":        subnet.Name,
+		"rdns_mode":   subnet.RDNSMode,
+		"vlan":        strconv.Itoa(subnet.VLAN.VID),
 	}
+
+	// Only manage ip_ranges if they're configured or already tracked in state
+	if _, ok := d.GetOk("ip_ranges"); ok {
+		allIPRanges, err := client.IPRanges.Get()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Filter IP ranges belonging to this subnet and build the set
+		ipRangesSet := make([]map[string]any, 0)
+
+		for _, ipr := range allIPRanges {
+			if ipr.Subnet.ID == id {
+				ipRangeMap := map[string]any{
+					"id":       ipr.ID,
+					"type":     ipr.Type,
+					"start_ip": ipToString(ipr.StartIP),
+					"end_ip":   ipToString(ipr.EndIP),
+					"comment":  ipr.Comment,
+				}
+				ipRangesSet = append(ipRangesSet, ipRangeMap)
+			}
+		}
+
+		tfState["ip_ranges"] = ipRangesSet
+	}
+
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
 	}
@@ -224,6 +261,20 @@ func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, meta any)
 		return diag.FromErr(err)
 	}
 
+	// Delete IP ranges tracked in state first
+	if ipRangesRaw, ok := d.GetOk("ip_ranges"); ok {
+		ipRangesSet := ipRangesRaw.(*schema.Set)
+		for _, i := range ipRangesSet.List() {
+			ipr := i.(map[string]any)
+			if rangeID, ok := ipr["id"]; ok {
+				err = client.IPRange.Delete(rangeID.(int))
+				if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
+					return diag.FromErr(err)
+				}
+			}
+		}
+	}
+
 	if err := client.Subnet.Delete(id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -236,23 +287,69 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 		return nil
 	}
 
-	// Removing existing IP ranges on this subnet
-	ipRanges, err := client.IPRanges.Get()
-	if err != nil {
-		return err
-	}
+	oldRanges, newRanges := d.GetChange("ip_ranges")
+	oldSet := oldRanges.(*schema.Set)
+	newSet := newRanges.(*schema.Set)
 
-	for _, ipr := range ipRanges {
-		if ipr.Subnet.ID != subnetID {
-			continue
-		}
+	// Build sets of old and new IDs for comparison
+	oldIDs := set.New[int](0)
+	newIDs := set.New[int](0)
 
-		if err := client.IPRange.Delete(ipr.ID); err != nil {
-			return err
+	for _, i := range oldSet.List() {
+		if id, ok := i.(map[string]any)["id"]; ok {
+			oldIDs.Insert(id.(int))
 		}
 	}
 
-	// Create the new IP ranges on this subnet
+	for _, i := range newSet.List() {
+		if id, ok := i.(map[string]any)["id"]; ok {
+			newIDs.Insert(id.(int))
+		}
+	}
+
+	// First, delete any IP ranges that were removed or changed
+	// (changed ranges will have new hash, so they won't be in newIDs)
+	for _, id := range oldIDs.Slice() {
+		if !newIDs.Contains(id) {
+			if err := client.IPRange.Delete(id); err != nil {
+				return fmt.Errorf("failed to delete IP range %d: %w", id, err)
+			}
+		}
+	}
+
+	// Then, update existing ranges or create new ones
+	for _, i := range newSet.List() {
+		newRange := i.(map[string]any)
+		params := entity.IPRangeParams{
+			Subnet:  strconv.Itoa(subnetID),
+			Type:    newRange["type"].(string),
+			StartIP: newRange["start_ip"].(string),
+			EndIP:   newRange["end_ip"].(string),
+			Comment: newRange["comment"].(string),
+		}
+
+		// If this range has an ID from old state, update it
+		if id, ok := newRange["id"]; ok {
+			rangeID := id.(int)
+			if oldIDs.Contains(rangeID) {
+				if _, err := client.IPRange.Update(rangeID, &params); err != nil {
+					return fmt.Errorf("failed to update IP range %d: %w", rangeID, err)
+				}
+
+				continue
+			}
+		}
+
+		// No ID or ID not in old set means this is a new range, create it
+		if _, err := client.IPRanges.Create(&params); err != nil {
+			return fmt.Errorf("failed to create IP range %s-%s: %w", params.StartIP, params.EndIP, err)
+		}
+	}
+
+	return nil
+}
+
+func createIPRanges(client *client.Client, d *schema.ResourceData, subnetID int) error {
 	p, ok := d.GetOk("ip_ranges")
 	if !ok {
 		return nil
@@ -262,14 +359,14 @@ func updateIPRanges(client *client.Client, d *schema.ResourceData, subnetID int)
 		ipr := i.(map[string]any)
 
 		params := entity.IPRangeParams{
-			Subnet:  fmt.Sprintf("%v", subnetID),
+			Subnet:  strconv.Itoa(subnetID),
 			Type:    ipr["type"].(string),
 			StartIP: ipr["start_ip"].(string),
 			EndIP:   ipr["end_ip"].(string),
 			Comment: ipr["comment"].(string),
 		}
 		if _, err := client.IPRanges.Create(&params); err != nil {
-			return err
+			return fmt.Errorf("failed to create IP range %s-%s: %w", params.StartIP, params.EndIP, err)
 		}
 	}
 
@@ -284,9 +381,32 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 		AllowDNS:   d.Get("allow_dns").(bool),
 		AllowProxy: d.Get("allow_proxy").(bool),
 		GatewayIP:  d.Get("gateway_ip").(string),
-		DNSServers: convertToStringSlice(d.Get("dns_servers")),
 		Managed:    true,
 	}
+
+	// Handle dns_servers: distinguish between not set, empty list, and with values
+	// Check both raw config and HasChange (CustomizeDiff may force changes)
+	dnsServersInConfig := false
+
+	rawConfig := d.GetRawConfig()
+	if !rawConfig.IsNull() {
+		dnsServersInConfig = !rawConfig.GetAttr("dns_servers").IsNull()
+	}
+
+	// If explicitly in config OR CustomizeDiff detected removal and forced a change
+	if dnsServersInConfig || (d.Id() != "" && d.HasChange("dns_servers")) {
+		dnsServers := convertToStringSlice(d.Get("dns_servers"))
+		if len(dnsServers) == 0 {
+			// Empty list in config → send single empty string to clear values in MAAS
+			// MAAS API requires dns_servers="" (not omitted) to clear DNS servers
+			params.DNSServers = []string{""}
+		} else {
+			// Non-empty list → send the values
+			params.DNSServers = dnsServers
+		}
+	}
+	// If dns_servers is not set in config and no change detected, don't include it in params
+	// This lets MAAS use its defaults on creation
 
 	if p, ok := d.GetOk("fabric"); ok {
 		fabric, err := getFabric(client, p.(string))
@@ -294,7 +414,7 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 			return nil, err
 		}
 
-		params.Fabric = fmt.Sprintf("%v", fabric.ID)
+		params.Fabric = strconv.Itoa(fabric.ID)
 
 		if p, ok := d.GetOk("vlan"); ok {
 			vlan, err := getVLAN(client, fabric.ID, p.(string))
@@ -302,7 +422,7 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 				return nil, err
 			}
 
-			params.VLAN = fmt.Sprintf("%v", vlan.ID)
+			params.VLAN = strconv.Itoa(vlan.ID)
 			params.VID = vlan.VID
 		}
 	}
@@ -317,7 +437,7 @@ func findSubnet(client *client.Client, identifier string) (*entity.Subnet, error
 	}
 
 	for _, s := range subnets {
-		if fmt.Sprintf("%v", s.ID) == identifier || s.CIDR == identifier {
+		if strconv.Itoa(s.ID) == identifier || s.CIDR == identifier {
 			return &s, nil
 		}
 	}
@@ -336,4 +456,24 @@ func getSubnet(client *client.Client, identifier string) (*entity.Subnet, error)
 	}
 
 	return subnet, nil
+}
+
+func customizeDiffSubnet(ctx context.Context, diff *schema.ResourceDiff, meta any) error {
+	// Check if dns_servers is in the config
+	rawConfig := diff.GetRawConfig()
+	if !rawConfig.IsNull() {
+		// If dns_servers is not in config but exists in state (has a value), force it to be cleared
+		if rawConfig.GetAttr("dns_servers").IsNull() {
+			if oldDNS, _ := diff.GetOk("dns_servers"); oldDNS != nil {
+				if len(oldDNS.([]any)) > 0 {
+					// User removed dns_servers from config - set to empty list to trigger update
+					if err := diff.SetNew("dns_servers", []any{}); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }

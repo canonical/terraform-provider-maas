@@ -60,15 +60,15 @@ resource "maas_subnet" "tf_subnet_2" {
 - `allow_dns` (Boolean) Boolean value that indicates if the MAAS DNS resolution is enabled for this subnet. Defaults to `true`.
 - `allow_proxy` (Boolean) Boolean value that indicates if `maas-proxy` allows requests from this subnet. Defaults to `true`.
 - `dns_servers` (List of String) List of IP addresses set as DNS servers for the new subnet. This argument is computed if it's not set.
-- `fabric` (String) The fabric identifier (ID or name) for the new subnet.
+- `fabric` (String) The fabric identifier (ID or name) for the new subnet. This argument is computed if it's not set.
 - `gateway_ip` (String) Gateway IP address for the new subnet. This argument is computed if it's not set.
-- `ip_ranges` (Block Set) A set of IP ranges configured on the new subnet. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). (see [below for nested schema](#nestedblock--ip_ranges))
+- `ip_ranges` (Block Set, Deprecated) A set of IP ranges configured on the new subnet. Parameters defined below. This argument is processed in [attribute-as-blocks mode](https://www.terraform.io/docs/configuration/attr-as-blocks.html). (see [below for nested schema](#nestedblock--ip_ranges))
 - `name` (String) The subnet name.
 - `rdns_mode` (Number) How reverse DNS is handled for this subnet. Defaults to `2`. Valid options are:
 	* `0` - Disabled, no reverse zone is created.
 	* `1` - Enabled, generate reverse zone.
 	* `2` - RFC2317, extends `1` to create the necessary parent zone with the appropriate CNAME resource records for the network, if the network is small enough to require the support described in RFC2317.
-- `vlan` (String) The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required.
+- `vlan` (String) The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required. This argument is computed if it's not set.
 
 ### Read-Only
 
@@ -86,6 +86,10 @@ Required:
 Optional:
 
 - `comment` (String) A description of this range.
+
+Read-Only:
+
+- `id` (Number) The ID of the IP range.
 
 ## Import
 

@@ -3,6 +3,7 @@ package maas
 import (
 	"encoding/base64"
 	"fmt"
+	"net"
 	"net/mail"
 	"strconv"
 	"strings"
@@ -284,4 +285,18 @@ func isMachineInPermittedState(machine *entity.Machine) bool {
 	default:
 		return false
 	}
+}
+
+// ipToString converts a net.IP to a string, returning an empty string if the IP is nil or "<nil>".
+func ipToString(ip net.IP) string {
+	if ip == nil {
+		return ""
+	}
+
+	s := ip.String()
+	if s == "<nil>" {
+		return ""
+	}
+
+	return s
 }

@@ -358,9 +358,10 @@ data "maas_vlan" "test_%v" {
 }
 
 resource "maas_subnet" "test_%v" {
+  name   = %q
   cidr   = %q
   fabric = maas_fabric.test_%v.id
-  vlan   = data.maas_vlan.test_%v.id
+  vlan   = data.maas_vlan.test_%v.vlan
 }
 
 resource "maas_subnet_ip_range" "test_%v" {
@@ -370,7 +371,7 @@ resource "maas_subnet_ip_range" "test_%v" {
   type     = "dynamic"
 }
 
-`, index, fabricID, index, rackController, index, index, index, cidr, index, index, index, index, startIP, endIP)
+`, index, fabricID, index, rackController, index, index, index, cidr, cidr, index, index, index, index, startIP, endIP)
 }
 
 func testAccMAASVLANDHCPConfigBasic(fabricID string, rackController string, cidr string, startIP string, endIP string, index string) string {
@@ -421,6 +422,7 @@ data "maas_vlan" "separate_vlan" {
 }
 
 resource "maas_subnet" "separate_subnet" {
+  name   = %q
   cidr   = %q
   fabric = maas_fabric.separate_fabric.id
   vlan   = data.maas_vlan.separate_vlan.vlan
@@ -439,7 +441,7 @@ resource "maas_vlan_dhcp" "test" {
   primary_rack_controller = data.maas_rack_controller.test_0.id
   ip_ranges               = [maas_subnet_ip_range.test_0.id, maas_subnet_ip_range.separate_ip_range.id]
 }
-`, testAccMAASVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP, "0"), fabricID2, cidr2, startIP2, endIP2)
+`, testAccMAASVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP, "0"), fabricID2, cidr2, cidr2, startIP2, endIP2)
 }
 
 func testAccMAASVLANDHCPConfigSubnet(fabricID string, rackController string, cidr string, startIP string, endIP string, cidr2 string, startIP2 string, endIP2 string) string {
@@ -449,6 +451,7 @@ func testAccMAASVLANDHCPConfigSubnet(fabricID string, rackController string, cid
 # Subnet needs ip ranges to be set to inform terraform about the dependency.
 # Any other subnets defined earlier in this config aren't used by the VLAN DHCP resource.
 resource "maas_subnet" "test_subnet" {
+  name   = %q
   cidr   = %q
   fabric = maas_fabric.test_0.id
   vlan   = data.maas_vlan.test_0.vlan
@@ -465,13 +468,14 @@ resource "maas_vlan_dhcp" "test" {
   primary_rack_controller = data.maas_rack_controller.test_0.id
   subnets                 = [maas_subnet.test_subnet.id]
 }
-`, testAccMAASVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP, "0"), cidr2, startIP2, endIP2)
+`, testAccMAASVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP, "0"), cidr2, cidr2, startIP2, endIP2)
 }
 
 func testAccMAASVLANDHCPConfigSubnetUpdate(fabricID string, rackController string, cidr string, startIP string, endIP string, startIP2 string, endIP2 string, cidr2 string, cidr3 string) string {
 	return fmt.Sprintf(`
 %s
 resource "maas_subnet" "test_subnet" {
+  name   = %q
   cidr   = %q
   fabric = maas_fabric.test_0.id
   vlan   = data.maas_vlan.test_0.vlan
@@ -484,6 +488,7 @@ resource "maas_subnet" "test_subnet" {
 
 # New subnet to be added to the VLAN DHCP resource
 resource "maas_subnet" "new_subnet" {
+  name   = %q
   cidr   = %q
   fabric = maas_fabric.test_0.id
   vlan   = data.maas_vlan.test_0.vlan
@@ -495,7 +500,7 @@ resource "maas_vlan_dhcp" "test" {
   primary_rack_controller = data.maas_rack_controller.test_0.id
   subnets                 = [maas_subnet.test_subnet.id, maas_subnet.new_subnet.id]
 }
-`, testAccMAASVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP, "0"), cidr2, startIP2, endIP2, cidr3)
+`, testAccMAASVLANDHCPConfigCore(fabricID, rackController, cidr, startIP, endIP, "0"), cidr2, cidr2, startIP2, endIP2, cidr3, cidr3)
 }
 
 func testAccMAASVLANDHCPConfigRelay(fabricID string, rackController string, cidr string, startIP string, endIP string, cidr2 string, startIP2 string, endIP2 string, dummyFabricID string) string {
@@ -512,6 +517,7 @@ data "maas_vlan" "dummy" {
 }
 
 resource "maas_subnet" "dummy" {
+  name   = %q
   cidr   = %q
   fabric = maas_fabric.dummy.id
   vlan   = data.maas_vlan.dummy.vlan
@@ -531,7 +537,7 @@ resource "maas_vlan_dhcp" "test_2" {
   relay_vlan = data.maas_vlan.test_0.id
 }
 
-`, testAccMAASVLANDHCPConfigBasic(fabricID, rackController, cidr, startIP, endIP, "0"), dummyFabricID, cidr2, startIP2, endIP2)
+`, testAccMAASVLANDHCPConfigBasic(fabricID, rackController, cidr, startIP, endIP, "0"), dummyFabricID, cidr2, cidr2, startIP2, endIP2)
 }
 
 func testAccMAASVLANDHCPConfigBasicUpdateRelay(fabricID string, rackController string, cidr string, startIP string, endIP string, fabricID2 string, cidr2 string, startIP2 string, endIP2 string) string {

@@ -298,6 +298,174 @@ resource "maas_subnet" "test_subnet" {
 	`, fabricName, cidr, name, vlan, gateway, dnsServer1, dnsServer2, allowDNS, allowProxy, rdnsMode)
 }
 
+func TestAccResourceMAASSubnet_computedFabricVlan(t *testing.T) {
+	subnetName := acctest.RandomWithPrefix("test-subnet")
+	subnetAttrName := "maas_subnet.test_subnet"
+	cidr := testutils.GenerateRandomCIDR()
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: testAccCheckMAASSubnetDestroy,
+		ErrorCheck:   func(err error) error { return err },
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+resource "maas_subnet" "test_subnet" {
+  cidr = %q
+  name = %q
+}
+`, cidr, subnetName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMAASSubnetCheckExists(subnetAttrName),
+					resource.TestCheckResourceAttr(subnetAttrName, "cidr", cidr),
+					resource.TestCheckResourceAttr(subnetAttrName, "name", subnetName),
+					resource.TestCheckResourceAttrSet(subnetAttrName, "fabric"),
+					resource.TestCheckResourceAttrSet(subnetAttrName, "vlan"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceMAASSubnet_ipRangesLifecycle(t *testing.T) {
+	subnetName := acctest.RandomWithPrefix("test-subnet")
+	subnetAttrName := "maas_subnet.test_subnet"
+	fabricName := acctest.RandomWithPrefix("test-fabric")
+	cidr := testutils.GenerateRandomCIDR()
+	prefix := testutils.GetNetworkPrefixFromCIDR(cidr)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testutils.PreCheck(t, nil) },
+		Providers:    testutils.TestAccProviders,
+		CheckDestroy: testAccCheckMAASSubnetDestroy,
+		ErrorCheck:   func(err error) error { return err },
+		Steps: []resource.TestStep{
+			// Step 1: Create subnet with one inline range
+			{
+				Config: fmt.Sprintf(`
+resource "maas_fabric" "test_fabric" {
+  name = %q
+}
+
+resource "maas_subnet" "test_subnet" {
+  cidr   = %q
+  name   = %q
+  fabric = maas_fabric.test_fabric.id
+
+  ip_ranges {
+    type     = "dynamic"
+    start_ip = "%s.100"
+    end_ip   = "%s.150"
+    comment  = "inline-dynamic"
+  }
+}
+`, fabricName, cidr, subnetName, prefix, prefix),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMAASSubnetCheckExists(subnetAttrName),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.#", "1"),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.0.type", "dynamic"),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.0.start_ip", fmt.Sprintf("%s.100", prefix)),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.0.end_ip", fmt.Sprintf("%s.150", prefix)),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.0.comment", "inline-dynamic"),
+				),
+			},
+			// Step 2: Add second inline range (tests adding after creation)
+			{
+				Config: fmt.Sprintf(`
+resource "maas_fabric" "test_fabric" {
+  name = %q
+}
+
+resource "maas_subnet" "test_subnet" {
+  cidr   = %q
+  name   = %q
+  fabric = maas_fabric.test_fabric.id
+
+  ip_ranges {
+    type     = "dynamic"
+    start_ip = "%s.100"
+    end_ip   = "%s.150"
+    comment  = "inline-dynamic"
+  }
+
+  ip_ranges {
+    type     = "reserved"
+    start_ip = "%s.60"
+    end_ip   = "%s.80"
+    comment  = "inline-reserved"
+  }
+}
+`, fabricName, cidr, subnetName, prefix, prefix, prefix, prefix),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMAASSubnetCheckExists(subnetAttrName),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.#", "2"),
+					resource.TestCheckTypeSetElemNestedAttrs(subnetAttrName, "ip_ranges.*", map[string]string{
+						"type":     "dynamic",
+						"start_ip": fmt.Sprintf("%s.100", prefix),
+						"end_ip":   fmt.Sprintf("%s.150", prefix),
+						"comment":  "inline-dynamic",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs(subnetAttrName, "ip_ranges.*", map[string]string{
+						"type":     "reserved",
+						"start_ip": fmt.Sprintf("%s.60", prefix),
+						"end_ip":   fmt.Sprintf("%s.80", prefix),
+						"comment":  "inline-reserved",
+					}),
+				),
+			},
+			// Step 3: Change type + update range, delete the other (tests type change + old→new deletion)
+			{
+				Config: fmt.Sprintf(`
+resource "maas_fabric" "test_fabric" {
+  name = %q
+}
+
+resource "maas_subnet" "test_subnet" {
+  cidr   = %q
+  name   = %q
+  fabric = maas_fabric.test_fabric.id
+
+  ip_ranges {
+    type     = "reserved"
+    start_ip = "%s.100"
+    end_ip   = "%s.200"
+    comment  = "inline-reserved-modified"
+  }
+}
+`, fabricName, cidr, subnetName, prefix, prefix),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMAASSubnetCheckExists(subnetAttrName),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.#", "1"),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.0.type", "reserved"),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.0.start_ip", fmt.Sprintf("%s.100", prefix)),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.0.end_ip", fmt.Sprintf("%s.200", prefix)),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.0.comment", "inline-reserved-modified"),
+				),
+			},
+			// Step 4: Remove all inline ranges
+			{
+				Config: fmt.Sprintf(`
+resource "maas_fabric" "test_fabric" {
+  name = %q
+}
+
+resource "maas_subnet" "test_subnet" {
+  cidr   = %q
+  name   = %q
+  fabric = maas_fabric.test_fabric.id
+}
+`, fabricName, cidr, subnetName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccMAASSubnetCheckExists(subnetAttrName),
+					resource.TestCheckResourceAttr(subnetAttrName, "ip_ranges.#", "0"),
+					testAccMAASSubnetCheckNoIPRanges(subnetAttrName),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckMAASSubnetDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client

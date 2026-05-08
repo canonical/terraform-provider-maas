@@ -31,8 +31,9 @@ data "maas_vlan" "default" {
 }
 
 resource "maas_subnet" "test_subnet" {
+    name         = "%s"
     fabric       = maas_fabric.default.id
-    vlan         = data.maas_vlan.default.id
+    vlan         = data.maas_vlan.default.vlan
     cidr         = "%s"
 }
 
@@ -53,7 +54,7 @@ resource "maas_network_interface_physical" "test" {
     # https://github.com/canonical/maas/commit/885021185340f740355faf13ad17b8fde5d8d285
     depends_on = [maas_subnet.test_subnet]
   }
-`, fabricName, machine, testutils.GenerateRandomCIDR(), name, macAddress, mtu)
+`, fabricName, machine, acctest.RandomWithPrefix("tf-sub"), testutils.GenerateRandomCIDR(), name, macAddress, mtu)
 }
 
 func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
