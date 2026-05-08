@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
@@ -222,6 +223,20 @@ func resourceSubnetDelete(ctx context.Context, d *schema.ResourceData, meta any)
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// Delete IP ranges tracked in state first
+	if ipRangesRaw, ok := d.GetOk("ip_ranges"); ok {
+		ipRangesSet := ipRangesRaw.(*schema.Set)
+		for _, i := range ipRangesSet.List() {
+			ipr := i.(map[string]any)
+			if rangeID, ok := ipr["id"]; ok {
+				err = client.IPRange.Delete(rangeID.(int))
+				if err != nil && !strings.Contains(err.Error(), "404 Not Found") {
+					return diag.FromErr(err)
+				}
+			}
+		}
 	}
 
 	if err := client.Subnet.Delete(id); err != nil {
