@@ -467,7 +467,15 @@ func getMachineCommissionParams(d *schema.ResourceData) *entity.MachineCommissio
 
 func getMachineStatusFunc(client *client.Client, systemID string) retry.StateRefreshFunc {
 	return func() (any, string, error) {
-		machine, err := client.Machine.Get(systemID)
+		var machine *entity.Machine
+
+		err := retryOnTransient(func() error {
+			var inner error
+
+			machine, inner = client.Machine.Get(systemID)
+
+			return inner
+		}, 5)
 		if err != nil {
 			return nil, "", err
 		}
