@@ -119,6 +119,15 @@ func resourceMAASMachine() *schema.Resource {
 					},
 				},
 			},
+			"commission": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+				Description: "Whether to trigger commissioning after creating (or recommissioning during update) the machine. " +
+					"Set to false to register the machine without waiting for the multi-minute commission cycle " +
+					"(caller drives commissioning externally via the API or `maas commission`). When false, the " +
+					"machine ends up in `New` state and must be commissioned before it can be deployed. Defaults to true.",
+			},
 			"commissioning_scripts": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -277,6 +286,17 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 		return diag.FromErr(err)
 	}
 
+	// Save Id (commit early so non-commissioned machines are tracked).
+	d.SetId(machine.SystemID)
+
+	// Gate commission on the schema flag. When false, the machine remains
+	// in `New` state and the caller drives commissioning externally.
+	if !d.Get("commission").(bool) {
+		log.Printf("[INFO] commission=false; skipping commissioning for machine %s", machine.SystemID)
+
+		return resourceMachineRead(ctx, d, meta)
+	}
+
 	commissionedMachine, err := client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
 	if err != nil {
 		log.Printf("[DEBUG] Machine (%s) cleaning up trailing resources\n", machine.SystemID)
@@ -288,9 +308,6 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 
 		return diag.FromErr(err)
 	}
-
-	// Save Id
-	d.SetId(machine.SystemID)
 
 	// Wait for machine to be ready
 	_, err = waitForMachineStatus(ctx, client, commissionedMachine.SystemID, []string{"Commissioning", "Testing"}, []string{"Ready"}, d.Timeout(schema.TimeoutCreate))
@@ -370,7 +387,9 @@ func resourceMachineUpdate(ctx context.Context, d *schema.ResourceData, meta any
 	}
 
 	// One of the below cases is a special case for when machine is in "New" state. A user has imported this machine into Terraform and it needs to be commissioned to get to "Ready" state. Power parameters are assuming to be empty in the state at this point.
-	if scriptsHaveChanged || (powerParamsHaveChanged && machine.StatusName == "New") {
+	// When commission=false the caller is driving commissioning externally;
+	// skip the recommission path even when scripts or power params changed.
+	if d.Get("commission").(bool) && (scriptsHaveChanged || (powerParamsHaveChanged && machine.StatusName == "New")) {
 		machine, err = client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
 		if err != nil {
 			return diag.FromErr(err)
