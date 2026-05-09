@@ -274,7 +274,22 @@ func resourceMachineCreate(ctx context.Context, d *schema.ResourceData, meta any
 
 	machine, err := client.Machines.Create(getMachineCreateParams(d), powerParams)
 	if err != nil {
-		return diag.FromErr(err)
+		// Adopt-by-MAC on conflict. When MAAS already has a machine with the
+		// same boot MAC (typical after a transient failure mid-Create), fall
+		// through and reuse it instead of deadlocking on every retry.
+		if !isMACConflict(err) || !hasPxe {
+			return diag.FromErr(err)
+		}
+
+		existing, lookupErr := findMachineByMAC(client, pxeMacAddress.(string))
+		if lookupErr != nil {
+			return diag.FromErr(err)
+		}
+
+		log.Printf("[WARN] machine with MAC %s already exists (system_id %s); adopting",
+			pxeMacAddress.(string), existing.SystemID)
+
+		machine = existing
 	}
 
 	commissionedMachine, err := client.Machine.Commission(machine.SystemID, getMachineCommissionParams(d))
