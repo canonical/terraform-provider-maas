@@ -1,11 +1,42 @@
 package maas
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"io"
+	"net"
+	"syscall"
 	"testing"
+
+	jujuerrors "github.com/juju/errors"
+	"github.com/juju/gomaasapi/v2"
 )
 
+type timeoutError struct{}
+
+func (timeoutError) Error() string {
+	return "request timed out"
+}
+
+func (timeoutError) Timeout() bool {
+	return true
+}
+
+func (timeoutError) Temporary() bool {
+	return false
+}
+
 func TestIsTransient(t *testing.T) {
+	serverEOF := gomaasapi.ServerError{
+		StatusCode:  500,
+		BodyMessage: "backend returned EOF",
+	}
+	serverTimeout := gomaasapi.ServerError{
+		StatusCode:  504,
+		BodyMessage: "dial tcp 1.2.3.4:80: i/o timeout",
+	}
+
 	cases := []struct {
 		name string
 		err  error
@@ -13,12 +44,13 @@ func TestIsTransient(t *testing.T) {
 	}{
 		{"nil", nil, false},
 		{"plain", errors.New("boom"), false},
-		{"rst", errors.New("read tcp 1.2.3.4:80: connection reset by peer"), true},
-		{"eof", errors.New("Post \"http://maas/MAAS/api/2.0/machines/\": EOF"), true},
-		{"timeout", errors.New("dial tcp 1.2.3.4:80: i/o timeout"), true},
-		{"tls", errors.New("TLS handshake timeout"), true},
-		{"server-400", errors.New("ServerError: 400 Bad Request"), false},
-		{"server-500", errors.New("ServerError: 500 Internal Server Error"), false},
+		{"server-eof-body", serverEOF, false},
+		{"std-wrapped-server-eof-body", fmt.Errorf("get machine: %w", serverEOF), false},
+		{"wrapped-server-timeout-body", jujuerrors.Trace(serverTimeout), false},
+		{"wrapped-eof", fmt.Errorf("read response: %w", io.EOF), true},
+		{"wrapped-unexpected-eof", fmt.Errorf("read response: %w", io.ErrUnexpectedEOF), true},
+		{"wrapped-econnreset", fmt.Errorf("read tcp: %w", syscall.ECONNRESET), true},
+		{"net-timeout", &net.OpError{Op: "read", Net: "tcp", Err: timeoutError{}}, true},
 	}
 
 	for _, tc := range cases {
@@ -31,10 +63,12 @@ func TestIsTransient(t *testing.T) {
 }
 
 func TestRetryOnTransient(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("success-first-attempt", func(t *testing.T) {
 		calls := 0
 
-		err := retryOnTransient(func() error {
+		err := retryOnTransient(ctx, func() error {
 			calls++
 
 			return nil
@@ -50,9 +84,9 @@ func TestRetryOnTransient(t *testing.T) {
 
 	t.Run("non-transient-no-retry", func(t *testing.T) {
 		calls := 0
-		boom := errors.New("ServerError: 400 Bad Request")
+		boom := errors.New("boom")
 
-		err := retryOnTransient(func() error {
+		err := retryOnTransient(ctx, func() error {
 			calls++
 
 			return boom
@@ -69,10 +103,10 @@ func TestRetryOnTransient(t *testing.T) {
 	t.Run("transient-recovers", func(t *testing.T) {
 		calls := 0
 
-		err := retryOnTransient(func() error {
+		err := retryOnTransient(ctx, func() error {
 			calls++
 			if calls < 3 {
-				return errors.New("connection reset by peer")
+				return fmt.Errorf("read tcp: %w", syscall.ECONNRESET)
 			}
 
 			return nil
@@ -88,9 +122,9 @@ func TestRetryOnTransient(t *testing.T) {
 
 	t.Run("transient-exhausts", func(t *testing.T) {
 		calls := 0
-		rst := errors.New("connection reset by peer")
+		rst := fmt.Errorf("read tcp: %w", syscall.ECONNRESET)
 
-		err := retryOnTransient(func() error {
+		err := retryOnTransient(ctx, func() error {
 			calls++
 
 			return rst

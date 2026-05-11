@@ -465,11 +465,11 @@ func getMachineCommissionParams(d *schema.ResourceData) *entity.MachineCommissio
 	}
 }
 
-func getMachineStatusFunc(client *client.Client, systemID string) retry.StateRefreshFunc {
+func getMachineStatusFunc(ctx context.Context, client *client.Client, systemID string) retry.StateRefreshFunc {
 	return func() (any, string, error) {
 		var machine *entity.Machine
 
-		err := retryOnTransient(func() error {
+		err := retryOnTransient(ctx, func() error {
 			var inner error
 
 			machine, inner = client.Machine.Get(systemID)
@@ -491,7 +491,7 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 	stateConf := &retry.StateChangeConf{
 		Pending:    pendingStates,
 		Target:     targetStates,
-		Refresh:    getMachineStatusFunc(client, systemID),
+		Refresh:    getMachineStatusFunc(ctx, client, systemID),
 		Timeout:    maxTimeout,
 		Delay:      10 * time.Second,
 		MinTimeout: 3 * time.Second,

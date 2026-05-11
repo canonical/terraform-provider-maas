@@ -1,55 +1,78 @@
 package maas
 
 import (
+	"context"
+	"errors"
+	"io"
 	"log"
-	"strings"
+	"net"
+	"syscall"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/juju/gomaasapi/v2"
 )
 
 // isTransient reports whether err is a network-level transient failure that is
-// safe to retry. Conservative: only RST / EOF / I/O timeout patterns observed
-// in practice. Real client errors (4xx, 5xx response bodies, schema errors)
-// MUST fall through.
+// safe to retry. HTTP/API responses and ordinary client errors fall through.
 func isTransient(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	msg := err.Error()
+	if _, ok := gomaasapi.GetServerError(err); ok {
+		return false
+	}
 
-	return strings.Contains(msg, "connection reset by peer") ||
-		strings.Contains(msg, "EOF") ||
-		strings.Contains(msg, "i/o timeout") ||
-		strings.Contains(msg, "TLS handshake timeout")
+	var serverErr gomaasapi.ServerError
+	if errors.As(err, &serverErr) {
+		return false
+	}
+
+	if errors.Is(err, io.EOF) ||
+		errors.Is(err, io.ErrUnexpectedEOF) ||
+		errors.Is(err, syscall.ECONNRESET) {
+		return true
+	}
+
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+
+	return false
 }
 
-// retryOnTransient retries fn up to maxAttempts on transient errors using
-// exponential backoff capped at 30s. Non-transient errors and successes return
+// retryOnTransient retries fn up to maxAttempts on transient errors using the
+// Terraform SDK retry helper. Non-transient errors and successes return
 // immediately.
-func retryOnTransient(fn func() error, maxAttempts int) error {
+func retryOnTransient(ctx context.Context, fn func() error, maxAttempts int) error {
 	if maxAttempts < 1 {
 		maxAttempts = 1
 	}
 
-	var err error
+	attempts := 0
+	timeout := time.Duration(maxAttempts) * 600 * time.Millisecond
 
-	backoff := time.Second
+	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		attempts++
 
-	for i := 0; i < maxAttempts; i++ {
-		err = fn()
-		if err == nil || !isTransient(err) {
-			return err
+		err := fn()
+		if err == nil {
+			return nil
 		}
 
-		log.Printf("[WARN] transient MAAS error (attempt %d/%d): %v; retrying in %s",
-			i+1, maxAttempts, err, backoff)
-
-		time.Sleep(backoff)
-
-		if backoff < 30*time.Second {
-			backoff *= 2
+		if !isTransient(err) {
+			return retry.NonRetryableError(err)
 		}
-	}
 
-	return err
+		if attempts >= maxAttempts {
+			return retry.NonRetryableError(err)
+		}
+
+		log.Printf("[WARN] transient MAAS error (attempt %d/%d): %v; retrying",
+			attempts, maxAttempts, err)
+
+		return retry.RetryableError(err)
+	})
 }
