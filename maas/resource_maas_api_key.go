@@ -115,8 +115,20 @@ func resourceAPIKeyRead(ctx context.Context, d *schema.ResourceData, meta any) d
 
 	tokenKey := d.Id()
 
-	token, err := findAuthorisationTokenByKey(client, tokenKey)
+	tokens, err := client.Account.ListAuthorisationTokens()
 	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	var token *entity.AuthorisationToken
+	for _, t := range tokens {
+		if t.TokenKey == tokenKey {
+			token = &t
+			break
+		}
+	}
+
+	if token == nil {
 		d.SetId("")
 		return nil
 	}
@@ -209,7 +221,7 @@ func findAuthorisationTokenByName(c *client.Client, name string) (*entity.Author
 func parseTokenString(token string) (consumerKey, tokenKey, tokenSecret string, err error) {
 	parts := strings.SplitN(token, ":", 3)
 	if len(parts) != 3 {
-		return "", "", "", fmt.Errorf("invalid token format: expected consumer_key:token_key:token_secret, got %q", token)
+		return "", "", "", fmt.Errorf("invalid token format: expected consumer_key:token_key:token_secret, got %d parts", len(parts))
 	}
 
 	return parts[0], parts[1], parts[2], nil
