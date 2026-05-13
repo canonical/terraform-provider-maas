@@ -80,7 +80,8 @@ func testAccCheckAPIKeyExists(rn string) resource.TestCheckFunc {
 		}
 
 		for _, t := range tokens {
-			if strings.Contains(t.Token, rs.Primary.ID) {
+			parts := strings.SplitN(t.Token, ":", 3)
+			if len(parts) >= 2 && parts[1] == rs.Primary.ID {
 				return nil
 			}
 		}
@@ -105,7 +106,8 @@ func testAccCheckAPIKeyDestroy(s *terraform.State) error {
 		}
 
 		for _, t := range tokens {
-			if strings.Contains(t.Token, tokenKey) {
+			parts := strings.SplitN(t.Token, ":", 3)
+			if len(parts) >= 2 && parts[1] == tokenKey {
 				return fmt.Errorf("API key with token_key %q still exists", tokenKey)
 			}
 		}
