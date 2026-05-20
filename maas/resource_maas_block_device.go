@@ -369,12 +369,7 @@ func findBlockDeviceFromSchema(client *client.Client, machineID string, d *schem
 		}
 	}
 
-	// Only fall back to the name match if no higher-priority match was found.
-	if nameMatch != nil {
-		return nameMatch, nil
-	}
-
-	return nil, err
+	return nameMatch, err
 }
 
 func findBlockDevice(client *client.Client, machineID string, identifier string) (*entity.BlockDevice, error) {
