@@ -199,14 +199,11 @@ func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	// 1. SMART SEARCH: Check if the disk already exists based on our hierarchy
-	// (id_path > model&serial > name)
 	blockDevice, err := findBlockDeviceFromSchema(client, machine.SystemID, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// 2. CREATE (If not found): If our smart search returned nil, it truly doesn't exist.
 	if blockDevice == nil {
 		blockDevice, err = client.BlockDevices.Create(machine.SystemID, getBlockDeviceParams(d))
 		if err != nil {
@@ -214,10 +211,8 @@ func resourceBlockDeviceCreate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
-	// 3. SAVE STATE: Lock in the immutable MAAS database ID
 	d.SetId(fmt.Sprintf("%v", blockDevice.ID))
 
-	// 4. SYNC CONFIG: Pass it to the UpdateContext to apply any name/tag changes
 	return resourceBlockDeviceUpdate(ctx, d, meta)
 }
 
@@ -341,6 +336,10 @@ func getBlockDeviceParams(d *schema.ResourceData) *entity.BlockDeviceParams {
 	}
 }
 
+// findBlockDeviceFromSchema searches for an existing block device on the machine using
+// a priority hierarchy: id_path (highest), then model+serial pair, then name (lowest).
+// The name match is deferred until after scanning all devices because it is the lowest
+// priority and should only be used as a fallback if no higher-priority match is found.
 func findBlockDeviceFromSchema(client *client.Client, machineID string, d *schema.ResourceData) (*entity.BlockDevice, error) {
 	blockDevices, err := client.BlockDevices.Get(machineID)
 	if err != nil {
@@ -370,11 +369,11 @@ func findBlockDeviceFromSchema(client *client.Client, machineID string, d *schem
 		}
 	}
 
+	// Only fall back to the name match if no higher-priority match was found.
 	if nameMatch != nil {
 		return nameMatch, nil
 	}
 
-	// No matches found
 	return nil, err
 }
 

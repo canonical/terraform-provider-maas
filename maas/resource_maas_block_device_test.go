@@ -79,7 +79,7 @@ resource "maas_block_device" "test" {
 `, machine)
 }
 
-func testAccMAASBlockDeviceRename(machine, name, idPath string) string {
+func testAccMAASBlockDeviceWithIDPath(machine, name, idPath string) string {
 	return fmt.Sprintf(`
 data "maas_machine" "machine" {
   hostname = "%s"
@@ -158,7 +158,7 @@ func TestAccResourceMAASBlockDevice_stale(t *testing.T) {
 		CheckDestroy: testAccCheckMAASBlockDeviceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASBlockDeviceRename(machine, oldName, idPath),
+				Config: testAccMAASBlockDeviceWithIDPath(machine, oldName, idPath),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("maas_block_device.test", "name", oldName),
 					resource.TestCheckResourceAttr("maas_block_device.test", "id_path", idPath),
@@ -166,7 +166,7 @@ func TestAccResourceMAASBlockDevice_stale(t *testing.T) {
 			},
 			// rename the disk to check there is nothing stale remaining
 			{
-				Config: testAccMAASBlockDeviceRename(machine, newName, idPath),
+				Config: testAccMAASBlockDeviceWithIDPath(machine, newName, idPath),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("maas_block_device.test", "name", newName),
 					resource.TestCheckResourceAttr("maas_block_device.test", "id_path", idPath),
