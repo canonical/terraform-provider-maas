@@ -369,7 +369,7 @@ func findBlockDeviceFromSchema(client *client.Client, machineID string, d *schem
 		}
 	}
 
-	return nameMatch, err
+	return nameMatch, nil
 }
 
 func findBlockDevice(client *client.Client, machineID string, identifier string) (*entity.BlockDevice, error) {
