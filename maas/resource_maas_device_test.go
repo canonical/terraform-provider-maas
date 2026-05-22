@@ -155,7 +155,6 @@ resource "maas_fabric" "test" {
 }
 
 resource "maas_subnet" "test" {
-  name       = %q
   cidr       = %q
   name       = %q
   fabric     = maas_fabric.test.id
@@ -169,7 +168,7 @@ resource "maas_network_interface_link" "first" {
   mode              = "STATIC"
   ip_address        = %q
 }
-	`, deviceHostname, macAddress, fabricName, subnetCIDR, subnetCIDR, subnetName, subnetGatewayIP, linkIPAddress)
+	`, deviceHostname, macAddress, fabricName, subnetCIDR, subnetName, subnetGatewayIP, linkIPAddress)
 }
 
 func testAccMAASDevice(description string, domain string, hostname string, zone string, macAddress string) string {

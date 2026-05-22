@@ -119,6 +119,7 @@ func resourceMAASSubnet() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				Description: "The subnet name.",
 			},
 			"rdns_mode": {
