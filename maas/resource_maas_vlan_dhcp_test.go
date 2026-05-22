@@ -512,7 +512,6 @@ data "maas_vlan" "dummy" {
 }
 
 resource "maas_subnet" "dummy" {
-  name   = %q
   cidr   = %q
   fabric = maas_fabric.dummy.id
   vlan   = data.maas_vlan.dummy.vlan
@@ -532,7 +531,7 @@ resource "maas_vlan_dhcp" "test_2" {
   relay_vlan = data.maas_vlan.test_0.id
 }
 
-`, testAccMAASVLANDHCPConfigBasic(fabricID, rackController, cidr, startIP, endIP, "0"), dummyFabricID, cidr2, cidr2, startIP2, endIP2)
+`, testAccMAASVLANDHCPConfigBasic(fabricID, rackController, cidr, startIP, endIP, "0"), dummyFabricID, cidr2, startIP2, endIP2)
 }
 
 func testAccMAASVLANDHCPConfigBasicUpdateRelay(fabricID string, rackController string, cidr string, startIP string, endIP string, fabricID2 string, cidr2 string, startIP2 string, endIP2 string) string {
