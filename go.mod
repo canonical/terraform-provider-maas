@@ -1,6 +1,6 @@
 module terraform-provider-maas
 
-go 1.25.8
+go 1.25.9
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/go-set/v2 v2.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.25.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.1
-	github.com/juju/gomaasapi/v2 v2.3.0
+	github.com/juju/gomaasapi/v2 v2.4.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.53.0
 )
@@ -59,8 +59,8 @@ require (
 	github.com/juju/collections v1.0.4 // indirect
 	github.com/juju/errors v1.0.0 // indirect
 	github.com/juju/loggo v1.0.0 // indirect
-	github.com/juju/mgo/v2 v2.0.2 // indirect
-	github.com/juju/schema v1.0.1 // indirect
+	github.com/juju/mgo/v2 v2.0.3 // indirect
+	github.com/juju/schema v1.2.0 // indirect
 	github.com/juju/version v0.0.0-20210303051006-2015802527a8 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
