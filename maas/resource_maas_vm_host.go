@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/juju/gomaasapi/v2"
@@ -271,7 +273,17 @@ func resourceVMHostCreate(ctx context.Context, d *schema.ResourceData, meta any)
 		}
 	}
 
-	// Save Id
+	err = waitForVMHostCommissioning(
+		ctx, client, vmHost.Host.SystemID,
+		[]string{"20-maas-03-machine-resources", "50-maas-01-commissioning"},
+		[]entity.ResultStatus{entity.PENDING, entity.RUNNING},
+		[]entity.ResultStatus{entity.PASSED, entity.SKIPPED},
+		d.Timeout(schema.TimeoutCreate),
+	)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(fmt.Sprintf("%v", vmHost.ID))
 
 	// Return updated VM host
@@ -507,4 +519,88 @@ func getVMHostDeployParams(d *schema.ResourceData, vmHostType string) (*entity.M
 	}
 
 	return &deployParams, nil
+}
+
+// Returns a function that waits for specific scripts to appear in the Node Results API, with specific target statuses.
+func getVMHostCommissioningScriptsStatusFunc(client *client.Client, systemID string, scripts []string, pendingStatuses []entity.ResultStatus, targetStatuses []entity.ResultStatus) retry.StateRefreshFunc {
+	// Create a set of scripts
+	scriptSet := make(map[string]struct{}, len(scripts))
+	passedScripts := make(map[string]bool, len(scripts))
+	for _, s := range scripts {
+		scriptSet[s] = struct{}{}
+	}
+
+	// Check if the result status is in the pending statuses
+	isPending := func(s entity.ResultStatus) bool {
+		for _, p := range pendingStatuses {
+			if s == p {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Check if the result status is in the target statuses
+	isTarget := func(s entity.ResultStatus) bool {
+		for _, t := range targetStatuses {
+			if s == t {
+				return true
+			}
+		}
+		return false
+	}
+
+	return func() (any, string, error) {
+		params := entity.NodeResultParams{}
+
+		results, err := client.NodeResults.Get(systemID, &params)
+		if err != nil {
+			return nil, "", err
+		}
+
+		for _, result := range results {
+			for _, nodeResult := range result.Results {
+				if _, watched := scriptSet[nodeResult.Name]; !watched {
+					continue
+				}
+				switch {
+				case isTarget(nodeResult.Status):
+					log.Printf("[INFO] VM host (%s) commissioning script reached target status: %s", systemID, nodeResult.Name)
+					passedScripts[nodeResult.Name] = true
+				case isPending(nodeResult.Status):
+					// still in progress, keep waiting
+				default:
+					return nil, "", fmt.Errorf("VM host (%s) commissioning script %q ended with unexpected status: %v", systemID, nodeResult.Name, nodeResult.Status)
+				}
+			}
+		}
+
+		if len(passedScripts) == len(scripts) {
+			return results, "Commissioned", nil
+		}
+
+		log.Printf("[INFO] VM host (%s) commissioning scripts not passed: %v", systemID, passedScripts)
+		return results, "Commissioning", nil
+	}
+}
+
+func waitForVMHostCommissioning(ctx context.Context, client *client.Client, systemID string, scripts []string, pendingStatuses []entity.ResultStatus, targetStatuses []entity.ResultStatus, maxTimeout time.Duration) error {
+	if systemID == "" {
+		log.Printf("[INFO] System ID is empty, skipping waiting for VM host commissioning")
+		return nil
+	}
+
+	log.Printf("[INFO] Waiting for VM host (%s) commissioning scripts to pass\n", systemID)
+	stateConf := &retry.StateChangeConf{
+		Pending:    []string{"Commissioning"},
+		Target:     []string{"Commissioned"},
+		Refresh:    getVMHostCommissioningScriptsStatusFunc(client, systemID, scripts, pendingStatuses, targetStatuses),
+		Timeout:    maxTimeout,
+		Delay:      5 * time.Second,
+		MinTimeout: 3 * time.Second,
+	}
+
+	_, err := stateConf.WaitForStateContext(ctx)
+
+	return err
 }
