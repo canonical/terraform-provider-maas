@@ -201,9 +201,10 @@ func resourceMAASMachine() *schema.Resource {
 				Description: "A power management type (e.g. `ipmi`).",
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(
 					[]string{
-						"amt", "apc", "dli", "eaton", "hmc", "ipmi", "manual", "moonshot",
-						"mscm", "msftocs", "nova", "openbmc", "proxmox", "recs_box", "redfish",
-						"sm15k", "ucsm", "vmware", "webhook", "wedge", "lxd", "virsh",
+						"amt", "apc", "dli", "eaton", "hmc", "hmcz", "ipmi", "lxd",
+						"manual", "moonshot", "mscm", "msftocs", "nova", "openbmc",
+						"proxmox", "raritan", "recs_box", "redfish", "sm15k", "ucsm",
+						"virsh", "vmware", "webhook", "wedge",
 					},
 					false)),
 			},
@@ -245,6 +246,13 @@ func resourceMAASMachine() *schema.Resource {
 			Update: schema.DefaultTimeout(30 * time.Minute),
 		},
 		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta any) error {
+			if d.Get("power_type").(string) == "nova" {
+				err := checkSemverConstraint(meta.(*ClientConfig).MAASVersion, "<3.8.0")
+				if err != nil {
+					return err
+				}
+			}
+
 			isDPU, ok := d.GetOk("is_dpu")
 			if !ok {
 				return nil
