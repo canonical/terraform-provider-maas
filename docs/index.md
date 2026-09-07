@@ -46,7 +46,7 @@ The provider API block contains the necessary credentials to allow Terraform to 
 - `api_url` (String) The MAAS API URL (eg: http://127.0.0.1:5240/MAAS). If not provided, it will be read from the MAAS_API_URL environment variable.
 - `api_version` (String) The MAAS API version (default 2.0)
 - `installation_method` (String) The MAAS installation method. Valid options: `snap`, and `deb`.
-- `skip_api_checks` (Boolean) Skip all checks that make API calls to MAAS during the provider configuration phase. This allows the provider to create a plan without a running MAAS present, such as when using Terragrunt stacks. This will potentially allow invalid plans, so use with caution. This currently only skips getting the current MAAS version, so resource version compatibility can only be determined at apply time directly from MAAS.
+- `skip_api_checks` (Boolean) Skip all checks that make API calls to MAAS during the provider configuration phase. This allows the provider to create a plan without a running MAAS present. This will potentially allow invalid plans, so use with caution. This currently only skips getting the current MAAS version, so resource version compatibility can only be determined at apply time directly from MAAS.
 - `tls_ca_cert_path` (String) Certificate CA bundle path to use to verify the MAAS certificate. If not provided, it will be read from the MAAS_API_CACERT environment variable.
 - `tls_insecure_skip_verify` (Boolean) Skip TLS certificate verification.
 
