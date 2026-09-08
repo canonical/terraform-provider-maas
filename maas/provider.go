@@ -39,6 +39,16 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("MAAS_INSTALLATION_METHOD", "snap"),
 				Description: "The MAAS installation method. Valid options: `snap`, and `deb`.",
 			},
+			"skip_api_checks": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  "false",
+				Description: "Skip all checks that make API calls to MAAS during the provider configuration phase. " +
+					"This allows the provider to create a plan without a running MAAS present. " +
+					"This will potentially allow invalid plans, so use with caution. This currently " +
+					"only skips getting the current MAAS version, so resource version compatibility can only be " +
+					"determined at apply time directly from MAAS.",
+			},
 			"tls_ca_cert_path": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -137,6 +147,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		APIVersion:            d.Get("api_version").(string),
 		TLSCACertPath:         d.Get("tls_ca_cert_path").(string),
 		TLSInsecureSkipVerify: d.Get("tls_insecure_skip_verify").(bool),
+		SkipAPIChecks:         d.Get("skip_api_checks").(bool),
 	}
 
 	// Warning or errors can be collected in a slice type
@@ -153,16 +164,31 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		return nil, diags
 	}
 
-	v, err := c.Version.Get()
-	if err != nil {
+	var version string
+
+	if !config.SkipAPIChecks {
+		v, err := c.Version.Get()
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to get MAAS version",
+				Detail:   fmt.Sprintf("Unable to get MAAS version using the provided configuration: %s", err),
+			})
+
+			return nil, diags
+		}
+
+		version = v.Version
+	} else {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to get MAAS version",
-			Detail:   fmt.Sprintf("Unable to get MAAS version using the provided configuration: %s", err),
+			Severity: diag.Warning,
+			Summary:  "Skipping MAAS API checks",
+			Detail:   "skip_api_checks is enabled: the MAAS version check was skipped, so version-gated resource validations are not enforced. The resulting plan may not be valid against the target MAAS.",
 		})
 
-		return nil, diags
+		// An empty  string is skipped by checkSemverConstraint
+		version = ""
 	}
 
-	return &ClientConfig{Client: c, InstallationMethod: d.Get("installation_method").(string), MAASVersion: v.Version}, diags
+	return &ClientConfig{Client: c, InstallationMethod: d.Get("installation_method").(string), MAASVersion: version}, diags
 }

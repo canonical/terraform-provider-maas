@@ -175,7 +175,7 @@ func TestCheckSemverConstraint(t *testing.T) {
 			expectedErr:      false,
 		},
 		{
-			name:             "empty version",
+			name:             "empty version (skip_api_checks) skips the check",
 			MAASVersion:      "",
 			semverConstraint: ">= 2.0.0",
 			expectedErr:      false,
