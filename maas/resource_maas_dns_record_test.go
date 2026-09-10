@@ -26,10 +26,10 @@ func TestAccResourceMAASDNSRecord_basic(t *testing.T) {
 	testRecordType := "A/AAAA"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccMAASDNSRecordCheckDestroy(testIPAddress),
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccMAASDNSRecordCheckDestroy(testIPAddress),
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: getDNSRecordConfigBasic(recordName, testRecordType, testIPAddress, testDomain),
@@ -57,10 +57,10 @@ func TestAccResourceMAASDNSRecord_sameIPAddress(t *testing.T) {
 	testDomain := acctest.RandomWithPrefix("tf")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccMAASDNSRecordCheckDestroy(testIPAddress),
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccMAASDNSRecordCheckDestroy(testIPAddress),
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: getDNSRecordConfigSameIPAAAA(testDomain, resourceName1, resourceName2, recordName1, recordName2, testIPAddress),

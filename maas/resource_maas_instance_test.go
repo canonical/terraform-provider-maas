@@ -28,10 +28,10 @@ func TestAccResourceMAASInstance_releaseScripts(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccMAASInstanceCheckDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccMAASInstanceCheckDestroy,
 		Steps: []resource.TestStep{
 			// Test creation
 			{
@@ -78,10 +78,10 @@ func TestAccResourceMAASInstance_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccMAASInstanceCheckDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccMAASInstanceCheckDestroy,
 		Steps: []resource.TestStep{
 			// Test creation
 			{

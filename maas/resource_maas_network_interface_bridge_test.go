@@ -94,10 +94,10 @@ func TestAccResourceMAASNetworkInterfaceBridge_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASNetworkInterfaceBridgeDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASNetworkInterfaceBridgeDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASNetworkInterfaceBridge(name, parentName, machine, macAddress, macAddressPhys, 1500),

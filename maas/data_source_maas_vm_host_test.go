@@ -35,10 +35,10 @@ func testAccDataSourceMAASVMHost(t *testing.T, vmHostType string, additionalChec
 	checks = append(checks, additionalChecks...)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASVMHostDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASVMHostDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceMAASVMHostConfig(vmHostID, vmHostMachineName, vmHostType),

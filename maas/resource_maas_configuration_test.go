@@ -375,10 +375,10 @@ func TestAccResourceMAASConfiguration_basic(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.key, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_CONFIGURATION_DISTRO_SERIES"}) },
-				Providers:    testutils.TestAccProviders,
-				ErrorCheck:   func(err error) error { return err },
-				CheckDestroy: testAccMAASConfigurationCheckDestroy,
+				PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_CONFIGURATION_DISTRO_SERIES"}) },
+				ProviderFactories: testutils.TestAccProviderFactories,
+				ErrorCheck:        func(err error) error { return err },
+				CheckDestroy:      testAccMAASConfigurationCheckDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccMAASConfigurationConfigBasic(testCase.key, testCase.value1),

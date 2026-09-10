@@ -78,10 +78,10 @@ func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASNetworkInterfacePhysicalDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASNetworkInterfacePhysicalDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				// Pass the dynamic fabric name into the config generator

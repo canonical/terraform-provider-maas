@@ -22,10 +22,10 @@ func TestAccDataSourceMAASBootResources_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BOOT_RESOURCES_OS"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: func(s *terraform.State) error { return nil },
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_BOOT_RESOURCES_OS"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      func(s *terraform.State) error { return nil },
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceMAASBootResources(resourcesRelease),

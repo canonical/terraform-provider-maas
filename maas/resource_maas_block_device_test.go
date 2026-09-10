@@ -131,10 +131,10 @@ func TestAccResourceMAASBlockDevice_basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: func(s *terraform.State) error { return nil },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASBlockDevice(machine),
@@ -152,10 +152,10 @@ func TestAccResourceMAASBlockDevice_stale(t *testing.T) {
 	idPath := acctest.RandomWithPrefix("/dev/vd")
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASBlockDeviceDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckMAASBlockDeviceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASBlockDeviceWithIDPath(machine, oldName, idPath),

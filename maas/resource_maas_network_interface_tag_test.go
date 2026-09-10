@@ -36,10 +36,10 @@ func TestAccNetworkInterfaceTag_basic(t *testing.T) {
 	tagName2 := acctest.RandomWithPrefix("tag")
 	tagName3 := acctest.RandomWithPrefix("tag")
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASNetworkInterfaceDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckMAASNetworkInterfaceDestroy,
 		Steps: []resource.TestStep{
 			// Test creation.
 			{

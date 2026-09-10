@@ -49,10 +49,10 @@ func TestAccResourceMAASRAID_basic(t *testing.T) {
 		testAccRAIDPartition(blockDevice4Name, 2, false)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheclMAASRAIDDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheclMAASRAIDDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
@@ -163,10 +163,10 @@ func TestAccResourceMAASRAID_formatAndMount(t *testing.T) {
 		testAccRAIDPartition(blockDevice4Name, 2, false)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheclMAASRAIDDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheclMAASRAIDDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
@@ -223,10 +223,10 @@ func TestAccResourceMAASRAID_differentLevels(t *testing.T) {
 			blockDevice4Name := fmt.Sprintf("raid_level_%s_test_bd4", thisLevel)
 
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
-				Providers:    testutils.TestAccProviders,
-				CheckDestroy: testAccCheclMAASRAIDDestroy,
-				ErrorCheck:   func(err error) error { return err },
+				PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+				ProviderFactories: testutils.TestAccProviderFactories,
+				CheckDestroy:      testAccCheclMAASRAIDDestroy,
+				ErrorCheck:        func(err error) error { return err },
 				Steps: []resource.TestStep{
 					{
 						Config: testAccRAIDMachine(machine) +

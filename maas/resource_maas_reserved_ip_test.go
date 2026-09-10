@@ -25,10 +25,10 @@ func TestAccResourceMAASReservedIP_basic(t *testing.T) {
 	attrName := "maas_reserved_ip.test"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASReservedIPDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASReservedIPDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Test create
 			{
@@ -141,10 +141,10 @@ func TestAccResourceMAASReservedIP_noSubnetField(t *testing.T) {
 	attrName := "maas_reserved_ip.test_no_subnet"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASReservedIPDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASReservedIPDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Create without explicit subnet
 			{

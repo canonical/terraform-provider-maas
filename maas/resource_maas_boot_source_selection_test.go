@@ -34,10 +34,10 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASBootSourceSelectionDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASBootSourceSelectionDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Test creation
 			{
@@ -86,10 +86,10 @@ func TestAccResourceMAASBootSourceSelection_defaultCommissioningAdoption(t *test
 	var bootSourceSelection entity.BootSourceSelection
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASBootSourceSelectionDefaultStillExists,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASBootSourceSelectionDefaultStillExists,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASBootSourceSelectionDefaultCommissioning([]string{"amd64", "ppc64el"}),

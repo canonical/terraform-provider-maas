@@ -73,10 +73,10 @@ func TestAccResourceMAASSubnet_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASSubnetDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASSubnetDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Test creation
 			{
@@ -304,10 +304,10 @@ func TestAccResourceMAASSubnet_computedFabricVlan(t *testing.T) {
 	cidr := testutils.GenerateRandomCIDR()
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASSubnetDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASSubnetDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -361,10 +361,10 @@ resource "maas_subnet" "test_subnet_dns" {
 `, cidr, subnetName)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASSubnetDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASSubnetDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Explicit values are set.
 			{
@@ -424,10 +424,10 @@ func TestAccResourceMAASSubnet_ipRangesLifecycle(t *testing.T) {
 	prefix := testutils.GetNetworkPrefixFromCIDR(cidr)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASSubnetDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASSubnetDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			// Step 1: Create subnet with one inline range
 			{
