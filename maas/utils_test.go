@@ -353,6 +353,65 @@ func TestListAsString(t *testing.T) {
 	}
 }
 
+func TestParseTokenString(t *testing.T) {
+	tests := []struct {
+		name            string
+		token           string
+		wantConsumerKey string
+		wantTokenKey    string
+		wantTokenSecret string
+		wantErr         bool
+	}{
+		{
+			name:            "valid token",
+			token:           "consumer:key:secret",
+			wantConsumerKey: "consumer",
+			wantTokenKey:    "key",
+			wantTokenSecret: "secret",
+			wantErr:         false,
+		},
+		{
+			name:            "valid token with colons in secret",
+			token:           "consumer:key:secret:with:colons",
+			wantConsumerKey: "consumer",
+			wantTokenKey:    "key",
+			wantTokenSecret: "secret:with:colons",
+			wantErr:         false,
+		},
+		{
+			name:    "too few parts",
+			token:   "consumer:key",
+			wantErr: true,
+		},
+		{
+			name:    "single value",
+			token:   "token",
+			wantErr: true,
+		},
+		{
+			name:    "empty string",
+			token:   "",
+			wantErr: true,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			consumerKey, tokenKey, tokenSecret, err := parseTokenString(testCase.token)
+			if (err != nil) != testCase.wantErr {
+				t.Errorf("parseTokenString() error = %v, wantErr %v", err, testCase.wantErr)
+				return
+			}
+
+			if !testCase.wantErr {
+				assert.Equal(t, testCase.wantConsumerKey, consumerKey)
+				assert.Equal(t, testCase.wantTokenKey, tokenKey)
+				assert.Equal(t, testCase.wantTokenSecret, tokenSecret)
+			}
+		})
+	}
+}
+
 func TestOptionalStringPtr(t *testing.T) {
 	tests := []struct {
 		name     string
