@@ -40,9 +40,9 @@ func TestAccStaticRoute_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		// boilerplate every basic test has, we provide basic pre-check and error check
 		// as our test doesn't require anything fancy
-		PreCheck:   func() { testutils.PreCheck(t, nil) },
-		Providers:  testutils.TestAccProviders,
-		ErrorCheck: func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
 		// When the test concludes we'll need to test the resources are correctly destroyed
 		CheckDestroy: testAccCheckMAASStaticRouteDestroy,
 		// We define the tests that will be run against our resource

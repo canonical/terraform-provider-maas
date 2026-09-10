@@ -32,10 +32,10 @@ func TestAccResourceMAASLogicalVolume_basic(t *testing.T) {
 	changedSize := 2
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckLogicalVolumeDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckLogicalVolumeDestroy,
 		Steps: []resource.TestStep{
 			// Test initial creation
 			{
@@ -77,10 +77,10 @@ func TestAccResourceMAASLogicalVolume_formatAndMount(t *testing.T) {
 	test2MountPoint := ""
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckLogicalVolumeDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_BLOCK_DEVICE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckLogicalVolumeDestroy,
 		Steps: []resource.TestStep{
 			// Test 1: `fs_type` not specified
 			{

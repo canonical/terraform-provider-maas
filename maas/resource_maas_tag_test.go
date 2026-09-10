@@ -31,10 +31,10 @@ func TestAccResourceMAASTag_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_TAG_MACHINES"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: testAccCheckMAASTagDestroy,
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_TAG_MACHINES"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckMAASTagDestroy,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASTag(name, comment, machines),

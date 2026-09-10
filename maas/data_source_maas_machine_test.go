@@ -18,9 +18,9 @@ func TestAccDataSourceMAASMachine_basic(t *testing.T) {
 	testMachineName := acctest.RandomWithPrefix("tf-acc-ds-machine")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:   func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
-		Providers:  testutils.TestAccProviders,
-		ErrorCheck: func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_VM_HOST_ID"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceMAASMachineVMHostConfig(vmHostID, testMachineName),

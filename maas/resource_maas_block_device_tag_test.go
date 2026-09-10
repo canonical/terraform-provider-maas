@@ -24,10 +24,10 @@ func TestAccBlockDeviceTag_basic(t *testing.T) {
 	tagName3 := acctest.RandomWithPrefix("tf-tag")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASBlockDeviceTagDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckMAASBlockDeviceTagDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{

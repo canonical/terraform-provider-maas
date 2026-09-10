@@ -122,10 +122,10 @@ func TestAccResourceMAASNetworkInterfaceLink_device(t *testing.T) {
 	ipAddress := testutils.GetNetworkPrefixFromCIDR(cidr) + ".42"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, nil) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: func(s *terraform.State) error { return nil },
+		PreCheck:          func() { testutils.PreCheck(t, nil) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASNetworkInterfaceLinkDevice(macAddress, randomName, cidr, gateway, ipAddress),
@@ -157,10 +157,10 @@ func TestAccResourceMAASNetworkInterfaceLink_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: func(s *terraform.State) error { return nil },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_NETWORK_INTERFACE_MACHINE"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      func(s *terraform.State) error { return nil },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccMAASNetworkInterfaceLink(machine, cidr, gateway, "30.30.30.2", macAddress),

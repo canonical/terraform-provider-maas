@@ -25,10 +25,10 @@ func TestAccMAASVLANDHCP_basic(t *testing.T) {
 	rackController := os.Getenv("TF_ACC_RACK_CONTROLLER_HOSTNAME")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{
@@ -77,10 +77,10 @@ func TestAccMAASVLANDHCP_wrongIPRange(t *testing.T) {
 	startIP2, endIP2 := networkPrefix2+".2", networkPrefix2+".5"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Test error on create.
 			{
@@ -104,10 +104,10 @@ func TestAccMAASVLANDHCP_subnet(t *testing.T) {
 	cidrForSubnetUpdate := testutils.GenerateRandomCIDR()
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{
@@ -143,10 +143,10 @@ func TestAccMAASVLANDHCP_relay(t *testing.T) {
 	rackController := os.Getenv("TF_ACC_RACK_CONTROLLER_HOSTNAME")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Test create.
 			{
@@ -175,10 +175,10 @@ func TestAccMAASVLANDHCP_relayVLANUpdateCycle(t *testing.T) {
 	rackController := os.Getenv("TF_ACC_RACK_CONTROLLER_HOSTNAME")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
-		Providers:    testutils.TestAccProviders,
-		ErrorCheck:   func(err error) error { return err },
-		CheckDestroy: testAccCheckMAASVLANDHCPDestroy,
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_RACK_CONTROLLER_HOSTNAME"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		ErrorCheck:        func(err error) error { return err },
+		CheckDestroy:      testAccCheckMAASVLANDHCPDestroy,
 		Steps: []resource.TestStep{
 			// Step 1: Start with primary rack controller DHCP
 			{

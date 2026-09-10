@@ -64,10 +64,10 @@ func TestAccResourceMAASMachine_Lookup(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testutils.PreCheck(t, []string{"TF_ACC_MACHINE_HOSTNAME"}) },
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: func(s *terraform.State) error { return nil },
-		ErrorCheck:   func(err error) error { return err },
+		PreCheck:          func() { testutils.PreCheck(t, []string{"TF_ACC_MACHINE_HOSTNAME"}) },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      func(s *terraform.State) error { return nil },
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceMAASMachineLookup(hostname, macAddress1, nicName1, macAddress2, nicName2),
@@ -83,9 +83,9 @@ func TestAccResourceMAASMachine_NoPXE(t *testing.T) {
 	testIPMIIP := "10.0.0.10"
 
 	resource.ParallelTest(t, resource.TestCase{
-		Providers:    testutils.TestAccProviders,
-		CheckDestroy: func(s *terraform.State) error { return nil },
-		ErrorCheck:   func(err error) error { return err },
+		ProviderFactories: testutils.TestAccProviderFactories,
+		CheckDestroy:      func(s *terraform.State) error { return nil },
+		ErrorCheck:        func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccMAASMachineLXDNoPXE(testLXDIP),
