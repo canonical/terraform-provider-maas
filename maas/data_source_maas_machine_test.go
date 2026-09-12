@@ -3,6 +3,7 @@ package maas_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"testing"
 
@@ -38,7 +39,49 @@ func TestAccDataSourceMAASMachine_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "block_devices.#"),
 					resource.TestCheckTypeSetElemAttr("data.maas_machine.test", "block_devices.1.tags.*", "test-tag"),
 					testAccCheckNoBlockDeviceWithName("data.maas_machine.test", "test-volume-group-virtual-test"),
+					// A lookup by system_id resolves to the same machine as the lookup by hostname
+					resource.TestCheckResourceAttrPair("data.maas_machine.test", "system_id", "maas_vm_host_machine.test", "id"),
+					resource.TestCheckResourceAttrPair("data.maas_machine.test_by_system_id", "id", "maas_vm_host_machine.test", "id"),
+					resource.TestCheckResourceAttrPair("data.maas_machine.test_by_system_id", "system_id", "maas_vm_host_machine.test", "id"),
+					resource.TestCheckResourceAttr("data.maas_machine.test_by_system_id", "hostname", testMachineName),
+					resource.TestCheckResourceAttrPair("data.maas_machine.test_by_system_id", "pxe_mac_address", "data.maas_machine.test", "pxe_mac_address"),
+					resource.TestCheckResourceAttrPair("data.maas_machine.test_by_system_id", "block_devices.#", "data.maas_machine.test", "block_devices.#"),
 				),
+			},
+		},
+	})
+}
+
+// The three identifiers are mutually exclusive, and at least one must be given.
+func TestAccDataSourceMAASMachine_identifierExactlyOneOf(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:   func() { testutils.PreCheck(t, nil) },
+		Providers:  testutils.TestAccProviders,
+		ErrorCheck: func(err error) error { return err },
+		Steps: []resource.TestStep{
+			{
+				Config: `
+data "maas_machine" "test" {
+  system_id = "abc123"
+  hostname  = "tf-acc-ds-machine"
+}
+`,
+				ExpectError: regexp.MustCompile(`Invalid combination of arguments`),
+			},
+			{
+				Config: `
+data "maas_machine" "test" {
+  system_id       = "abc123"
+  pxe_mac_address = "52:54:00:89:f5:3e"
+}
+`,
+				ExpectError: regexp.MustCompile(`Invalid combination of arguments`),
+			},
+			{
+				Config: `
+data "maas_machine" "test" {}
+`,
+				ExpectError: regexp.MustCompile(`Invalid combination of arguments`),
 			},
 		},
 	})
@@ -102,6 +145,12 @@ resource "maas_logical_volume" "test" {
 
 data "maas_machine" "test" {
   hostname   = maas_vm_host_machine.test.hostname
+  depends_on = [maas_logical_volume.test]
+}
+
+# Use the same vm host machine for this test
+data "maas_machine" "test_by_system_id" {
+  system_id  = maas_vm_host_machine.test.id
   depends_on = [maas_logical_volume.test]
 }
 `, vmHostID, testMachineName)

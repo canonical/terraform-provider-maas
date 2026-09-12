@@ -73,7 +73,7 @@ func dataSourceMAASMachine() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ExactlyOneOf: []string{"hostname", "pxe_mac_address"},
+				ExactlyOneOf: []string{"hostname", "pxe_mac_address", "system_id"},
 				Description:  "The machine hostname.",
 			},
 			"min_hwe_kernel": {
@@ -101,8 +101,15 @@ func dataSourceMAASMachine() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ExactlyOneOf: []string{"hostname", "pxe_mac_address"},
+				ExactlyOneOf: []string{"hostname", "pxe_mac_address", "system_id"},
 				Description:  "The MAC address of the machine's PXE boot NIC.",
+			},
+			"system_id": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ExactlyOneOf: []string{"hostname", "pxe_mac_address", "system_id"},
+				Description:  "The machine system ID. Looking up a machine by its system ID is significantly faster than by `hostname` or `pxe_mac_address`, which require a lookup over all machines.",
 			},
 			"status": {
 				Type:        schema.TypeString,
@@ -123,7 +130,9 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 
 	var identifier string
 
-	if v, ok := d.GetOk("hostname"); ok {
+	if v, ok := d.GetOk("system_id"); ok {
+		identifier = v.(string)
+	} else if v, ok := d.GetOk("hostname"); ok {
 		identifier = v.(string)
 	} else if v, ok := d.GetOk("pxe_mac_address"); ok {
 		identifier = v.(string)
@@ -171,6 +180,7 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 		"power_type":       machine.PowerType,
 		"power_parameters": powerParamsJSON,
 		"pxe_mac_address":  machine.BootInterface.MACAddress,
+		"system_id":        machine.SystemID,
 		"status":           machine.StatusName,
 		"block_devices":    getShortBlockDeviceMachineParameters(physicalBlockDevices),
 	}
