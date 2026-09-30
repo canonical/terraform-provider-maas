@@ -204,8 +204,13 @@ func resourceNetworkInterfaceLinkDelete(ctx context.Context, d *schema.ResourceD
 
 func getNetworkInterfaceLinkParams(d *schema.ResourceData, subnetID int) *entity.NetworkInterfaceLinkParams {
 	return &entity.NetworkInterfaceLinkParams{
-		Subnet:         subnetID,
-		Mode:           d.Get("mode").(string),
+		Subnet: subnetID,
+		Mode:   d.Get("mode").(string),
+		// Without force MAAS only accepts subnets on the interface's current VLAN
+		// and reports a confusing cascade of errors otherwise. The create path
+		// already unlinks every existing link, which is what MAAS does for a
+		// forced link anyway.
+		Force:          true,
 		DefaultGateway: d.Get("default_gateway").(bool),
 		IPAddress:      d.Get("ip_address").(string),
 	}
