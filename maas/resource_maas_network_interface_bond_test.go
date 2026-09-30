@@ -92,13 +92,13 @@ resource "maas_network_interface_bond" "test" {
 func TestAccResourceMAASNetworkInterfaceBond_basic(t *testing.T) {
 	var networkInterfaceBond entity.NetworkInterface
 
-	name := fmt.Sprintf("tf-nic-bond-%d", acctest.RandIntRange(0, 9))
+	name := testutils.UniqueInterfaceName("tf-nic-bond-")
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddress := testutils.RandomMAC()
 	macAddressPhysOne := testutils.RandomMAC()
 	macAddressPhysTwo := testutils.RandomMAC()
-	parentNameOne := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
-	parentNameTwo := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
+	parentNameOne := testutils.UniqueInterfaceName("tf-nic-eth-")
+	parentNameTwo := testutils.UniqueInterfaceName("tf-nic-eth-")
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASNetworkInterfaceBondCheckExists("maas_network_interface_bond.test", &networkInterfaceBond),

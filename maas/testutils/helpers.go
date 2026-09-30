@@ -6,8 +6,35 @@ import (
 	"fmt"
 	mrand "math/rand"
 	"strings"
+	"sync/atomic"
 	"time"
 )
+
+// nicCounter hands out the suffix of generated test interface names. It is
+// package state on purpose: names only have to be unique within this process.
+var nicCounter atomic.Uint64
+
+// UniqueInterfaceName builds an interface name from prefix and a process-wide
+// counter. MAAS enforces interface names per node while the acceptance suite
+// runs several tests against the same machine concurrently, and each step
+// re-generates the config, so randomising a small range lets a later draw
+// repeat a name whose interface is still present. The result is always exactly
+// 15 characters, Linux's IFNAMSIZ minus the NUL terminator.
+func UniqueInterfaceName(prefix string) string {
+	const maxNameLen = 15
+
+	width := maxNameLen - len(prefix)
+	if width < 1 {
+		panic(fmt.Sprintf("interface name prefix %q leaves no room for a unique suffix", prefix))
+	}
+
+	// Masking keeps the suffix at exactly `width` digits rather than letting
+	// the counter spill past IFNAMSIZ. A run generates a handful of names, so
+	// the wrap point is never approached.
+	mask := uint64(1)<<(4*width) - 1
+
+	return fmt.Sprintf("%s%0*x", prefix, width, nicCounter.Add(1)&mask)
+}
 
 // RandomMAC generates a random locally administered MAC address.
 func RandomMAC() string {
