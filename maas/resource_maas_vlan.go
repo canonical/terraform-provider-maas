@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/canonical/gomaasclient/client"
@@ -32,7 +33,7 @@ func resourceMAASVLAN() *schema.Resource {
 					return nil, err
 				}
 
-				vlan, err := getVLAN(client, fabric.ID, idParts[1])
+				vlan, err := getVLAN(client, fabric.ID, idParts[1], lookupVLANByVID)
 				if err != nil {
 					return nil, err
 				}
@@ -117,7 +118,7 @@ func resourceVLANRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVLAN(client, fabric.ID, d.Id())
+	vlan, err := getVLAN(client, fabric.ID, d.Id(), lookupVLANByID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -143,7 +144,7 @@ func resourceVLANUpdate(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVLAN(client, fabric.ID, d.Id())
+	vlan, err := getVLAN(client, fabric.ID, d.Id(), lookupVLANByID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -163,7 +164,7 @@ func resourceVLANDelete(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVLAN(client, fabric.ID, d.Id())
+	vlan, err := getVLAN(client, fabric.ID, d.Id(), lookupVLANByID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -185,30 +186,41 @@ func getVLANParams(d *schema.ResourceData) *entity.VLANParams {
 	}
 }
 
-func findVLAN(client *client.Client, fabricID int, identifier string) (*entity.VLAN, error) {
+// vlanLookup selects which VLAN attribute an identifier is matched against
+// first. MAAS identifies VLANs within a fabric by both their database ID and
+// their VID, and a fabric always contains a VID 0, so an identifier can
+// legitimately match two different VLANs. Resolving deterministically keeps
+// that collision from silently picking the wrong VLAN.
+type vlanLookup int
+
+const (
+	// lookupVLANByID prefers the database ID, falling back to the VID.
+	lookupVLANByID vlanLookup = iota
+	// lookupVLANByVID prefers the VID, falling back to the database ID.
+	lookupVLANByVID
+)
+
+func getVLAN(client *client.Client, fabricID int, identifier string, lookup vlanLookup) (*entity.VLAN, error) {
 	vlans, err := client.VLANs.Get(fabricID)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, v := range vlans {
-		if fmt.Sprintf("%v", v.VID) == identifier || fmt.Sprintf("%v", v.ID) == identifier {
-			return &v, nil
+	attrs := []func(entity.VLAN) string{
+		func(v entity.VLAN) string { return strconv.Itoa(v.ID) },
+		func(v entity.VLAN) string { return strconv.Itoa(v.VID) },
+	}
+	if lookup == lookupVLANByVID {
+		attrs[0], attrs[1] = attrs[1], attrs[0]
+	}
+
+	for _, attr := range attrs {
+		for i := range vlans {
+			if attr(vlans[i]) == identifier {
+				return &vlans[i], nil
+			}
 		}
 	}
 
-	return nil, err
-}
-
-func getVLAN(client *client.Client, fabricID int, identifier string) (*entity.VLAN, error) {
-	vlan, err := findVLAN(client, fabricID, identifier)
-	if err != nil {
-		return nil, err
-	}
-
-	if vlan == nil {
-		return nil, fmt.Errorf("vlan (%s) was not found", identifier)
-	}
-
-	return vlan, nil
+	return nil, fmt.Errorf("vlan (%s) was not found", identifier)
 }

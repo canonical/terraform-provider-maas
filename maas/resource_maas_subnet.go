@@ -416,7 +416,7 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 		params.Fabric = strconv.Itoa(fabric.ID)
 
 		if p, ok := d.GetOk("vlan"); ok {
-			vlan, err := getVLAN(client, fabric.ID, p.(string))
+			vlan, err := getVLAN(client, fabric.ID, p.(string), lookupVLANByVID)
 			if err != nil {
 				return nil, err
 			}
