@@ -9,6 +9,7 @@ import (
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
+	"time"
 
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -125,38 +126,43 @@ func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) 
 			Hostname: hostname,
 		}
 
-		events, err := conn.Events.Get(&params)
-		if err != nil {
-			return err
-		}
+		// MAAS logs "Released" before it logs "Disks erased", so a single read
+		// taken the instant the destroy returns can land between the two and
+		// report a machine that was never wiped. Keep polling for the pair.
+		deadline := time.Now().Add(time.Minute)
 
-		if len(events.Events) == 0 {
-			return fmt.Errorf("no events found for hostname %s", hostname)
-		}
-
-		// Check through all events to see if the machine was released as expected
-		wasErased := false
-		wasReleased := false
-
-		for _, event := range events.Events {
-			if event.Type == "Disks erased" {
-				wasErased = true
+		for {
+			events, err := conn.Events.Get(&params)
+			if err != nil {
+				return err
 			}
 
-			if event.Type == "Released" {
-				wasReleased = true
+			wasReleased, wasErased := false, false
+
+			for _, ev := range events.Events {
+				if ev.Type == "Released" {
+					wasReleased = true
+				}
+
+				if ev.Type == "Disks erased" {
+					wasErased = true
+				}
 			}
-		}
 
-		if !wasReleased {
-			return fmt.Errorf("machine %s was not released as expected", hostname)
-		}
+			if wasReleased && wasErased == erase {
+				return nil
+			}
 
-		if wasErased != erase {
-			return fmt.Errorf("machine %s did not have disks erased as expected", hostname)
-		}
+			if !time.Now().Before(deadline) {
+				if !wasReleased {
+					return fmt.Errorf("machine %s was not released as expected", hostname)
+				}
 
-		return nil
+				return fmt.Errorf("machine %s did not have disks erased as expected", hostname)
+			}
+
+			time.Sleep(2 * time.Second)
+		}
 	}
 }
 
