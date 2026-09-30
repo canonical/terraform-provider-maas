@@ -56,7 +56,7 @@ func dataSourceVLANRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string))
+	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string), lookupVLANByVID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
