@@ -18,22 +18,30 @@ var nicCounter atomic.Uint64
 // counter. MAAS enforces interface names per node while the acceptance suite
 // runs several tests against the same machine concurrently, and each step
 // re-generates the config, so randomising a small range lets a later draw
-// repeat a name whose interface is still present. The result is always exactly
-// 15 characters, Linux's IFNAMSIZ minus the NUL terminator.
+// repeat a name whose interface is still present.
+//
+// The result is always exactly 15 characters: Linux rejects interface names
+// longer than that (IFNAMSIZ minus the NUL terminator), so the counter is
+// padded out to fill whatever space the prefix leaves over.
 func UniqueInterfaceName(prefix string) string {
 	const maxNameLen = 15
 
-	width := maxNameLen - len(prefix)
-	if width < 1 {
+	suffixLen := maxNameLen - len(prefix)
+	if suffixLen < 1 {
 		panic(fmt.Sprintf("interface name prefix %q leaves no room for a unique suffix", prefix))
 	}
 
-	// Masking keeps the suffix at exactly `width` digits rather than letting
-	// the counter spill past IFNAMSIZ. A run generates a handful of names, so
-	// the wrap point is never approached.
-	mask := uint64(1)<<(4*width) - 1
+	// Zero-pad so every generated name is the same length.
+	suffix := fmt.Sprintf("%0*x", suffixLen, nicCounter.Add(1))
+	if len(suffix) > suffixLen {
+		// The counter has outgrown the space the prefix leaves. Keep its last
+		// digits so the name still fits, rather than hand MAAS something it
+		// will reject. Reaching this first takes 16**suffixLen names (4096 for
+		// the 12-character prefixes in use here), which a run never generates.
+		suffix = suffix[len(suffix)-suffixLen:]
+	}
 
-	return fmt.Sprintf("%s%0*x", prefix, width, nicCounter.Add(1)&mask)
+	return prefix + suffix
 }
 
 // RandomMAC generates a random locally administered MAC address.
