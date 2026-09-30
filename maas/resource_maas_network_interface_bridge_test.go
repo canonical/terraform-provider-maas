@@ -72,8 +72,8 @@ resource "maas_network_interface_bridge" "test" {
 func TestAccResourceMAASNetworkInterfaceBridge_basic(t *testing.T) {
 	var networkInterfaceBridge entity.NetworkInterface
 
-	name := fmt.Sprintf("tf-nic-br-%d", acctest.RandIntRange(0, 9))
-	parentName := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
+	name := testutils.UniqueInterfaceName("tf-nic-br-")
+	parentName := testutils.UniqueInterfaceName("tf-nic-eth-")
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddress := testutils.RandomMAC()
 	macAddressPhys := testutils.RandomMAC()
