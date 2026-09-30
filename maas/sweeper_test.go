@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-maas/maas"
 
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -18,19 +19,26 @@ func init() {
 }
 
 func sweepNetworkInterfaces(region string) error {
-	// Get the test machine system ID from environment
-	machineSystemID := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
-	if machineSystemID == "" {
+	// Get the test machine identifier from environment
+	identifier := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
+	if identifier == "" {
 		log.Printf("[INFO] TF_ACC_NETWORK_INTERFACE_MACHINE not set, skipping network interface sweep")
 		return nil
 	}
 
-	log.Printf("[INFO] Starting network interface sweep for machine: %s", machineSystemID)
+	log.Printf("[INFO] Starting network interface sweep for machine: %s", identifier)
 
 	// Get MAAS client
 	clientConfig, err := getSweeperClient()
 	if err != nil {
 		return fmt.Errorf("error getting sweeper client: %s", err)
+	}
+
+	// MAAS node endpoints only address nodes by system_id, so a hostname from
+	// the config has to be resolved first.
+	machineSystemID, err := resolveNodeSystemID(clientConfig, identifier)
+	if err != nil {
+		return fmt.Errorf("error resolving node %s: %s", identifier, err)
 	}
 
 	// Get all network interfaces for the machine
@@ -47,8 +55,8 @@ func sweepNetworkInterfaces(region string) error {
 
 	for _, iface := range interfaces {
 		// Only delete interfaces with test naming pattern
-		if !strings.HasPrefix(iface.Name, "tf-nic-") {
-			log.Printf("[DEBUG] Skipping interface: %s (does not match tf-nic- pattern)", iface.Name)
+		if !isTestInterfaceName(iface.Name) {
+			log.Printf("[DEBUG] Skipping interface: %s (does not match a test prefix)", iface.Name)
 			continue
 		}
 
@@ -69,6 +77,31 @@ func sweepNetworkInterfaces(region string) error {
 	log.Printf("[INFO] Network interface sweep complete: deleted %d interfaces", deletedCount)
 
 	return nil
+}
+
+// resolveNodeSystemID maps a node identifier to its system_id. MAAS node
+// endpoints only accept a system_id, while the acceptance config supplies a
+// hostname, so looking the hostname up directly always 404s.
+func resolveNodeSystemID(clientConfig *maas.ClientConfig, identifier string) (string, error) {
+	machines, err := clientConfig.Client.Machines.Get(&entity.MachinesParams{})
+	if err != nil {
+		return "", err
+	}
+
+	for _, m := range machines {
+		if m.SystemID == identifier || m.Hostname == identifier || m.FQDN == identifier || m.BootInterface.MACAddress == identifier {
+			return m.SystemID, nil
+		}
+	}
+
+	return "", fmt.Errorf("no node matches %q", identifier)
+}
+
+// isTestInterfaceName reports whether an interface was created by the
+// acceptance tests. tf-lookup-* is produced by the machine lookup test, the
+// rest by the network interface tests.
+func isTestInterfaceName(name string) bool {
+	return strings.HasPrefix(name, "tf-nic-") || strings.HasPrefix(name, "tf-lookup-")
 }
 
 // getSweeperClient creates a MAAS client for use in sweepers

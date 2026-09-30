@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"slices"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -26,8 +25,8 @@ func sweepLeftoverInterfaces() {
 		return
 	}
 
-	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
-	if machine == "" {
+	identifier := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
+	if identifier == "" {
 		return
 	}
 
@@ -37,20 +36,26 @@ func sweepLeftoverInterfaces() {
 		return
 	}
 
-	interfaces, err := clientConfig.Client.NetworkInterfaces.Get(machine)
+	systemID, err := resolveNodeSystemID(clientConfig, identifier)
+	if err != nil {
+		log.Printf("[WARN] Skipping pre-suite interface sweep: %s", err)
+		return
+	}
+
+	interfaces, err := clientConfig.Client.NetworkInterfaces.Get(systemID)
 	if err != nil {
 		log.Printf("[WARN] Skipping pre-suite interface sweep: %s", err)
 		return
 	}
 
 	for _, iface := range interfaces {
-		if !strings.HasPrefix(iface.Name, "tf-nic-") {
+		if !isTestInterfaceName(iface.Name) {
 			continue
 		}
 
 		log.Printf("[INFO] Pre-suite sweep: deleting leftover interface %s (ID: %d)", iface.Name, iface.ID)
 
-		if err := clientConfig.Client.NetworkInterface.Delete(machine, iface.ID); err != nil {
+		if err := clientConfig.Client.NetworkInterface.Delete(systemID, iface.ID); err != nil {
 			log.Printf("[WARN] Pre-suite sweep: could not delete interface %s: %s", iface.Name, err)
 		}
 	}
