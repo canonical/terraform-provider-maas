@@ -231,7 +231,9 @@ func resourceMAASVMHost() *schema.Resource {
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
+			// Matches maas_vm_host_machine: registering the host and waiting for
+			// it to sync can exceed 30 minutes under load.
+			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 	}

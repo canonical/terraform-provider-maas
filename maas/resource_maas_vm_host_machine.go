@@ -152,7 +152,9 @@ func resourceMAASVMHostMachine() *schema.Resource {
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
+			// Composing a VM and commissioning it is routinely 25 minutes on a
+			// loaded MAAS, so leave headroom before declaring a timeout.
+			Create: schema.DefaultTimeout(60 * time.Minute),
 		},
 	}
 }
