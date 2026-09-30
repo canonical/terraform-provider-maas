@@ -26,10 +26,14 @@ var nicCounter atomic.Uint64
 func UniqueInterfaceName(prefix string) string {
 	const maxNameLen = 15
 
-	suffixLen := maxNameLen - len(prefix)
-	if suffixLen < 1 {
-		panic(fmt.Sprintf("interface name prefix %q leaves no room for a unique suffix", prefix))
+	// Truncate an over-long prefix instead of refusing to generate a name:
+	// callers pass literals, and a name MAAS will reject is worse than a
+	// shorter one.
+	if len(prefix) >= maxNameLen {
+		prefix = prefix[:maxNameLen-1]
 	}
+
+	suffixLen := maxNameLen - len(prefix)
 
 	// Zero-pad so every generated name is the same length.
 	suffix := fmt.Sprintf("%0*x", suffixLen, nicCounter.Add(1))

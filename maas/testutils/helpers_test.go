@@ -99,12 +99,15 @@ func TestUniqueInterfaceName(t *testing.T) {
 	}
 }
 
-func TestUniqueInterfaceNameRejectsOverlongPrefix(t *testing.T) {
-	defer func() {
-		if recover() == nil {
-			t.Error("UniqueInterfaceName did not panic for a 15 character prefix")
-		}
-	}()
+func TestUniqueInterfaceNameTruncatesOverlongPrefix(t *testing.T) {
+	prefixes := []string{
+		"abcdefghijklmno",   // exactly 15 characters
+		"abcdefghijklmnopq", // longer than the interface name limit
+	}
 
-	UniqueInterfaceName("abcdefghijklmno")
+	for _, prefix := range prefixes {
+		if name := UniqueInterfaceName(prefix); len(name) != 15 {
+			t.Errorf("UniqueInterfaceName(%q) = %q, want exactly 15 characters", prefix, name)
+		}
+	}
 }

@@ -1,6 +1,7 @@
 package maas_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -129,40 +131,56 @@ func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) 
 		// MAAS logs "Released" before it logs "Disks erased", so a single read
 		// taken the instant the destroy returns can land between the two and
 		// report a machine that was never wiped. Keep polling for the pair.
-		deadline := time.Now().Add(time.Minute)
+		var wasReleased, wasErased bool
+		// Retained so a failed poll isn't reported as a missing event.
+		var pollErr error
 
-		for {
-			events, err := conn.Events.Get(&params)
-			if err != nil {
-				return err
-			}
-
-			wasReleased, wasErased := false, false
-
-			for _, ev := range events.Events {
-				if ev.Type == "Released" {
-					wasReleased = true
+		stateConf := &retry.StateChangeConf{
+			Pending: []string{"waiting"},
+			Target:  []string{"done"},
+			Refresh: func() (any, string, error) {
+				events, err := conn.Events.Get(&params)
+				if err != nil {
+					pollErr = err
+					return nil, "", err
 				}
 
-				if ev.Type == "Disks erased" {
-					wasErased = true
+				pollErr = nil
+
+				wasReleased, wasErased = false, false
+
+				for _, ev := range events.Events {
+					switch ev.Type {
+					case "Released":
+						wasReleased = true
+					case "Disks erased":
+						wasErased = true
+					}
 				}
-			}
 
-			if wasReleased && wasErased == erase {
-				return nil
-			}
-
-			if !time.Now().Before(deadline) {
-				if !wasReleased {
-					return fmt.Errorf("machine %s was not released as expected", hostname)
+				if wasReleased && wasErased == erase {
+					return "done", "done", nil
 				}
 
-				return fmt.Errorf("machine %s did not have disks erased as expected", hostname)
-			}
-
-			time.Sleep(2 * time.Second)
+				return "waiting", "waiting", nil
+			},
+			Timeout:    time.Minute,
+			MinTimeout: 2 * time.Second,
 		}
+
+		if _, err := stateConf.WaitForStateContext(context.Background()); err != nil {
+			if pollErr != nil {
+				return pollErr
+			}
+
+			if !wasReleased {
+				return fmt.Errorf("machine %s was not released as expected", hostname)
+			}
+
+			return fmt.Errorf("machine %s did not have disks erased as expected", hostname)
+		}
+
+		return nil
 	}
 }
 
