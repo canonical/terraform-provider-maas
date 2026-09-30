@@ -339,6 +339,12 @@ func awaitImportComplete(client *client.Client, os string, release string, arche
 				// the resources individually.
 				resourceDetails, err := client.BootResource.Get(resource.ID)
 				if err != nil {
+					// A resource can be removed and recreated while the import is
+					// still running, so a 404 here just means "keep waiting".
+					if strings.Contains(err.Error(), "404 Not Found") {
+						return retry.RetryableError(err)
+					}
+
 					return retry.NonRetryableError(err)
 				}
 
