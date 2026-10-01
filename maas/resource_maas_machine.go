@@ -2,11 +2,13 @@ package maas
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
 	"reflect"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/canonical/gomaasclient/client"
@@ -504,11 +506,36 @@ func waitForMachineStatus(ctx context.Context, client *client.Client, systemID s
 	}
 
 	result, err := stateConf.WaitForStateContext(ctx)
-	if err != nil {
-		return nil, err
+	if err == nil {
+		return result.(*entity.Machine), nil
 	}
 
-	return result.(*entity.Machine), nil
+	// The SDK's message for an unexpected state ends in "last error: %!s(<nil>)",
+	// so ask MAAS what actually happened instead.
+	if machine, getErr := getMachine(client, systemID); getErr == nil {
+		return nil, machineStateError(err, machine, targetStates)
+	}
+
+	return nil, err
+}
+
+// machineStateError explains a failed wait using what MAAS last reported about
+// the machine. Timeouts and other failures pass through untouched, because the
+// SDK already describes those well.
+func machineStateError(waitErr error, machine *entity.Machine, targetStates []string) error {
+	var unexpected *retry.UnexpectedStateError
+	if !errors.As(waitErr, &unexpected) {
+		return waitErr
+	}
+
+	detail := machine.StatusMessage
+	if detail == "" {
+		detail = "MAAS reported no further detail"
+	}
+
+	return fmt.Errorf("machine %s (%s) is %q while waiting for %s: %s",
+		machine.Hostname, machine.SystemID, unexpected.State,
+		strings.Join(targetStates, " or "), detail)
 }
 
 func getMachine(client *client.Client, identifier string) (*entity.Machine, error) {
