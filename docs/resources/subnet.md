@@ -68,7 +68,7 @@ resource "maas_subnet" "tf_subnet_2" {
 	* `0` - Disabled, no reverse zone is created.
 	* `1` - Enabled, generate reverse zone.
 	* `2` - RFC2317, extends `1` to create the necessary parent zone with the appropriate CNAME resource records for the network, if the network is small enough to require the support described in RFC2317.
-- `vlan` (String) The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required. This argument is computed if it's not set.
+- `vlan` (String) The VLAN identifier (ID or traffic segregation ID; if a value matches both, the traffic segregation ID wins) for the new subnet. If this is set, the `fabric` argument is required. This argument is computed if it's not set.
 
 ### Read-Only
 

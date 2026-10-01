@@ -42,7 +42,7 @@ func dataSourceMAASVLAN() *schema.Resource {
 			"vlan": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The VLAN identifier (ID or traffic segregation ID).",
+				Description: "The VLAN identifier (ID or traffic segregation ID; if a value matches both, the traffic segregation ID wins).",
 			},
 		},
 	}
