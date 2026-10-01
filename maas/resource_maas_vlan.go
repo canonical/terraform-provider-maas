@@ -206,6 +206,16 @@ func getVLAN(client *client.Client, fabricID int, identifier string, lookup vlan
 		return nil, err
 	}
 
+	if vlan := matchVLAN(vlans, identifier, lookup); vlan != nil {
+		return vlan, nil
+	}
+
+	return nil, fmt.Errorf("vlan (%s) was not found", identifier)
+}
+
+// matchVLAN returns the VLAN in vlans whose preferred attribute equals
+// identifier, falling back to the other attribute before giving up.
+func matchVLAN(vlans []entity.VLAN, identifier string, lookup vlanLookup) *entity.VLAN {
 	attrs := []func(entity.VLAN) string{
 		func(v entity.VLAN) string { return strconv.Itoa(v.ID) },
 		func(v entity.VLAN) string { return strconv.Itoa(v.VID) },
@@ -217,10 +227,10 @@ func getVLAN(client *client.Client, fabricID int, identifier string, lookup vlan
 	for _, attr := range attrs {
 		for i := range vlans {
 			if attr(vlans[i]) == identifier {
-				return &vlans[i], nil
+				return &vlans[i]
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("vlan (%s) was not found", identifier)
+	return nil
 }
