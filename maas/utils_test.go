@@ -1,6 +1,7 @@
 package maas
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -382,6 +383,39 @@ func TestOptionalStringPtr(t *testing.T) {
 			case result != nil && testCase.expected != nil && *result != *testCase.expected:
 				t.Errorf("optionalStringPtr() result = %v, expected %v", *result, *testCase.expected)
 			}
+		})
+	}
+}
+
+// Only gomaasapi's 404 counts as "gone": a boot resource removed mid-import has
+// to keep the wait going, while every other failure must surface immediately.
+func TestIsNotFoundError(t *testing.T) {
+	testCases := []struct {
+		name string
+		err  error
+		out  bool
+	}{
+		{
+			name: "404 from a recreated boot resource",
+			err:  fmt.Errorf("ServerError: 404 Not Found (%s)", `{"detail": "No BootResource matches the given query."}`),
+			out:  true,
+		},
+		{
+			name: "server error is not not-found",
+			err:  fmt.Errorf("ServerError: 500 Internal Server Error (%s)", `{"errors": ["boom"]}`),
+			out:  false,
+		},
+		{
+			name: "transport error is not not-found",
+			err:  errors.New("connection refused"),
+			out:  false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			out := isNotFoundError(testCase.err)
+			assert.Equal(t, testCase.out, out, fmt.Sprintf("isNotFoundError(%s) => %v, want %v", testCase.err, out, testCase.out))
 		})
 	}
 }

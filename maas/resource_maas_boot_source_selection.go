@@ -281,7 +281,7 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 	// Delete the selection (normal path for non-default selections)
 	if err := client.BootSourceSelection.Delete(d.Get("boot_source").(int), id); err != nil {
 		// 404 means the resource was deleted already
-		if strings.Contains(err.Error(), "404 Not Found") {
+		if isNotFoundError(err) {
 			return nil
 		}
 
@@ -341,7 +341,7 @@ func awaitImportComplete(client *client.Client, os string, release string, arche
 				if err != nil {
 					// A resource can be removed and recreated while the import is
 					// still running, so a 404 here just means "keep waiting".
-					if strings.Contains(err.Error(), "404 Not Found") {
+					if isNotFoundError(err) {
 						return retry.RetryableError(err)
 					}
 
