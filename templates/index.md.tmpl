@@ -115,7 +115,7 @@ Subnets are the network backbone of MAAS, and thus provide a number of attribute
 The [VLAN](https://github.com/maas/terraform-provider-maas/blob/master/docs/data-sources/vlan.md) data source provides details about an existing MAAS VLAN.  A VLAN takes two arguments:
 
 - fabric - (Required) The fabric identifier (ID or name) for the VLAN.
-- vlan - (Required) The VLAN identifier (ID or traffic segregation ID).
+- vlan - (Required) The VLAN identifier (ID or traffic segregation ID; if a value matches both, the traffic segregation ID wins).
 
 A VLAN data source exports a few useful attributes:
 

@@ -133,7 +133,7 @@ func resourceMAASSubnet() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				RequiredWith: []string{"fabric"},
-				Description:  "The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required. This argument is computed if it's not set.",
+				Description:  "The VLAN identifier (ID or traffic segregation ID; if a value matches both, the traffic segregation ID wins) for the new subnet. If this is set, the `fabric` argument is required. This argument is computed if it's not set.",
 			},
 		},
 	}

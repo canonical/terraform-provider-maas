@@ -47,6 +47,6 @@ Import is supported using the following syntax:
 The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
-# Existing MAAS VLANs can be imported using the fabric identifier (ID or name) and the VLAN identifier (ID or traffic segregation ID). e.g.
+# Existing MAAS VLANs can be imported using the fabric identifier (ID or name) and the VLAN identifier (ID or traffic segregation ID; if a value matches both, the traffic segregation ID wins). e.g.
 $ terraform import maas_vlan.tf_vlan tf-fabric:14
 ```
