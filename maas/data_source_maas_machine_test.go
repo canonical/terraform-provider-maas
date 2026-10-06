@@ -70,6 +70,10 @@ func testAccDataSourceMAASMachineVMHostConfig(vmHostID, testMachineName string) 
 resource "maas_vm_host_machine" "test" {
   vm_host  = %q
   hostname = %q
+
+  timeouts {
+    create = "60m"
+  }
 }
 
 # Create a virtual block device to verify that only physical block devices are returned

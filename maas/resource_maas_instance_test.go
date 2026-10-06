@@ -259,6 +259,10 @@ resource "maas_vm_host_machine" "test" {
   cores    = 1
   memory   = 4096  # set to above the default
   hostname = %q
+
+  timeouts {
+    create = "60m"
+  }
 }
 
 `, vmHost, hostname)
@@ -273,6 +277,10 @@ resource "maas_instance" "test" {
     hostname      = maas_vm_host_machine.test.hostname
     min_memory    = 4000
     min_cpu_count = 1
+  }
+
+  timeouts {
+    create = "60m"
   }
 }
 `, testAccMAASInstanceConfigSetup(vmHost, hostname))
@@ -291,6 +299,9 @@ resource "maas_instance" "test" {
     min_cpu_count = 1
   }
 
+  timeouts {
+    create = "60m"
+  }
 }
 `
 }
@@ -334,6 +345,10 @@ resource "maas_instance" "test" {
     min_memory    = 4000
     min_cpu_count = 1
   }
+
+  timeouts {
+    create = "60m"
+  }
 }
 `, comment, erase, force, quickErase, secureErase)
 }
@@ -348,6 +363,10 @@ resource "maas_instance" "test" {
     min_memory    = 4000
     min_cpu_count = 1
     architecture  = %q
+  }
+
+  timeouts {
+    create = "60m"
   }
 }
 `, testAccMAASInstanceConfigSetup(vmHost, hostname), architecture)
