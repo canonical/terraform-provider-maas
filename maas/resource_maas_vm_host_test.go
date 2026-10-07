@@ -83,11 +83,19 @@ func testAccMAASVMHostDeployParamsConfig(vmHostIdentifier string, testMachineNam
 	resource "maas_vm_host_machine" "test" {
 	  vm_host  = %q
 	  hostname = %q
+
+	  timeouts {
+	    create = "60m"
+	  }
 	}
 
 	resource "maas_vm_host" "test" {
 	  machine = maas_vm_host_machine.test.id
 	  type    = %q
+
+	  timeouts {
+	    create = "60m"
+	  }
 
 	  deploy_params {
 		  user_data        = "#!/bin/bash\necho 'Hello from cloud-init'"
