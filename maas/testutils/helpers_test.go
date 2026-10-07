@@ -65,3 +65,49 @@ func TestGenerateRandomCIDR(t *testing.T) {
 		}
 	}
 }
+
+func TestUniqueInterfaceName(t *testing.T) {
+	prefixes := []string{
+		"tf-nic-eth-",
+		"tf-nic-vlan-",
+		"tf-nic-br-",
+		"tf-nic-bond-",
+		"tf-lookup-1-",
+		"tf-lookup-2-",
+	}
+
+	seen := make(map[string]bool)
+
+	for _, prefix := range prefixes {
+		for range 10 {
+			name := UniqueInterfaceName(prefix)
+
+			if !strings.HasPrefix(name, prefix) {
+				t.Errorf("UniqueInterfaceName(%q) = %q, want prefix %q", prefix, name, prefix)
+			}
+
+			if len(name) != 15 {
+				t.Errorf("UniqueInterfaceName(%q) = %q, want exactly 15 characters", prefix, name)
+			}
+
+			if seen[name] {
+				t.Errorf("UniqueInterfaceName(%q) repeated %q", prefix, name)
+			}
+
+			seen[name] = true
+		}
+	}
+}
+
+func TestUniqueInterfaceNameTruncatesOverlongPrefix(t *testing.T) {
+	prefixes := []string{
+		"abcdefghijklmno",   // exactly 15 characters
+		"abcdefghijklmnopq", // longer than the interface name limit
+	}
+
+	for _, prefix := range prefixes {
+		if name := UniqueInterfaceName(prefix); len(name) != 15 {
+			t.Errorf("UniqueInterfaceName(%q) = %q, want exactly 15 characters", prefix, name)
+		}
+	}
+}

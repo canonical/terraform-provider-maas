@@ -77,8 +77,8 @@ func TestAccResourceMAASNetworkInterfaceVLAN_basic(t *testing.T) {
 
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddressPhys := testutils.RandomMAC()
-	name := fmt.Sprintf("tf-nic-vlan-%d", acctest.RandIntRange(0, 999))
-	parentName := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
+	name := testutils.UniqueInterfaceName("tf-nic-vlan-")
+	parentName := testutils.UniqueInterfaceName("tf-nic-eth-")
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASNetworkInterfaceVLANCheckExists("maas_network_interface_vlan.test", &networkInterfaceVLAN),

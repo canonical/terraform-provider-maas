@@ -80,7 +80,7 @@ resource "maas_network_interface_link" "test" {
   ip_address        = "%s"
   default_gateway   = true
 }
-`, machine, macAddress, fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999)), fmt.Sprintf("tf-nic-vlan-%d", acctest.RandIntRange(0, 999)), fmt.Sprintf("tf-nic-br-%d", acctest.RandIntRange(0, 999)), cidr, cidr, gateway, ip)
+`, machine, macAddress, testutils.UniqueInterfaceName("tf-nic-eth-"), testutils.UniqueInterfaceName("tf-nic-vlan-"), testutils.UniqueInterfaceName("tf-nic-br-"), cidr, cidr, gateway, ip)
 }
 
 func testAccMAASNetworkInterfaceLinkDevice(macAddress string, randomName string, cidr string, gateway string, ip string) string {

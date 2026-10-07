@@ -62,7 +62,7 @@ func TestAccResourceMAASNetworkInterfacePhysical_basic(t *testing.T) {
 
 	fabricName := acctest.RandomWithPrefix("tf-fab")
 
-	name := fmt.Sprintf("tf-nic-eth-%d", acctest.RandIntRange(0, 999))
+	name := testutils.UniqueInterfaceName("tf-nic-eth-")
 
 	machine := os.Getenv("TF_ACC_NETWORK_INTERFACE_MACHINE")
 	macAddress := testutils.RandomMAC()

@@ -1,6 +1,7 @@
 package maas_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -9,10 +10,12 @@ import (
 	"terraform-provider-maas/maas"
 	"terraform-provider-maas/maas/testutils"
 	"testing"
+	"time"
 
 	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -125,34 +128,55 @@ func testAccMAASInstanceCheckMachineLogsForDestroy(hostname string, erase bool) 
 			Hostname: hostname,
 		}
 
-		events, err := conn.Events.Get(&params)
-		if err != nil {
-			return err
+		// MAAS logs "Released" before it logs "Disks erased", so a single read
+		// taken the instant the destroy returns can land between the two and
+		// report a machine that was never wiped. Keep polling for the pair.
+		var wasReleased, wasErased bool
+		// Retained so a failed poll isn't reported as a missing event.
+		var pollErr error
+
+		stateConf := &retry.StateChangeConf{
+			Pending: []string{"waiting"},
+			Target:  []string{"done"},
+			Refresh: func() (any, string, error) {
+				events, err := conn.Events.Get(&params)
+				if err != nil {
+					pollErr = err
+					return nil, "", err
+				}
+
+				pollErr = nil
+
+				wasReleased, wasErased = false, false
+
+				for _, ev := range events.Events {
+					switch ev.Type {
+					case "Released":
+						wasReleased = true
+					case "Disks erased":
+						wasErased = true
+					}
+				}
+
+				if wasReleased && wasErased == erase {
+					return "done", "done", nil
+				}
+
+				return "waiting", "waiting", nil
+			},
+			Timeout:    time.Minute,
+			MinTimeout: 2 * time.Second,
 		}
 
-		if len(events.Events) == 0 {
-			return fmt.Errorf("no events found for hostname %s", hostname)
-		}
-
-		// Check through all events to see if the machine was released as expected
-		wasErased := false
-		wasReleased := false
-
-		for _, event := range events.Events {
-			if event.Type == "Disks erased" {
-				wasErased = true
+		if _, err := stateConf.WaitForStateContext(context.Background()); err != nil {
+			if pollErr != nil {
+				return pollErr
 			}
 
-			if event.Type == "Released" {
-				wasReleased = true
+			if !wasReleased {
+				return fmt.Errorf("machine %s was not released as expected", hostname)
 			}
-		}
 
-		if !wasReleased {
-			return fmt.Errorf("machine %s was not released as expected", hostname)
-		}
-
-		if wasErased != erase {
 			return fmt.Errorf("machine %s did not have disks erased as expected", hostname)
 		}
 
