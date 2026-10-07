@@ -267,7 +267,7 @@ func optionalStringPtr(value string) *string {
 // unsets the ID of the resource data and returns no diagnostics.
 // Otherwise, it returns diagnostics containing the error.
 func unsetIfNotFoundError(d *schema.ResourceData, err error) diag.Diagnostics {
-	if strings.Contains(err.Error(), "404 Not Found") {
+	if isNotFoundError(err) {
 		d.SetId("")
 		return nil
 	}
@@ -275,7 +275,12 @@ func unsetIfNotFoundError(d *schema.ResourceData, err error) diag.Diagnostics {
 	return diag.FromErr(err)
 }
 
-// isNotFoundError checks if the given error is a 404 Not Found error.
+// isNotFoundError checks if the given error is a 404 Not Found error. gomaasapi
+// reports these as "ServerError: 404 Not Found (...)".
+func isNotFoundError(err error) bool {
+	return strings.Contains(err.Error(), "404 Not Found")
+}
+
 func isMachineInPermittedState(machine *entity.Machine) bool {
 	switch machine.Status {
 	case
