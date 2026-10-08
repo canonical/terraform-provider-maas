@@ -94,7 +94,7 @@ func resourceNetworkInterfaceVLANCreate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
+	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)), lookupVLANByID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -177,7 +177,7 @@ func resourceNetworkInterfaceVLANUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)))
+	vlan, err := getVLAN(client, fabric.ID, strconv.Itoa(d.Get("vlan").(int)), lookupVLANByID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

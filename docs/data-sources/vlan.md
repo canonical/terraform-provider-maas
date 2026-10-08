@@ -30,7 +30,7 @@ data "maas_vlan" "vid10" {
 ### Required
 
 - `fabric` (String) The fabric identifier (ID or name) for the VLAN.
-- `vlan` (String) The VLAN identifier (ID or traffic segregation ID).
+- `vlan` (String) The VLAN identifier (ID or traffic segregation ID; if a value matches both, the traffic segregation ID wins).
 
 ### Read-Only
 

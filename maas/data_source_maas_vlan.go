@@ -42,7 +42,7 @@ func dataSourceMAASVLAN() *schema.Resource {
 			"vlan": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The VLAN identifier (ID or traffic segregation ID).",
+				Description: "The VLAN identifier (ID or traffic segregation ID; if a value matches both, the traffic segregation ID wins).",
 			},
 		},
 	}
@@ -56,7 +56,7 @@ func dataSourceVLANRead(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string))
+	vlan, err := getVLAN(client, fabric.ID, d.Get("vlan").(string), lookupVLANByVID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

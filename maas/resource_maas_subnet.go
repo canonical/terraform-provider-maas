@@ -133,7 +133,7 @@ func resourceMAASSubnet() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				RequiredWith: []string{"fabric"},
-				Description:  "The VLAN identifier (ID or traffic segregation ID) for the new subnet. If this is set, the `fabric` argument is required. This argument is computed if it's not set.",
+				Description:  "The VLAN identifier (ID or traffic segregation ID; if a value matches both, the traffic segregation ID wins) for the new subnet. If this is set, the `fabric` argument is required. This argument is computed if it's not set.",
 			},
 		},
 	}
@@ -416,7 +416,7 @@ func getSubnetParams(client *client.Client, d *schema.ResourceData) (*entity.Sub
 		params.Fabric = strconv.Itoa(fabric.ID)
 
 		if p, ok := d.GetOk("vlan"); ok {
-			vlan, err := getVLAN(client, fabric.ID, p.(string))
+			vlan, err := getVLAN(client, fabric.ID, p.(string), lookupVLANByVID)
 			if err != nil {
 				return nil, err
 			}
