@@ -42,3 +42,6 @@ dist/
 
 # Dev environment
 .devenv/
+
+# Workshop
+.workshop.lock

@@ -73,6 +73,10 @@ Where
 
 
 ## Create a development environment
+There are two options for developing the provider:
+- **Locally**, with Go and Terraform installed on your machine, as described in this section and in [Testing](#testing).
+- **In a workshop**, an isolated development environment with the toolchain pre-installed. See [Develop in a workshop](#develop-in-a-workshop).
+
 ### Setup
 1. Run `make build` to build the provider binary locally, located in `./bin`.
 1. Run `make create_dev_overrides` and follow any output instructions. More info [here](https://developer.hashicorp.com/terraform/cli/config/config-file#development-overrides-for-provider-developers).
@@ -118,6 +122,10 @@ To run the tests:
         ```bash
         make testacc TESTARGS="-run=TestAcc<resource_name>_basic"
         ```
+    - Run a specific acceptance test without using the cached result:
+        ```bash
+        make testacc TESTARGS="-run=TestAcc<resource_name>_basic -count=1"
+        ```
     - Run a group of acceptance tests with names matching the regex:
         ```bash
         make testacc TESTARGS="-run=TestAcc<resource_name>"
@@ -140,6 +148,81 @@ To run specific sweepers or pass additional options:
 ```bash
 make sweep SWEEPARGS="-sweep-run=maas_network_interface"
 ```
+
+## Develop in a workshop
+
+As an alternative to a local setup, you can develop in a [workshop](https://ubuntu.com/workshop/docs/): an LXD container defined in `.workshop/dev.yaml` that comes with Go, Terraform, `make`, and `golangci-lint` installed. Your checkout is mounted into the workshop at `/project`, so you keep editing and using git on your host as usual.
+
+### Setup
+1. Install Workshop by following the [Workshop documentation](https://ubuntu.com/workshop/docs/).
+1. From the repository root, launch the workshop:
+    ```bash
+    workshop launch dev
+    ```
+1. Check it is ready:
+    ```bash
+    workshop info dev
+    ```
+
+> [!NOTE]
+> If the launch fails to resolve or download packages, your host firewall may be blocking traffic on the `workshopbr0` bridge. Run `workshop warnings` for details. With UFW, allow it with:
+> ```bash
+> sudo ufw allow in on workshopbr0
+> sudo ufw route allow in on workshopbr0
+> sudo ufw route allow out on workshopbr0
+> ```
+
+### Workflow
+The common tasks are available as workshop actions, which wrap the `make` targets:
+
+| Action | Runs |
+|--------|------|
+| `build` | `make build` |
+| `test` | `make test` |
+| `testacc` | `make testacc` |
+| `lint` / `lint-fix` | `make lint` / `make lint-go-fix` |
+| `fmt` / `fmt-check` | `terraform fmt -recursive` (with `-check`) |
+| `generate` | `go generate ./...` and `make generate_docs` |
+| `docs-validate` | `tfplugindocs validate` |
+| `dev-overrides` | `make create_dev_overrides` |
+
+Run an action with:
+```bash
+workshop run dev build
+```
+
+To work interactively, for example to use Terraform with your development build, open a shell in the workshop:
+```bash
+workshop run dev dev-overrides
+workshop shell
+# inside the workshop:
+export TF_CLI_CONFIG_FILE=/project/bin/developer_overrides.tfrc
+make create_dev_env
+cd /project/.devenv && terraform init && terraform apply
+```
+
+### Testing
+Unit tests need no extra setup:
+```bash
+workshop run dev test
+```
+
+Acceptance tests need the same environment variables as a local run. Set them in your host shell and pass them into the workshop by name with `--env`:
+```bash
+export MAAS_API_URL=http://<maas-address>:5240/MAAS
+export MAAS_API_KEY=<api-key>
+export MAAS_VERSION=<maas-version>
+
+workshop run --env MAAS_API_URL --env MAAS_API_KEY --env MAAS_VERSION \
+  dev testacc TESTARGS="-run=TestAcc<resource_name>_basic -count=1"
+```
+
+Pass any `TF_ACC_*` variables that a test needs the same way, with an extra `--env` flag for each.
+
+> [!NOTE]
+> `localhost` inside the workshop refers to the workshop itself, not your host. Set `MAAS_API_URL` to an address the workshop can reach, such as the address of your MAAS on its bridge network or LAN.
+
+To run sweepers, use `workshop shell`, export the variables inside the workshop, and run `make sweep`.
 
 ## Getting Help
 

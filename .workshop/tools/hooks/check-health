@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+
+for tool in make git golangci-lint; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        workshopctl set-health error "$tool not found on PATH"
+        exit 0
+    fi
+done
+workshopctl set-health okay

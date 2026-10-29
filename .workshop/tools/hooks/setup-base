@@ -1,0 +1,11 @@
+#!/bin/bash
+# Install build tools the go and terraform SDKs do not ship.
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y --no-install-recommends make git curl ca-certificates
+
+# golangci-lint version matches CI (.github/workflows/test.yml: version v2.13).
+# UNVERIFIED: install route — CI uses golangci-lint-action; the repo has no install command.
+curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b /usr/local/bin v2.13.2
