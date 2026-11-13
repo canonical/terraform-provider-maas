@@ -14,7 +14,8 @@ Provides a resource to manage the MAAS boot source.
 
 ```terraform
 resource "maas_boot_source" "test_boot_source" {
-  url = "http://images.maas.io/ephemeral-v3/candidate/"
+  url              = "http://images.maas.io/ephemeral-v3/candidate/"
+  keyring_filename = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 }
 ```
 
@@ -27,8 +28,8 @@ resource "maas_boot_source" "test_boot_source" {
 
 ### Optional
 
-- `keyring_data` (String) The data on the keyring for the boot source.
-- `keyring_filename` (String) The filename on the keyring for the boot source.
+- `keyring_data` (String) The keyring data for the boot source. Specify exactly one of keyring_data or keyring_filename.
+- `keyring_filename` (String) The path to the keyring file for the boot source. Specify exactly one of keyring_data or keyring_filename.
 
 ### Read-Only
 

@@ -31,13 +31,13 @@ func resourceMAASBootSource() *schema.Resource {
 			"keyring_data": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The data on the keyring for the boot source.",
+				Description:  "The keyring data for the boot source. Specify exactly one of keyring_data or keyring_filename.",
 				ExactlyOneOf: []string{"keyring_filename"},
 			},
 			"keyring_filename": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The filename on the keyring for the boot source.",
+				Description:  "The path to the keyring file for the boot source. Specify exactly one of keyring_data or keyring_filename.",
 				ExactlyOneOf: []string{"keyring_data"},
 			},
 			"updated": {
