@@ -97,3 +97,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/canonical/gomaasclient => github.com/skatsaounis/gomaasclient v0.0.0-20261117163728-8963a7f93e1a
