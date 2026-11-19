@@ -1,0 +1,45 @@
+name: dev
+base: ubuntu@26.04
+sdks:
+  - name: go
+    channel: 1.26/stable
+  # terraform-cli publishes only latest/edge; terraform-papagr has latest/stable.
+  - name: terraform-papagr
+  - name: project-tools
+  - name: omp
+
+actions:
+  build: |
+    make build
+
+  test: |
+    make test "$@"
+
+  # Needs a reachable MAAS: workshop run --env MAAS_API_KEY --env MAAS_API_URL --env MAAS_VERSION testacc
+  testacc: |
+    make testacc "$@"
+
+  lint: |
+    make lint
+
+  lint-fix: |
+    make lint-go-fix
+
+  fmt-check: |
+    terraform fmt -recursive -check
+
+  fmt: |
+    terraform fmt -recursive
+
+  generate: |
+    go generate ./...
+    make generate_docs
+
+  # `make validate_docs` infers the provider name from the checkout directory,
+  # which is /project here; pass it explicitly as `make generate_docs` does.
+  docs-validate: |
+    make bin/tfplugindocs
+    bin/tfplugindocs validate --provider-name terraform-provider-maas
+
+  dev-overrides: |
+    make create_dev_overrides
