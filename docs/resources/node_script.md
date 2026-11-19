@@ -40,7 +40,7 @@ resource "maas_node_script" "tf_node_script" {
 - `parameters` (String) The parameters the node script accepts.
 - `recommission` (Boolean) Whether builtin commissioning scripts should be rerun after successfully running this node script.
 - `results` (String) The results the node script will return on completion.
-- `script_type` (String) Defines when the node script should be used: `commissioning` or `testing` or `release`.
+- `script_type` (String) Defines when the node script should be used: `commissioning`, `testing`, `release` or `deployment` (MAAS 3.8+).
 - `tags` (List of String) A set of tag names assigned to the node script.
 - `timeout` (String) How long the node script is allowed to run before failing. `0` means unlimited time. The time is represented in the following format: `[DD] [[HH:]MM:]ss[.uuuuuu]`
 - `title` (String) The title of the node script.

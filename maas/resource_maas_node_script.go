@@ -25,6 +25,7 @@ var scriptTypeEnumToName = map[entity.NodeScriptType]string{
 	entity.ScriptTypeCommissioning: "commissioning",
 	entity.ScriptTypeTesting:       "testing",
 	entity.ScriptTypeRelease:       "release",
+	entity.ScriptTypeDeployment:    "deployment",
 }
 
 var parallelEnumToName = map[entity.NodeScriptParallel]string{
@@ -130,7 +131,7 @@ func resourceMAASNodeScript() *schema.Resource {
 			"script_type": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Defines when the node script should be used: `commissioning` or `testing` or `release`.",
+				Description: "Defines when the node script should be used: `commissioning`, `testing`, `release` or `deployment` (MAAS 3.8+).",
 			},
 			"tags": {
 				Type:     schema.TypeList,

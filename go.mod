@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/bflad/tfproviderlint v0.31.0
-	github.com/canonical/gomaasclient v0.20.0
+	github.com/canonical/gomaasclient v0.21.0
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-set/v2 v2.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.25.0
