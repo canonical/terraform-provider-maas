@@ -25,6 +25,11 @@ func dataSourceMAASMachine() *schema.Resource {
 				Description: "A list of physical block devices attached to the machine.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"device_path": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The `/dev/disk/by-path` name of the block device (e.g. `pci-0000:03:00.0-nvme-1`), from the machine's current commissioning output. Unlike `name`, it identifies the PCI slot and NVMe namespace. Empty unless `include_commissioning_output` is `true`.",
+						},
 						"id": {
 							Type:        schema.TypeInt,
 							Computed:    true,
@@ -44,6 +49,16 @@ func dataSourceMAASMachine() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The block device name.",
+						},
+						"numa_node": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "The NUMA node of the block device. Taken from the current commissioning output when `include_commissioning_output` is `true`, otherwise the value MAAS stores, which is not refreshed when drives move between commissionings.",
+						},
+						"pci_address": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The PCI address of the block device's controller (e.g. `0000:03:00.0`), from the machine's current commissioning output. All namespaces of an NVMe controller share it; use `device_path` to tell them apart. Empty unless `include_commissioning_output` is `true`.",
 						},
 						"serial": {
 							Type:        schema.TypeString,
@@ -75,6 +90,12 @@ func dataSourceMAASMachine() *schema.Resource {
 				Computed:     true,
 				ExactlyOneOf: []string{"hostname", "pxe_mac_address"},
 				Description:  "The machine hostname.",
+			},
+			"include_commissioning_output": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Read the machine's current commissioning output to populate `device_path`, `pci_address` and `numa_node` on `block_devices`. This costs one extra API request per read, returning a few hundred kilobytes. Defaults to `false`.",
 			},
 			"min_hwe_kernel": {
 				Type:        schema.TypeString,
@@ -160,6 +181,15 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 		}
 	}
 
+	disks := map[string]commissioningDisk{}
+
+	if d.Get("include_commissioning_output").(bool) {
+		disks, err = getCurrentCommissioningDisks(client, machine.SystemID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	tfState := map[string]any{
 		"id":               machine.SystemID,
 		"architecture":     machine.Architecture,
@@ -172,7 +202,7 @@ func dataSourceMachineRead(ctx context.Context, d *schema.ResourceData, meta any
 		"power_parameters": powerParamsJSON,
 		"pxe_mac_address":  machine.BootInterface.MACAddress,
 		"status":           machine.StatusName,
-		"block_devices":    getShortBlockDeviceMachineParameters(physicalBlockDevices),
+		"block_devices":    getDataSourceBlockDeviceParameters(physicalBlockDevices, disks),
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)

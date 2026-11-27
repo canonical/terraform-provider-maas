@@ -37,6 +37,7 @@ data "maas_machine" "test_by_pxe_mac_address" {
 ### Optional
 
 - `hostname` (String) The machine hostname.
+- `include_commissioning_output` (Boolean) Read the machine's current commissioning output to populate `device_path`, `pci_address` and `numa_node` on `block_devices`. This costs one extra API request per read, returning a few hundred kilobytes. Defaults to `false`.
 - `pxe_mac_address` (String) The MAC address of the machine's PXE boot NIC.
 
 ### Read-Only
@@ -57,10 +58,13 @@ data "maas_machine" "test_by_pxe_mac_address" {
 
 Read-Only:
 
+- `device_path` (String)
 - `id` (Number)
 - `id_path` (String)
 - `model` (String)
 - `name` (String)
+- `numa_node` (Number)
+- `pci_address` (String)
 - `serial` (String)
 - `size_gigabytes` (Number)
 - `tags` (Set of String)
