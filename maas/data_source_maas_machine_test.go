@@ -38,6 +38,13 @@ func TestAccDataSourceMAASMachine_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.maas_machine.test", "block_devices.#"),
 					resource.TestCheckTypeSetElemAttr("data.maas_machine.test", "block_devices.1.tags.*", "test-tag"),
 					testAccCheckNoBlockDeviceWithName("data.maas_machine.test", "test-volume-group-virtual-test"),
+					// Without include_commissioning_output the commissioning-derived
+					// attributes stay empty and no extra request is made.
+					resource.TestCheckResourceAttr("data.maas_machine.test", "block_devices.0.device_path", ""),
+					resource.TestCheckResourceAttr("data.maas_machine.test", "block_devices.0.pci_address", ""),
+					resource.TestCheckResourceAttrSet("data.maas_machine.with_commissioning_output", "block_devices.0.device_path"),
+					resource.TestCheckResourceAttrSet("data.maas_machine.with_commissioning_output", "block_devices.0.pci_address"),
+					resource.TestCheckResourceAttrSet("data.maas_machine.with_commissioning_output", "block_devices.0.numa_node"),
 				),
 			},
 		},
@@ -107,6 +114,12 @@ resource "maas_logical_volume" "test" {
 data "maas_machine" "test" {
   hostname   = maas_vm_host_machine.test.hostname
   depends_on = [maas_logical_volume.test]
+}
+
+data "maas_machine" "with_commissioning_output" {
+  hostname                     = maas_vm_host_machine.test.hostname
+  include_commissioning_output = true
+  depends_on                   = [maas_logical_volume.test]
 }
 `, vmHostID, testMachineName)
 }
